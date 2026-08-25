@@ -13,8 +13,8 @@ Set up the project, establish the app architecture, wire up the database, and lo
 ## Coding Objectives
 
 ### 1. Project scaffold
-- Initialize an **Electron + React + TypeScript** project.
-- Decide the bundler/build tooling. Recommended: **Vite** for the renderer + **electron-builder** (or electron-vite) for packaging/main.
+- Initialize an **Electron + React + TypeScript** project using **electron-vite** (integrated bundler for main/preload/renderer with HMR).
+- Packaging via **electron-builder** will be added later (Phase 4) for cross-platform installers.
 - Verify the app launches a window and hot-reloads during dev.
 
 ### 2. App architecture — process split
@@ -25,7 +25,7 @@ Set up the project, establish the app architecture, wire up the database, and lo
 - Enable secure defaults: `contextIsolation: true`, `nodeIntegration: false`, `sandbox` as appropriate.
 
 ### 3. SQLite layer
-- Add SQLite integration (e.g., `better-sqlite3`).
+- Use the built-in **`node:sqlite`** driver (no native module compilation needed).
 - Define the **initial schema** and a **migration mechanism** so the DB is created/upgraded on first launch.
 - Write a tiny migration runner that runs on app startup.
 
@@ -37,7 +37,7 @@ Set up the project, establish the app architecture, wire up the database, and lo
 ### 5. Tooling baseline
 - **Lint** (ESLint + TypeScript config).
 - **Formatting** (Prettier).
-- Confirm **Node.js 20 LTS** and the chosen package manager are documented/pinned.
+- Confirm **Node.js 24 LTS** and the chosen package manager (**pnpm**) are documented/pinned.
 - Optional: minimal CI config to run lint/typecheck/build.
 
 ### 6. Repository hygiene
@@ -50,27 +50,27 @@ Set up the project, establish the app architecture, wire up the database, and lo
 > Tasks that must happen outside of writing feature code — these are often blockers for the coding work.
 
 ### Environment & setup
-- [ ] Install **Node.js 20 LTS** (pin version in `.nvmrc` or `.node-version`).
-- [ ] Choose and install a **package manager** (recommended: **pnpm** or the latest npm bundled with Node 20).
-- [ ] Verify native module toolchain works on Windows (SQLite is a native dependency) — confirm build tools / VS Build Tools are available so `better-sqlite3` compiles.
+- [x] **Node.js 24 LTS** installed and pinned via fnm (see `.node-version` at project root).
+- [x] Package manager: **pnpm** installed globally.
+- [x] SQLite driver: **`node:sqlite`** (built into Node — no native build toolchain needed on Windows).
 - [ ] Confirm Electron can run in the local dev environment (GPU/display/sandbox quirks on Windows).
 
 ### Architecture decisions (resolve before/early coding)
-- [ ] Confirm the bundler choice: **electron-vite** vs. separate Vite + electron-builder setup.
-- [ ] Lock the **SQLite driver** (`better-sqlite3` vs. alternatives) — affects native build requirements.
-- [ ] Decide **state management** approach for the renderer (Context + hooks vs. Zustand/Redux) — aligns with Phase 1+
-- [ ] Finalize the **folder structure** (e.g., `src/main`, `src/preload`, `src/renderer`, `src/shared`).
-- [ ] Define the **DB schema** v1 (Assignments, PriorityOrder, SubTasks, Notes) and how migrations are structured.
+- [x] ~~Confirm the bundler choice~~ — **resolved:** `electron-vite` (dev/build) + `electron-builder` (packaging, Phase 4).
+- [x] ~~Lock the SQLite driver~~ — **resolved:** `node:sqlite` (no native build requirements).
+- [x] **State management** — **resolved:** **Zustand** for renderer (per repo memory).
+- [x] **Folder structure** — **resolved:** `src/main`, `src/preload`, `src/renderer`, `src/shared` (see phase0-01-scaffold).
+- [x] **DB schema v1** — **resolved:** Assignments, PriorityOrder, SubTasks, Notes, Settings + migrations (see phase0-03-sqlite).
 
 ### Product / data
-- [ ] Confirm the data model fields we need up front (so the v1 schema is stable).
-- [ ] Note where the iCal URL will live (user setting, stored how?) — informs DB/architecture now even if implemented later.
+- [x] **Data model fields confirmed** — see `docs/architecture/data-model.md` (phase0-06-hygiene).
+- [x] **iCal URL storage** — **resolved:** encrypted in SQLite `settings` table via Web Crypto (see `docs/architecture/security.md`).
 
 ### Process & hygiene
-- [ ] Agree on commit conventions / PR process (even if solo).
-- [ ] Create the `tickets/phase0/` breakdown into specific tickets (the actionable list for this phase).
-- [ ] Add project conventions to a `docs/` or README (lint/format commands).
-- [ ] Confirm licensing note (from root README) is not a blocker for Phase 0.
+- [x] **Commit conventions** — **resolved:** Conventional Commits (`feat:`, `fix:`, `chore:`, etc.) (phase0-06-hygiene).
+- [x] **Phase 0 tickets created** — see `docs/tickets/phase0/phase0-0[1-6]-*.md`.
+- [x] **Project conventions** — lint/format/typecheck/test scripts documented in `package.json` and `README.md`.
+- [x] **Licensing** — MIT license added (phase0-06-hygiene).
 
 
 ## Deliverables
@@ -85,3 +85,16 @@ By the end of Phase 0:
 
 
 *Detailed task tickets for this phase are tracked under `docs/tickets/phase0/`.*
+
+---
+
+## Tickets (this phase)
+
+| ID | Title | Description |
+|----|-------|-------------|
+| `phase0-01-scaffold` | **Project Scaffold** | Initialize Electron + React + TS with electron-vite, electron-builder, pnpm, ESLint, Prettier, Vitest, Husky. Produces runnable "Hello World" app. |
+| `phase0-02-architecture` | **Process Architecture & IPC Contract** | Document three-process model, define typed IPC channels/payloads/events in `src/shared/ipc.ts`, domain types in `src/shared/types.ts`, contextBridge pattern. |
+| `phase0-03-sqlite` | **SQLite Database Layer** | Implement `node:sqlite` connection, v1 schema (assignments, priority_order, sub_tasks, notes, settings, schema_version), migration runner, typed synchronous repository. |
+| `phase0-04-ipc` | **IPC Wiring** | Connect IPC contract to SQLite repository: implement all handlers, emit `db:changed` events, expose full typed `window.api` in preload. |
+| `phase0-05-tooling` | **Tooling Hardening** | TS project references, ESLint flat config with architectural import guards, Prettier, Vitest multi-project, Husky pre-commit with lint-staged. |
+| `phase0-06-hygiene` | **Repository Hygiene & Decisions** | Commit `.node-version`, add MIT license, document commit conventions, confirm data model fields, design iCal URL encryption, verify Windows Electron. |*
