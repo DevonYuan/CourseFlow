@@ -1,6 +1,6 @@
 ---
-applyTo: "docs/tickets/phase*/**.md"
-issue: "N/A"
+applyTo: 'docs/tickets/phase*/**.md'
+issue: 'N/A'
 ---
 
 # <short_title>

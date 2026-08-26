@@ -1,18 +1,22 @@
 # Ticket: phase0-03-sqlite
+
 **Phase:** 0 — Foundations & Tooling  
 **Status:** Not Started  
 **Priority:** Critical  
-**Estimated Effort:** 1 day  
+**Estimated Effort:** 1 day
 
 ---
 
 ## Description
+
 Implement the SQLite database layer in the main process using Node's built-in `node:sqlite` (synchronous `DatabaseSync` API). Define the v1 schema for Assignments, Priority Order, Sub-Tasks, Notes, and Settings. Provide a typed repository module that the IPC handlers will call.
 
 ---
 
 ## Requirements
+
 ### Functional
+
 - Single `DatabaseSync` connection opened at app startup (path: `<userData>/courseflow.db`)
 - Schema v1 with tables:
   - `assignments` — core assignment fields + Canvas sync metadata
@@ -26,6 +30,7 @@ Implement the SQLite database layer in the main process using Node's built-in `n
 - WAL mode enabled for concurrency (renderer reads via IPC, main writes)
 
 ### Non-Functional
+
 - **No ORM** — raw parameterized SQL only (security, simplicity, bundle size)
 - All repository functions return typed objects matching `src/shared/types.ts`
 - Zero `any` in repository code
@@ -36,7 +41,9 @@ Implement the SQLite database layer in the main process using Node's built-in `n
 ---
 
 ## Designs & Constraints
+
 ### Schema v1 (SQL)
+
 ```sql
 -- Core assignments from iCal + user extensions
 CREATE TABLE assignments (
@@ -101,6 +108,7 @@ CREATE INDEX idx_sub_tasks_assignment ON sub_tasks(assignment_id, position);
 ```
 
 ### Repository API (src/main/db/repository.ts)
+
 ```ts
 // All functions synchronous, throw on SQL error
 export const repo = {
@@ -136,6 +144,7 @@ export const repo = {
 ```
 
 ### Migration Runner (src/main/db/migrate.ts)
+
 ```ts
 export function migrate(db: DatabaseSync): void {
   const current = db.prepare('SELECT version FROM schema_version').get()?.version ?? 0;
@@ -152,34 +161,39 @@ export function migrate(db: DatabaseSync): void {
 ---
 
 ## Code Changes
+
 ### New Files
+
 - `src/main/db/connection.ts` — open `DatabaseSync`, enable WAL/FK, export singleton
 - `src/main/db/migrate.ts` — migration runner (called once at startup)
 - `src/main/db/repository.ts` — typed repository (above)
 - `src/main/db/schema.sql` — raw SQL for v1 (reference, also embedded in migrate.ts)
 
 ### Modified Files
+
 - `src/main/index.ts` — call `migrate(db)` before creating window; attach `db` to `globalThis` or export for handlers
 - `src/main/ipc-handlers.ts` — wire repository functions to IPC channel handlers (stubs from phase0-02 now implemented)
 
 ---
 
 ## Acceptance Criteria
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | App starts, creates `courseflow.db` in `app.getPath('userData')` | Check file exists |
-| 2 | `schema_version` table shows version 1 after first run | `sqlite3 courseflow.db "SELECT * FROM schema_version"` |
-| 3 | All repository functions compile and return types matching `src/shared/types.ts` | `pnpm typecheck` |
-| 4 | CRUD round-trip works via IPC: `window.api.db.assignments.upsert → list → get → delete` | Manual test in renderer console |
-| 5 | Priority reorder persists across app restarts | Restart, verify order |
-| 6 | Sub-tasks and notes cascade delete when assignment deleted | Delete assignment, verify tables empty |
-| 7 | Settings get/set survives restart | Set iCal URL, restart, read back |
-| 8 | WAL mode enabled (`PRAGMA journal_mode=WAL`) | `sqlite3 courseflow.db "PRAGMA journal_mode"` |
-| 9 | No raw SQL in IPC handlers — all via repository | Code review |
+
+| #   | Criterion                                                                               | Verification                                           |
+| --- | --------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1   | App starts, creates `courseflow.db` in `app.getPath('userData')`                        | Check file exists                                      |
+| 2   | `schema_version` table shows version 1 after first run                                  | `sqlite3 courseflow.db "SELECT * FROM schema_version"` |
+| 3   | All repository functions compile and return types matching `src/shared/types.ts`        | `pnpm typecheck`                                       |
+| 4   | CRUD round-trip works via IPC: `window.api.db.assignments.upsert → list → get → delete` | Manual test in renderer console                        |
+| 5   | Priority reorder persists across app restarts                                           | Restart, verify order                                  |
+| 6   | Sub-tasks and notes cascade delete when assignment deleted                              | Delete assignment, verify tables empty                 |
+| 7   | Settings get/set survives restart                                                       | Set iCal URL, restart, read back                       |
+| 8   | WAL mode enabled (`PRAGMA journal_mode=WAL`)                                            | `sqlite3 courseflow.db "PRAGMA journal_mode"`          |
+| 9   | No raw SQL in IPC handlers — all via repository                                         | Code review                                            |
 
 ---
 
 ## Notes
+
 - This ticket **resolves** the "DB schema v1 (assignments, priority, sub-tasks, notes, migrations)" open item in `docs/tickets/phase0/README.md`.
 - `node:sqlite` is **synchronous** — all repository functions are sync. This is fine for main process (off UI thread). Do not wrap in promises.
 - UUID generation: use `crypto.randomUUID()` (Node 24 global).
@@ -189,6 +203,7 @@ export function migrate(db: DatabaseSync): void {
 ---
 
 ## Release Summary
+
 > **What:** SQLite database layer with v1 schema, migration runner, and typed synchronous repository in the main process using `node:sqlite`.  
 > **Why:** Persistent local storage for all assignment data, priorities, sub-tasks, notes, and settings — the foundation for every feature.  
 > **Impact:** IPC handlers from phase0-02 now return real data. Renderer can persist user changes. Zero UI delivered.
