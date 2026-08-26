@@ -1,6 +1,8 @@
 import { join } from 'node:path';
 
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow } from 'electron';
+
+import { registerIpcHandlers } from './ipc-handlers.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -12,7 +14,7 @@ function createWindow(): void {
     minHeight: 600,
     title: 'CourseFlow',
     webPreferences: {
-      preload: join(import.meta.dirname, '../preload/index.js'),
+      preload: join(import.meta.dirname, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -32,6 +34,9 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  // Register all IPC handlers before creating windows
+  registerIpcHandlers();
+
   void createWindow();
 
   app.on('activate', () => {
@@ -46,5 +51,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-ipcMain.handle('app:version', () => app.getVersion());

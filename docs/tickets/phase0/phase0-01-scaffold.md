@@ -5,8 +5,6 @@
 **Priority:** Critical  
 **Estimated Effort:** 1 day
 
----
-
 ## Description
 
 Initialize the monorepo-style workspace with the agreed-upon toolchain:
@@ -21,8 +19,6 @@ Initialize the monorepo-style workspace with the agreed-upon toolchain:
 - Husky + lint-staged for pre-commit hooks
 
 The scaffold must produce a runnable "Hello World" Electron window (main + renderer) that compiles, lints, tests, and packages without errors.
-
----
 
 ## Requirements
 
@@ -40,8 +36,6 @@ The scaffold must produce a runnable "Hello World" Electron window (main + rende
 - No `any` in scaffold code (except deliberate `unknown` narrowings)
 - Source maps enabled for debugging
 - Build output goes to `dist/` (ignored by git)
-
----
 
 ## Designs & Constraints
 
@@ -72,8 +66,6 @@ The scaffold must produce a runnable "Hello World" Electron window (main + rende
 - **Prettier**: single quotes, trailing commas, 100 char line width
 - **Husky**: `pre-commit` runs `lint-staged` (ESLint + Prettier on staged files)
 
----
-
 ## Code Changes
 
 ### New Files
@@ -98,8 +90,6 @@ The scaffold must produce a runnable "Hello World" Electron window (main + rende
 
 - `.gitignore` (add `dist/`, `node_modules/`, `*.local`, `.vite/`, `.electron-vite/`)
 
----
-
 ## Acceptance Criteria
 
 | #   | Criterion                                                                                         | Verification                   |
@@ -113,8 +103,6 @@ The scaffold must produce a runnable "Hello World" Electron window (main + rende
 | 7   | `pnpm test` exits 0 (empty suite configured)                                                      | Run                            |
 | 8   | Pre-commit hook blocks commit on lint/format failure                                              | Stage bad file, attempt commit |
 
----
-
 ## Notes
 
 - This ticket **resolves** the "Finalize folder structure" and "Confirm electron-vite + electron-builder" open items in `docs/tickets/phase0/README.md`.
@@ -122,8 +110,6 @@ The scaffold must produce a runnable "Hello World" Electron window (main + rende
 - Use `node:sqlite` (native) — do **not** add `better-sqlite3` or `sqlite3` npm packages.
 - React 18 with functional components + hooks only.
 - Zustand is **already decided** for renderer state (per repo memory); do not install it here — wait for the state-management ticket in Phase 1.
-
----
 
 ## Release Summary
 

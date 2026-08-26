@@ -16,10 +16,10 @@ export default defineConfig({
   preload: {
     build: {
       outDir: 'dist/backend/preload',
-      rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'src/backend/preload/index.ts'),
-        },
+      lib: {
+        entry: resolve(__dirname, 'src/backend/preload/index.ts'),
+        formats: ['cjs'],
+        fileName: 'index',
       },
     },
   },

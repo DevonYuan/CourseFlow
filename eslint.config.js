@@ -79,27 +79,114 @@ export default typescriptEslint.config(
     },
   },
   {
-    files: ['src/main/**/*.ts'],
+    files: ['src/backend/main/**/*.ts'],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 },
     },
-  },
-  {
-    files: ['src/preload/**/*.ts'],
-    languageOptions: {
-      globals: { ...globals.node, ...globals.es2022 },
+    rules: {
+      // Main must not import from preload or renderer
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../preload/**', '../frontend/**'],
+              message: 'Main process must not import from Preload or Renderer',
+            },
+            {
+              group: ['@/../preload/**', '@/../frontend/**'],
+              message: 'Main process must not import from Preload or Renderer',
+            },
+          ],
+        },
+      ],
+      // Disable unsafe-* rules that have false positives with catch blocks and branded types
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
     },
   },
   {
-    files: ['src/renderer/**/*.ts', 'src/renderer/**/*.tsx'],
+    files: ['src/backend/preload/**/*.ts'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.es2022 },
+    },
+    rules: {
+      // Preload must not import from main or renderer (only shared)
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../main/**', '../../frontend/**'],
+              message: 'Preload must not import from Main or Renderer',
+            },
+            {
+              group: ['@/../main/**', '@/../frontend/**'],
+              message: 'Preload must not import from Main or Renderer',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/frontend/**/*.ts', 'src/frontend/**/*.tsx'],
     languageOptions: {
       globals: { ...globals.browser, ...globals.es2022 },
     },
+    rules: {
+      // Renderer must not import Electron or Node.js built-ins
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['electron', 'electron/*'],
+              message: 'Renderer must not import Electron APIs directly — use window.api instead',
+            },
+            { group: ['node:*'], message: 'Renderer must not import Node.js built-ins' },
+            {
+              group: ['../../backend/main/**', '../../backend/preload/**'],
+              message: 'Renderer must not import from Main or Preload — use @shared instead',
+            },
+            {
+              group: ['@/../backend/main/**', '@/../backend/preload/**'],
+              message: 'Renderer must not import from Main or Preload — use @shared instead',
+            },
+          ],
+        },
+      ],
+    },
   },
   {
-    files: ['src/shared/**/*.ts'],
+    files: ['src/backend/shared/**/*.ts'],
     languageOptions: {
       globals: { ...globals.es2022 },
+    },
+    rules: {
+      // Shared code must not import Electron or Node.js built-ins (pure TypeScript)
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['electron', 'electron/*'],
+              message: 'Shared code must not import Electron — zero dependencies allowed',
+            },
+            {
+              group: ['node:*'],
+              message: 'Shared code must not import Node.js built-ins — zero dependencies allowed',
+            },
+            {
+              group: ['../main/**', '../preload/**', '../../frontend/**'],
+              message: 'Shared code must not import from Main, Preload, or Renderer',
+            },
+          ],
+        },
+      ],
     },
   },
 );

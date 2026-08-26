@@ -1,17 +1,13 @@
 # Ticket: phase0-02-architecture
 
 **Phase:** 0 — Foundations & Tooling  
-**Status:** Not Started  
+**Status:** Completed  
 **Priority:** Critical  
 **Estimated Effort:** 0.5 day
-
----
 
 ## Description
 
 Document and codify the Process Architecture & IPC Contract that all future tickets will follow. This ticket produces a living architecture decision record (ADR) and the TypeScript interfaces that enforce the contract at compile time.
-
----
 
 ## Requirements
 
@@ -28,8 +24,6 @@ Document and codify the Process Architecture & IPC Contract that all future tick
 - Shared code (`src/backend/shared/`) has **zero** Electron/Node dependencies
 - All IPC goes through typed channels — no stringly-typed `invoke`/`on` in feature code
 - Single source of truth for channel names (const objects, not magic strings)
-
----
 
 ## Designs & Constraints
 
@@ -76,8 +70,6 @@ export type IpcEvents = {
 // No raw ipcRenderer exposed.
 ```
 
----
-
 ## Code Changes
 
 ### New Files
@@ -92,8 +84,6 @@ export type IpcEvents = {
 - `src/backend/preload/index.ts` — implement typed `contextBridge` exposure using `ipc.ts` types
 - `src/backend/main/ipc-handlers.ts` — skeleton handlers keyed by `ipc.ts` channels (throw `NotImplementedError` for now)
 
----
-
 ## Acceptance Criteria
 
 | #   | Criterion                                                                                             | Verification                                            |
@@ -105,16 +95,12 @@ export type IpcEvents = {
 | 5   | Renderer can import `ipc.ts` types and call `window.api.*` with autocomplete                          | Manual test in `App.tsx`                                |
 | 6   | No forbidden cross-process imports (enforced by ESLint `import/no-restricted-paths`)                  | `pnpm lint` passes                                      |
 
----
-
 ## Notes
 
 - This ticket **resolves** the "Define IPC schema (channels, payloads, error handling)" and "ContextBridge pattern" open items in `docs/tickets/phase0/README.md`.
 - The ADR documents _why_ we chose this model (security, testability, maintainability).
 - Keep payloads minimal — add fields only when a downstream ticket needs them.
 - Error handling: IPC handlers return `{ ok: true; data: T } | { ok: false; error: string }` — define this wrapper in `ipc.ts`.
-
----
 
 ## Release Summary
 
