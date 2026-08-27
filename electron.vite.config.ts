@@ -10,6 +10,7 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/backend/main/index.ts'),
         },
+        external: ['sql.js', 'better-sqlite3'],
       },
     },
   },

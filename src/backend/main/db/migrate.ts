@@ -7,7 +7,7 @@
  * @module @backend/main/db/migrate
  */
 
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'sql.js';
 
 /**
  * Migration SQL statements by version.
@@ -16,7 +16,7 @@ import type { DatabaseSync } from 'node:sqlite';
 const MIGRATIONS: Record<number, string> = {
   1: `
     -- Core assignments from iCal + user extensions
-    CREATE TABLE assignments (
+    CREATE TABLE IF NOT EXISTS assignments (
       id TEXT PRIMARY KEY,
       canvas_id TEXT UNIQUE,
       title TEXT NOT NULL,
@@ -36,13 +36,13 @@ const MIGRATIONS: Record<number, string> = {
     );
 
     -- User-defined priority (drag-drop order)
-    CREATE TABLE priority_order (
+    CREATE TABLE IF NOT EXISTS priority_order (
       assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
       position INTEGER NOT NULL UNIQUE
     );
 
     -- Sub-tasks / checklist per assignment
-    CREATE TABLE sub_tasks (
+    CREATE TABLE IF NOT EXISTS sub_tasks (
       id TEXT PRIMARY KEY,
       assignment_id TEXT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
@@ -53,28 +53,28 @@ const MIGRATIONS: Record<number, string> = {
     );
 
     -- Notes per assignment
-    CREATE TABLE notes (
+    CREATE TABLE IF NOT EXISTS notes (
       assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
       content TEXT NOT NULL DEFAULT '',
       updated_at INTEGER NOT NULL
     );
 
     -- App settings (key-value, single row per key)
-    CREATE TABLE settings (
+    CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
 
     -- Migration tracking
-    CREATE TABLE schema_version (
+    CREATE TABLE IF NOT EXISTS schema_version (
       version INTEGER PRIMARY KEY,
       applied_at INTEGER NOT NULL
     );
 
     -- Indexes
-    CREATE INDEX idx_assignments_due_at ON assignments(due_at);
-    CREATE INDEX idx_assignments_course ON assignments(course_name);
-    CREATE INDEX idx_sub_tasks_assignment ON sub_tasks(assignment_id, position);
+    CREATE INDEX IF NOT EXISTS idx_assignments_due_at ON assignments(due_at);
+    CREATE INDEX IF NOT EXISTS idx_assignments_course ON assignments(course_name);
+    CREATE INDEX IF NOT EXISTS idx_sub_tasks_assignment ON sub_tasks(assignment_id, position);
   `,
 };
 
@@ -82,10 +82,10 @@ const MIGRATIONS: Record<number, string> = {
  * Run all pending migrations on the given database.
  * Creates schema_version table if it doesn't exist.
  *
- * @param db - DatabaseSync instance to migrate
+ * @param db - sql.js Database instance to migrate
  * @throws {Error} If any migration fails
  */
-export function migrate(db: DatabaseSync): void {
+export function migrate(db: Database): void {
   // Ensure schema_version table exists (for fresh databases)
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_version (
@@ -94,16 +94,23 @@ export function migrate(db: DatabaseSync): void {
     );
   `);
 
-  // Get current schema version
-  const row = db
-    .prepare('SELECT version FROM schema_version ORDER BY version DESC LIMIT 1')
-    .get() as { version: number } | undefined;
-  const currentVersion = row?.version ?? 0;
+  // Get all applied migration versions
+  const appliedStmt = db.prepare('SELECT version FROM schema_version');
+  const appliedVersions = new Set<number>();
+  while (appliedStmt.step()) {
+    const row = appliedStmt.getAsObject() as { version: number };
+    appliedVersions.add(row.version);
+  }
+  appliedStmt.free();
 
   // Apply pending migrations
   const maxVersion = Math.max(...Object.keys(MIGRATIONS).map(Number));
 
-  for (let version = currentVersion + 1; version <= maxVersion; version++) {
+  for (let version = 1; version <= maxVersion; version++) {
+    if (appliedVersions.has(version)) {
+      continue; // Already applied
+    }
+
     const migrationSql = MIGRATIONS[version];
     if (!migrationSql) {
       throw new Error(`Missing migration for version ${version}`);
@@ -113,10 +120,11 @@ export function migrate(db: DatabaseSync): void {
     db.exec('BEGIN TRANSACTION;');
     try {
       db.exec(migrationSql);
-      db.prepare('INSERT INTO schema_version (version, applied_at) VALUES (?, ?)').run(
-        version,
-        Date.now(),
+      const insertStmt = db.prepare(
+        'INSERT INTO schema_version (version, applied_at) VALUES (?, ?)',
       );
+      insertStmt.run([version, Date.now()]);
+      insertStmt.free();
       db.exec('COMMIT;');
     } catch (error) {
       db.exec('ROLLBACK;');
@@ -130,12 +138,12 @@ export function migrate(db: DatabaseSync): void {
 /**
  * Get the current schema version.
  *
- * @param db - DatabaseSync instance
+ * @param db - sql.js Database instance
  * @returns Current schema version (0 if no migrations applied)
  */
-export function getCurrentVersion(db: DatabaseSync): number {
-  const row = db
-    .prepare('SELECT version FROM schema_version ORDER BY version DESC LIMIT 1')
-    .get() as { version: number } | undefined;
+export function getCurrentVersion(db: Database): number {
+  const stmt = db.prepare('SELECT version FROM schema_version ORDER BY version DESC LIMIT 1');
+  const row = stmt.getAsObject() as { version: number } | undefined;
+  stmt.free();
   return row?.version ?? 0;
 }

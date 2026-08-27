@@ -1,7 +1,7 @@
 /**
  * Database Repository — Main Process
  *
- * Typed, synchronous CRUD operations using prepared statements.
+ * Typed, asynchronous CRUD operations using sql.js (WASM).
  * All functions throw on SQL error (handled by IPC layer).
  * Zero `any` usage — all inputs/outputs fully typed.
  *
@@ -24,129 +24,7 @@ import type {
   DbSettings,
 } from '../shared/types.js';
 
-import { getDatabase } from './connection.js';
-
-// ============================================================================
-// Prepared Statements (cached in module scope)
-// ============================================================================
-
-const db = getDatabase();
-
-// --- Assignments ---
-const stmtListAssignments = db.prepare('SELECT * FROM assignments ORDER BY due_at ASC');
-const stmtGetAssignment = db.prepare('SELECT * FROM assignments WHERE id = ?');
-const stmtFindByICalUID = db.prepare('SELECT * FROM assignments WHERE ical_uid = ?');
-const stmtListAssignmentsByCourse = db.prepare(
-  'SELECT * FROM assignments WHERE course_name = ? ORDER BY due_at ASC',
-);
-const stmtUpsertAssignment = db.prepare(`
-  INSERT INTO assignments (
-    id, canvas_id, title, description, course_name, course_color,
-    due_at, unlock_at, lock_at, points_possible, submission_types,
-    workflow_state, html_url, ical_uid, created_at, updated_at
-  ) VALUES (
-    @id, @canvas_id, @title, @description, @course_name, @course_color,
-    @due_at, @unlock_at, @lock_at, @points_possible, @submission_types,
-    @workflow_state, @html_url, @ical_uid, @created_at, @updated_at
-  )
-  ON CONFLICT(id) DO UPDATE SET
-    canvas_id = excluded.canvas_id,
-    title = excluded.title,
-    description = excluded.description,
-    course_name = excluded.course_name,
-    course_color = excluded.course_color,
-    due_at = excluded.due_at,
-    unlock_at = excluded.unlock_at,
-    lock_at = excluded.lock_at,
-    points_possible = excluded.points_possible,
-    submission_types = excluded.submission_types,
-    workflow_state = excluded.workflow_state,
-    html_url = excluded.html_url,
-    ical_uid = excluded.ical_uid,
-    updated_at = excluded.updated_at
-  RETURNING *;
-`);
-const stmtDeleteAssignment = db.prepare('DELETE FROM assignments WHERE id = ?');
-
-// --- Priority Order ---
-const stmtGetPriorityOrder = db.prepare(
-  'SELECT assignment_id FROM priority_order ORDER BY position ASC',
-);
-const stmtSetPriorityOrder = db.prepare(
-  'INSERT OR REPLACE INTO priority_order (assignment_id, position) VALUES (?, ?)',
-);
-const stmtUpsertPriorityOrder = db.prepare(`
-  INSERT INTO priority_order (assignment_id, position)
-  VALUES (?, ?)
-  ON CONFLICT(assignment_id) DO UPDATE SET position = excluded.position
-`);
-
-// --- Sub-tasks ---
-const stmtListSubTasks = db.prepare(
-  'SELECT * FROM sub_tasks WHERE assignment_id = ? ORDER BY position ASC',
-);
-const stmtUpsertSubTask = db.prepare(`
-  INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at)
-  VALUES (@id, @assignment_id, @title, @completed, @position, @created_at, @updated_at)
-  ON CONFLICT(id) DO UPDATE SET
-    assignment_id = excluded.assignment_id,
-    title = excluded.title,
-    completed = excluded.completed,
-    position = excluded.position,
-    updated_at = excluded.updated_at
-  RETURNING *;
-`);
-const stmtDeleteSubTask = db.prepare('DELETE FROM sub_tasks WHERE id = ?');
-const stmtReorderSubTasks = db.prepare(
-  'UPDATE sub_tasks SET position = ?, updated_at = ? WHERE id = ?',
-);
-
-// --- Notes ---
-const stmtGetNote = db.prepare('SELECT * FROM notes WHERE assignment_id = ?');
-const stmtUpsertNote = db.prepare(`
-  INSERT INTO notes (assignment_id, content, updated_at)
-  VALUES (?, ?, ?)
-  ON CONFLICT(assignment_id) DO UPDATE SET
-    content = excluded.content,
-    updated_at = excluded.updated_at
-  RETURNING *;
-`);
-
-// --- Settings ---
-const stmtGetSetting = db.prepare('SELECT value FROM settings WHERE key = ?');
-const stmtSetSetting = db.prepare(`
-  INSERT INTO settings (key, value) VALUES (?, ?)
-  ON CONFLICT(key) DO UPDATE SET value = excluded.value
-`);
-
-// --- Bulk Operations ---
-const stmtBulkUpsertAssignments = db.prepare(`
-  INSERT INTO assignments (
-    id, canvas_id, title, description, course_name, course_color,
-    due_at, unlock_at, lock_at, points_possible, submission_types,
-    workflow_state, html_url, ical_uid, created_at, updated_at
-  ) VALUES (
-    @id, @canvas_id, @title, @description, @course_name, @course_color,
-    @due_at, @unlock_at, @lock_at, @points_possible, @submission_types,
-    @workflow_state, @html_url, @ical_uid, @created_at, @updated_at
-  )
-  ON CONFLICT(id) DO UPDATE SET
-    canvas_id = excluded.canvas_id,
-    title = excluded.title,
-    description = excluded.description,
-    course_name = excluded.course_name,
-    course_color = excluded.course_color,
-    due_at = excluded.due_at,
-    unlock_at = excluded.unlock_at,
-    lock_at = excluded.lock_at,
-    points_possible = excluded.points_possible,
-    submission_types = excluded.submission_types,
-    workflow_state = excluded.workflow_state,
-    html_url = excluded.html_url,
-    ical_uid = excluded.ical_uid,
-    updated_at = excluded.updated_at
-  RETURNING *;
-`);
+import { getDatabase, saveDatabase } from './connection.js';
 
 // ============================================================================
 // Type Conversion Helpers
@@ -229,6 +107,43 @@ function mapDbSettingsToSettings(rows: DbSettings[]): Settings {
 }
 
 // ============================================================================
+// SQL Helpers
+// ============================================================================
+
+function run(sql: string, params: (string | number | null)[] = []): void {
+  const db = getDatabase();
+  db.run(sql, params);
+  saveDatabase();
+}
+
+function get<T>(sql: string, params: (string | number | null)[] = []): T | null {
+  const db = getDatabase();
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const result = stmt.getAsObject();
+  stmt.free();
+  return result as T | null;
+}
+
+function all<T>(sql: string, params: (string | number | null)[] = []): T[] {
+  const db = getDatabase();
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const results: T[] = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject() as T);
+  }
+  stmt.free();
+  return results;
+}
+
+function exec(sql: string): void {
+  const db = getDatabase();
+  db.exec(sql);
+  saveDatabase();
+}
+
+// ============================================================================
 // Repository API
 // ============================================================================
 
@@ -239,7 +154,7 @@ export const repo = {
    * List all assignments ordered by due date.
    */
   listAssignments(): Assignment[] {
-    const rows = stmtListAssignments.all() as DbAssignment[];
+    const rows = all<DbAssignment>('SELECT * FROM assignments ORDER BY due_at ASC');
     return rows.map(mapDbAssignmentToAssignment);
   },
 
@@ -247,23 +162,26 @@ export const repo = {
    * Get a single assignment by ID.
    */
   getAssignment(id: string): Assignment | null {
-    const row = stmtGetAssignment.get(id);
-    return row ? mapDbAssignmentToAssignment(row as DbAssignment) : null;
+    const row = get<DbAssignment>('SELECT * FROM assignments WHERE id = ?', [id]);
+    return row ? mapDbAssignmentToAssignment(row) : null;
   },
 
   /**
    * Find assignment by iCal UID (for sync deduplication).
    */
   findByICalUID(uid: string): Assignment | null {
-    const row = stmtFindByICalUID.get(uid);
-    return row ? mapDbAssignmentToAssignment(row as DbAssignment) : null;
+    const row = get<DbAssignment>('SELECT * FROM assignments WHERE ical_uid = ?', [uid]);
+    return row ? mapDbAssignmentToAssignment(row) : null;
   },
 
   /**
    * List assignments for a specific course.
    */
   listAssignmentsByCourse(courseName: string): Assignment[] {
-    const rows = stmtListAssignmentsByCourse.all(courseName) as DbAssignment[];
+    const rows = all<DbAssignment>(
+      'SELECT * FROM assignments WHERE course_name = ? ORDER BY due_at ASC',
+      [courseName],
+    );
     return rows.map(mapDbAssignmentToAssignment);
   },
 
@@ -275,25 +193,51 @@ export const repo = {
     const now = Date.now();
     const id = randomUUID();
 
-    const row = stmtUpsertAssignment.get({
-      id,
-      canvas_id: null,
-      title: input.title,
-      description: input.description,
-      course_name: input.courseId ?? '',
-      course_color: null,
-      due_at: toUnixMs(input.dueDate) ?? now,
-      unlock_at: null,
-      lock_at: null,
-      points_possible: null,
-      submission_types: null,
-      workflow_state: input.status,
-      html_url: input.sourceUrl,
-      ical_uid: input.source === 'ical' ? input.sourceUrl : null,
-      created_at: now,
-      updated_at: now,
-    });
+    run(
+      `
+      INSERT INTO assignments (
+        id, canvas_id, title, description, course_name, course_color,
+        due_at, unlock_at, lock_at, points_possible, submission_types,
+        workflow_state, html_url, ical_uid, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        canvas_id = excluded.canvas_id,
+        title = excluded.title,
+        description = excluded.description,
+        course_name = excluded.course_name,
+        course_color = excluded.course_color,
+        due_at = excluded.due_at,
+        unlock_at = excluded.unlock_at,
+        lock_at = excluded.lock_at,
+        points_possible = excluded.points_possible,
+        submission_types = excluded.submission_types,
+        workflow_state = excluded.workflow_state,
+        html_url = excluded.html_url,
+        ical_uid = excluded.ical_uid,
+        updated_at = excluded.updated_at
+    `,
+      [
+        id,
+        null,
+        input.title,
+        input.description,
+        input.courseId ?? '',
+        null,
+        toUnixMs(input.dueDate) ?? now,
+        null,
+        null,
+        null,
+        null,
+        input.status,
+        input.sourceUrl,
+        input.source === 'ical' ? input.sourceUrl : null,
+        now,
+        now,
+      ],
+    );
 
+    const row = get<DbAssignment>('SELECT * FROM assignments WHERE id = ?', [id]);
+    if (!row) throw new Error('Failed to retrieve upserted assignment');
     return mapDbAssignmentToAssignment(row);
   },
 
@@ -301,7 +245,7 @@ export const repo = {
    * Delete an assignment (cascades to sub_tasks, notes, priority_order).
    */
   deleteAssignment(id: string): void {
-    stmtDeleteAssignment.run(id);
+    run('DELETE FROM assignments WHERE id = ?', [id]);
   },
 
   /**
@@ -312,32 +256,62 @@ export const repo = {
     const now = Date.now();
     const results: Assignment[] = [];
 
-    const transaction = db.transaction((items: AssignmentInput[]) => {
-      for (const input of items) {
+    exec('BEGIN TRANSACTION');
+    try {
+      for (const input of inputs) {
         const id = randomUUID();
-        const row = stmtBulkUpsertAssignments.get({
-          id,
-          canvas_id: null,
-          title: input.title,
-          description: input.description,
-          course_name: input.courseId ?? '',
-          course_color: null,
-          due_at: toUnixMs(input.dueDate) ?? now,
-          unlock_at: null,
-          lock_at: null,
-          points_possible: null,
-          submission_types: null,
-          workflow_state: input.status,
-          html_url: input.sourceUrl,
-          ical_uid: input.source === 'ical' ? input.sourceUrl : null,
-          created_at: now,
-          updated_at: now,
-        });
-        results.push(mapDbAssignmentToAssignment(row));
-      }
-    });
+        run(
+          `
+          INSERT INTO assignments (
+            id, canvas_id, title, description, course_name, course_color,
+            due_at, unlock_at, lock_at, points_possible, submission_types,
+            workflow_state, html_url, ical_uid, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            canvas_id = excluded.canvas_id,
+            title = excluded.title,
+            description = excluded.description,
+            course_name = excluded.course_name,
+            course_color = excluded.course_color,
+            due_at = excluded.due_at,
+            unlock_at = excluded.unlock_at,
+            lock_at = excluded.lock_at,
+            points_possible = excluded.points_possible,
+            submission_types = excluded.submission_types,
+            workflow_state = excluded.workflow_state,
+            html_url = excluded.html_url,
+            ical_uid = excluded.ical_uid,
+            updated_at = excluded.updated_at
+        `,
+          [
+            id,
+            null,
+            input.title,
+            input.description,
+            input.courseId ?? '',
+            null,
+            toUnixMs(input.dueDate) ?? now,
+            null,
+            null,
+            null,
+            null,
+            input.status,
+            input.sourceUrl,
+            input.source === 'ical' ? input.sourceUrl : null,
+            now,
+            now,
+          ],
+        );
 
-    transaction(inputs);
+        const row = get<DbAssignment>('SELECT * FROM assignments WHERE id = ?', [id]);
+        if (row) results.push(mapDbAssignmentToAssignment(row));
+      }
+      exec('COMMIT');
+    } catch (e) {
+      exec('ROLLBACK');
+      throw e;
+    }
+
     return results;
   },
 
@@ -347,7 +321,9 @@ export const repo = {
    * Get all assignment IDs in priority order (0 = highest priority).
    */
   getPriorityOrder(): string[] {
-    const rows = stmtGetPriorityOrder.all() as { assignment_id: string }[];
+    const rows = all<{ assignment_id: string }>(
+      'SELECT assignment_id FROM priority_order ORDER BY position ASC',
+    );
     return rows.map((r) => r.assignment_id);
   },
 
@@ -356,15 +332,22 @@ export const repo = {
    * Replaces all existing priority order entries.
    */
   setPriorityOrder(ids: string[]): void {
-    const transaction = db.transaction((items: string[]) => {
+    exec('BEGIN TRANSACTION');
+    try {
       // Clear existing
-      db.prepare('DELETE FROM priority_order').run();
+      run('DELETE FROM priority_order');
       // Insert new order
-      for (let i = 0; i < items.length; i++) {
-        stmtSetPriorityOrder.run(items[i], i);
+      for (let i = 0; i < ids.length; i++) {
+        run('INSERT OR REPLACE INTO priority_order (assignment_id, position) VALUES (?, ?)', [
+          ids[i],
+          i,
+        ]);
       }
-    });
-    transaction(ids);
+      exec('COMMIT');
+    } catch (e) {
+      exec('ROLLBACK');
+      throw e;
+    }
   },
 
   /**
@@ -372,7 +355,10 @@ export const repo = {
    */
   upsertPriorityOrder(input: PriorityOrderInput): PriorityOrder {
     const now = Date.now();
-    stmtUpsertPriorityOrder.run(input.assignmentId, input.order);
+    run('INSERT OR REPLACE INTO priority_order (assignment_id, position) VALUES (?, ?)', [
+      input.assignmentId,
+      input.order,
+    ]);
     return {
       id: input.assignmentId as PriorityOrder['id'],
       assignmentId: input.assignmentId,
@@ -387,7 +373,10 @@ export const repo = {
    * List all sub-tasks for an assignment, ordered by position.
    */
   listSubTasks(assignmentId: string): SubTask[] {
-    const rows = stmtListSubTasks.all(assignmentId) as DbSubTask[];
+    const rows = all<DbSubTask>(
+      'SELECT * FROM sub_tasks WHERE assignment_id = ? ORDER BY position ASC',
+      [assignmentId],
+    );
     return rows.map(mapDbSubTaskToSubTask);
   },
 
@@ -398,16 +387,30 @@ export const repo = {
     const now = Date.now();
     const dbInput = mapSubTaskInputToDb(input, now);
 
-    const row = stmtUpsertSubTask.get({
-      id: dbInput.id,
-      assignment_id: dbInput.assignment_id,
-      title: dbInput.title,
-      completed: dbInput.completed,
-      position: dbInput.position,
-      created_at: now,
-      updated_at: now,
-    });
+    run(
+      `
+      INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        assignment_id = excluded.assignment_id,
+        title = excluded.title,
+        completed = excluded.completed,
+        position = excluded.position,
+        updated_at = excluded.updated_at
+    `,
+      [
+        dbInput.id,
+        dbInput.assignment_id,
+        dbInput.title,
+        dbInput.completed,
+        dbInput.position,
+        now,
+        now,
+      ],
+    );
 
+    const row = get<DbSubTask>('SELECT * FROM sub_tasks WHERE id = ?', [dbInput.id]);
+    if (!row) throw new Error('Failed to retrieve upserted sub-task');
     return mapDbSubTaskToSubTask(row);
   },
 
@@ -415,7 +418,7 @@ export const repo = {
    * Delete a sub-task by ID.
    */
   deleteSubTask(id: string): void {
-    stmtDeleteSubTask.run(id);
+    run('DELETE FROM sub_tasks WHERE id = ?', [id]);
   },
 
   /**
@@ -423,13 +426,17 @@ export const repo = {
    * Updates positions based on the provided ordered array of IDs.
    */
   reorderSubTasks(assignmentId: string, ids: string[]): void {
-    const transaction = db.transaction((items: string[]) => {
-      const now = Date.now();
-      for (let i = 0; i < items.length; i++) {
-        stmtReorderSubTasks.run(i, now, items[i]);
+    const now = Date.now();
+    exec('BEGIN TRANSACTION');
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        run('UPDATE sub_tasks SET position = ?, updated_at = ? WHERE id = ?', [i, now, ids[i]]);
       }
-    });
-    transaction(ids);
+      exec('COMMIT');
+    } catch (e) {
+      exec('ROLLBACK');
+      throw e;
+    }
   },
 
   // --- Notes ---
@@ -438,7 +445,10 @@ export const repo = {
    * Get the note for an assignment.
    */
   getNote(assignmentId: string): Note | null {
-    const row = stmtGetNote.get(assignmentId);
+    const row = get<{ assignment_id: string; content: string; updated_at: number }>(
+      'SELECT * FROM notes WHERE assignment_id = ?',
+      [assignmentId],
+    );
     if (!row) return null;
     return {
       id: row.assignment_id as Note['id'],
@@ -454,13 +464,22 @@ export const repo = {
    */
   setNote(assignmentId: string, content: string): Note {
     const now = Date.now();
-    const row = stmtUpsertNote.get(assignmentId, content, now);
+    run(
+      `
+      INSERT INTO notes (assignment_id, content, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(assignment_id) DO UPDATE SET
+        content = excluded.content,
+        updated_at = excluded.updated_at
+    `,
+      [assignmentId, content, now],
+    );
     return {
-      id: row.assignment_id as Note['id'],
-      assignmentId: row.assignment_id as Note['assignmentId'],
-      content: row.content,
-      createdAt: toIsoDateTime(row.updated_at),
-      updatedAt: toIsoDateTime(row.updated_at),
+      id: assignmentId as Note['id'],
+      assignmentId: assignmentId as Note['assignmentId'],
+      content,
+      createdAt: toIsoDateTime(now),
+      updatedAt: toIsoDateTime(now),
     };
   },
 
@@ -470,10 +489,10 @@ export const repo = {
    * Get a setting value with a default fallback.
    */
   getSetting<T>(key: string, defaultValue: T): T {
-    const row = stmtGetSetting.get(key);
+    const row = get<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
     if (!row) return defaultValue;
     try {
-      return JSON.parse((row as DbSettings).value) as T;
+      return JSON.parse(row.value) as T;
     } catch {
       return defaultValue;
     }
@@ -483,14 +502,17 @@ export const repo = {
    * Set a setting value (JSON stringified).
    */
   setSetting<T>(key: string, value: T): void {
-    stmtSetSetting.run(key, JSON.stringify(value));
+    run(
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      [key, JSON.stringify(value)],
+    );
   },
 
   /**
    * Get all settings as a Settings object.
    */
   getAllSettings(): Settings {
-    const rows = db.prepare('SELECT * FROM settings').all() as DbSettings[];
+    const rows = all<DbSettings>('SELECT * FROM settings');
     return mapDbSettingsToSettings(rows);
   },
 };

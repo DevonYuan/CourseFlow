@@ -35,9 +35,9 @@ function createWindow(): void {
   });
 }
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
   // Initialize database and run migrations
-  const db = initializeDatabase();
+  const db = await initializeDatabase();
   migrate(db);
 
   // Register all IPC handlers before creating windows

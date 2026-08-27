@@ -1,7 +1,7 @@
 # Ticket: phase0-04-ipc
 
 **Phase:** 0 — Foundations & Tooling  
-**Status:** Not Started  
+**Status:** Done  
 **Priority:** Critical  
 **Estimated Effort:** 0.5 day
 
