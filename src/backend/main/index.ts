@@ -2,6 +2,8 @@ import { join } from 'node:path';
 
 import { app, BrowserWindow } from 'electron';
 
+import { initializeDatabase, closeDatabase } from './db/connection.js';
+import { migrate } from './db/migrate.js';
 import { registerIpcHandlers } from './ipc-handlers.js';
 
 let mainWindow: BrowserWindow | null = null;
@@ -34,6 +36,10 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  // Initialize database and run migrations
+  const db = initializeDatabase();
+  migrate(db);
+
   // Register all IPC handlers before creating windows
   registerIpcHandlers();
 
@@ -50,4 +56,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  closeDatabase();
 });

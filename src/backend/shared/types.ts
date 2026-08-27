@@ -159,16 +159,21 @@ export interface CourseInput {
  */
 export interface DbAssignment {
   id: string;
+  canvas_id: string | null;
   title: string;
-  description: string;
-  course_id: string | null;
-  due_date: string | null;
-  priority: number;
-  status: string;
-  source: string;
-  source_url: string | null;
-  created_at: string;
-  updated_at: string;
+  description: string | null;
+  course_name: string;
+  course_color: string | null;
+  due_at: number;
+  unlock_at: number | null;
+  lock_at: number | null;
+  points_possible: number | null;
+  submission_types: string | null;
+  workflow_state: string | null;
+  html_url: string | null;
+  ical_uid: string | null;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DbSubTask {
@@ -176,24 +181,20 @@ export interface DbSubTask {
   assignment_id: string;
   title: string;
   completed: number; // 0/1
-  order_index: number;
-  created_at: string;
-  updated_at: string;
+  position: number;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DbNote {
-  id: string;
   assignment_id: string;
   content: string;
-  created_at: string;
-  updated_at: string;
+  updated_at: number;
 }
 
 export interface DbPriorityOrder {
-  id: string;
   assignment_id: string;
-  order_index: number;
-  updated_at: string;
+  position: number;
 }
 
 export interface DbSettings {
