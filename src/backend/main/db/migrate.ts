@@ -76,6 +76,21 @@ const MIGRATIONS: Record<number, string> = {
     CREATE INDEX IF NOT EXISTS idx_assignments_course ON assignments(course_name);
     CREATE INDEX IF NOT EXISTS idx_sub_tasks_assignment ON sub_tasks(assignment_id, position);
   `,
+
+  2: `
+    -- Migration v2: Add missing Assignment columns
+    ALTER TABLE assignments ADD COLUMN status TEXT CHECK (status IN ('pending', 'in_progress', 'completed')) DEFAULT 'pending';
+    ALTER TABLE assignments ADD COLUMN source TEXT CHECK (source IN ('manual', 'ical')) DEFAULT 'manual';
+    ALTER TABLE assignments ADD COLUMN source_url TEXT;
+    ALTER TABLE assignments ADD COLUMN rrule TEXT;
+
+    -- Update existing rows: backfill status
+    UPDATE assignments SET status = 'pending' WHERE status IS NULL;
+    UPDATE assignments SET source = 'manual' WHERE source IS NULL;
+
+    -- Add index for ical_uid lookups
+    CREATE INDEX IF NOT EXISTS idx_assignments_ical_uid ON assignments(ical_uid);
+  `,
 };
 
 /**

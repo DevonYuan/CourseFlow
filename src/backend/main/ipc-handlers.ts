@@ -271,8 +271,8 @@ const handlers: IpcHandlers = {
 
   'ical:import': (_input: {
     events: ICalEvent[];
-    sourceUrl: string;
-  }): Promise<IpcResult<{ imported: number; skipped: number }>> =>
+    url: string;
+  }): Promise<IpcResult<{ imported: number; updated: number; skipped: number }>> =>
     Promise.resolve(err('Not implemented: ical:import', 'INTERNAL_ERROR')),
 
   // ── Settings ───────────────────────────────────────────────────────────
@@ -309,10 +309,13 @@ const handlers: IpcHandlers = {
         theme: 'system',
         autoFetchIcal: false,
         icalFetchIntervalMinutes: 60,
-        defaultPriority: 100,
+        defaultPriority: 'medium',
         showCompletedAssignments: true,
         notifyDueSoon: true,
         dueSoonThresholdHours: 24,
+        icalUrl: '',
+        lastSyncAt: null,
+        autoFetchIntervalMs: 60 * 60 * 1000,
       };
       for (const [key, value] of Object.entries(defaults)) {
         repo.setSetting(key, value);

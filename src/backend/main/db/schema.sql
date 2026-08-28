@@ -14,9 +14,13 @@ CREATE TABLE assignments (
   lock_at INTEGER,                        -- Unix ms (UTC)
   points_possible REAL,
   submission_types TEXT,                  -- JSON array ['online_text_entry', ...]
-  workflow_state TEXT,                    -- 'unsubmitted', 'submitted', 'graded', etc.
+  workflow_state TEXT,                    -- 'published', 'unpublished', etc.
   html_url TEXT,                          -- Canvas URL
   ical_uid TEXT UNIQUE,                   -- iCal UID for dedup across syncs
+  status TEXT CHECK (status IN ('pending', 'in_progress', 'completed')) DEFAULT 'pending',
+  source TEXT CHECK (source IN ('manual', 'ical')) DEFAULT 'manual',
+  source_url TEXT,                        -- iCal feed URL this came from
+  rrule TEXT,                             -- RRULE string for recurring
   created_at INTEGER NOT NULL,            -- Unix ms
   updated_at INTEGER NOT NULL             -- Unix ms
 );
@@ -61,3 +65,4 @@ CREATE TABLE schema_version (
 CREATE INDEX idx_assignments_due_at ON assignments(due_at);
 CREATE INDEX idx_assignments_course ON assignments(course_name);
 CREATE INDEX idx_sub_tasks_assignment ON sub_tasks(assignment_id, position);
+CREATE INDEX idx_assignments_ical_uid ON assignments(ical_uid);

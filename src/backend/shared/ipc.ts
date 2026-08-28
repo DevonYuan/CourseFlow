@@ -122,8 +122,8 @@ export interface IpcChannels {
     response: ICalEvent[];
   };
   'ical:import': {
-    request: { events: ICalEvent[]; sourceUrl: string };
-    response: { imported: number; skipped: number };
+    request: { events: ICalEvent[]; url: string };
+    response: { imported: number; updated: number; skipped: number };
   };
 
   // ── Settings ───────────────────────────────────────────────────────────
@@ -167,8 +167,9 @@ export interface IpcEvents {
     id: string;
   };
   'ical:progress': {
-    stage: 'fetch' | 'parse' | 'store';
-    progress: number; // 0–100
+    stage: 'fetching' | 'parsing' | 'importing' | 'complete' | 'error';
+    progress: number;
+    message?: string;
   };
   'settings:changed': Settings;
 }
