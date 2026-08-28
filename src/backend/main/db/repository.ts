@@ -84,7 +84,7 @@ export function mapAssignmentInputToDb(input: AssignmentInput, now: number): Par
   if (input.id !== undefined) dbRow.id = input.id;
   if (input.title !== undefined) dbRow.title = input.title;
   if (input.description !== undefined) dbRow.description = input.description;
-  if (input.courseId !== undefined) dbRow.course_name = input.courseId;
+  if (input.courseId !== undefined) dbRow.canvas_id = input.courseId;
   if (input.courseName !== undefined) dbRow.course_name = input.courseName;
   if (input.courseColor !== undefined) dbRow.course_color = input.courseColor;
   if (input.dueAt !== undefined) dbRow.due_at = toUnixMs(input.dueAt) ?? now;
@@ -95,9 +95,7 @@ export function mapAssignmentInputToDb(input: AssignmentInput, now: number): Par
   if (input.workflowState !== undefined) dbRow.workflow_state = input.workflowState;
   if (input.htmlUrl !== undefined) dbRow.html_url = input.htmlUrl;
   if (input.icalUid !== undefined) dbRow.ical_uid = input.icalUid;
-  if (input.priority !== undefined) dbRow.status = input.priority; // Note: priority stored in status column? No, we need separate column
-  // Actually the priority field in Assignment is 'low'|'medium'|'high' but the DB doesn't have a priority column
-  // The priority is calculated, not stored. We'll skip storing it.
+  // priority is calculated, not stored in DB — skip
   if (input.status !== undefined) dbRow.status = input.status;
   if (input.source !== undefined) dbRow.source = input.source;
   if (input.sourceUrl !== undefined) dbRow.source_url = input.sourceUrl;

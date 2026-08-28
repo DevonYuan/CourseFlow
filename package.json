@@ -14,8 +14,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --build config/tsconfig.json",
-    "prepare": "husky"
+    "typecheck": "tsc --build config/tsconfig.json"
   },
   "engines": {
     "node": ">=24.0.0"
@@ -47,8 +46,6 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-unicorn": "^56.0.0",
     "globals": "^17.11.0",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "rollup": "4.20.0",
     "typescript": "^5.6.3",
