@@ -13,6 +13,14 @@ Global error boundary; toast notifications for iCal fetch errors, DB errors, net
 
 ---
 
+## PREREQUISITE
+
+**This ticket depends on Ticket 1.0 (Data Model Alignment) being completed first.**
+
+The error codes and IPC contracts referenced by other tickets (1.10, 1.11, 1.14) should align with `src/backend/shared/ipc.ts`. Current `IpcErrorCode` values are: `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT`, `INTERNAL_ERROR`. Other tickets reference additional codes (`NETWORK_ERROR`, `HTTP_ERROR`, `TIMEOUT_ERROR`, `PARSE_ERROR`) that may need to be added to the contract.
+
+---
+
 ## Requirements
 
 ### Functional
@@ -33,7 +41,7 @@ Global error boundary; toast notifications for iCal fetch errors, DB errors, net
   - DB errors → `toast.error(message)`
   - Network errors → `toast.error(message)`
   - Mark complete success → `toast.success('Marked complete')`
-  - Sync now success → `toast.success('Synced: X new, Y updated')`
+  - Sync now success → `toast.success('Synced: X new, Y updated, Z skipped')` (uses `updated` from ical:import response after Ticket 1.0)
 
 ### Non-Functional
 
@@ -146,8 +154,7 @@ render() {
 - Error boundary only catches render-phase errors; async errors must be caught manually and passed to toast
 - Toast system is a prerequisite for tickets 1.10, 1.11, 1.14 — implement early or provide minimal inline fallback
 - Consider using `react-dom/createPortal` for toast container to escape layout constraints
-
----
+- **After Ticket 1.0**: The `ical:import` response will include `updated` count for sync success toast
 
 ## Release Summary
 

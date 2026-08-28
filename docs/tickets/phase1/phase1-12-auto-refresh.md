@@ -13,6 +13,14 @@ Subscribe to `window.api.onDbChanged` → re-fetch list when `assignments` table
 
 ---
 
+## PREREQUISITE
+
+**This ticket depends on Ticket 1.0 (Data Model Alignment) being completed first.**
+
+The `DbChangedEvent` type and `db:changed` event emission must be verified against the actual implementation in `src/backend/shared/ipc.ts` and `src/backend/main/ipc-handlers.ts`.
+
+---
+
 ## Requirements
 
 ### Functional
@@ -34,11 +42,11 @@ Subscribe to `window.api.onDbChanged` → re-fetch list when `assignments` table
 ## Designs & Constraints
 
 - **Location**: `src/frontend/src/hooks/useAssignments.ts`
-- **Preload API** (to be exposed in `src/backend/preload/index.ts`):
+- **Preload API** (already exposed in `src/backend/preload/index.ts`):
   ```typescript
   onDbChanged: (callback: (payload: DbChangedEvent) => void) => () => void;
   ```
-- **Event Payload** (from IPC contract):
+- **Event Payload** (from IPC contract in `src/backend/shared/ipc.ts`):
   ```typescript
   interface DbChangedEvent {
     table: string;
@@ -46,6 +54,7 @@ Subscribe to `window.api.onDbChanged` → re-fetch list when `assignments` table
     id: string;
   }
   ```
+  Note: The actual event is `db:changed` (defined in `IpcEvents` in shared/ipc.ts), not `onDbChanged`. The preload bridge converts it.
 
 ### Implementation
 
@@ -71,7 +80,7 @@ const debouncedRefetch = useMemo(() => debounce(() => fetchAssignments(), 100), 
 ### Modified Files
 
 - `src/frontend/src/hooks/useAssignments.ts` — add subscription logic
-- `src/backend/preload/index.ts` — expose `onDbChanged`
+- `src/backend/preload/index.ts` — verify `onDbChanged` is exposed (already done)
 - `src/backend/main/ipc-handlers.ts` — ensure `db:changed` emitted on assignment CRUD (already in repo)
 
 ### New Files

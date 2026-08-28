@@ -11,6 +11,8 @@
 
 Implement AES-GCM encryption for the iCal URL in the `settings` table per `docs/architecture/security.md`. Use Web Crypto API in Main process; store `{ ciphertext, iv, salt }` as JSON string in `settings.value` for key `icalUrl`.
 
+**PREREQUISITE**: Ticket 1.0 (Data Model Alignment) adds `icalUrl` field to `Settings` type.
+
 ---
 
 ## Requirements
@@ -30,7 +32,7 @@ Implement AES-GCM encryption for the iCal URL in the `settings` table per `docs/
 - [ ] **Web Crypto API** — Node 24 has full `crypto.subtle` support in Electron Main
 - [ ] **Zero `any`** — typed `EncryptedSetting` interface
 - [ ] **Key Management**: Passphrase derived from `app.getPath('userData')` + fixed string (not user password for MVP)
-  - _Note: Phase 2 may add user-set passphrase for stronger security_
+  - **SECURITY NOTE**: This is machine-specific but not user-specific. Any process on the machine can decrypt. Phase 2 should add user-set passphrase or OS keychain integration.
 - [ ] **Error Handling**: Throw `EncryptionError` / `DecryptionError` with generic messages (don't leak crypto details)
 
 ---
@@ -97,6 +99,14 @@ const passphrase = `courseflow-${app.getPath('userData')}-v1`;
 ## Code Changes
 
 ### New Files
+
+- `src/backend/main/security/encryption.ts` — encryption module
+- `src/backend/main/security/__tests__/encryption.test.ts` — unit tests
+
+### Modified Files
+
+- `src/backend/main/db/repository.ts` — `getAllSettings`/`setSetting` to handle `icalUrl` encryption/decryption transparently
+- `src/backend/shared/types.ts` — add `EncryptedSetting` type (or keep in encryption.ts)
 
 - `src/backend/main/security/encryption.ts` — encryption/decryption implementation
 - `src/backend/main/security/__tests__/encryption.test.ts` — unit tests

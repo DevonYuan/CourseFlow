@@ -13,6 +13,19 @@ Top bar with app title, sync status indicator, settings gear icon. Responsive la
 
 ---
 
+## PREREQUISITE
+
+**This ticket depends on Ticket 1.0 (Data Model Alignment) being completed first.**
+
+The `Settings` type in `src/backend/shared/types.ts` currently has:
+
+- `showCompletedAssignments: boolean` (not `showCompleted`)
+- `theme: 'light' | 'dark' | 'system'` — confirm this is the actual type
+
+Ticket 1.0 will align the Settings type with the full data model.
+
+---
+
 ## Requirements
 
 ### Functional
@@ -21,7 +34,7 @@ Top bar with app title, sync status indicator, settings gear icon. Responsive la
   - App title: "CourseFlow" (link to home/assignment list)
   - Sync status indicator (ticket 1.14) — shows last sync, next auto-sync, manual sync button
   - Settings gear icon (right side) → opens Settings modal (ticket 1.6)
-  - "Show Completed" toggle (checkbox) — filters assignment list
+  - "Show Completed" toggle (checkbox) — filters assignment list, bound to `settings.showCompletedAssignments`
 - [ ] **Main Content Area**: `AssignmentList` component (ticket 1.9)
 - [ ] **Responsive**:
   - Min-width 800px (horizontal scroll if narrower)
@@ -43,7 +56,7 @@ Top bar with app title, sync status indicator, settings gear icon. Responsive la
   - `src/frontend/src/components/Layout.tsx` — wrapper with header + main
   - `src/frontend/src/App.tsx` — compose Layout
 - **State**:
-  - `showCompleted` in Zustand store (assignments store or UI store)
+  - `showCompletedAssignments` from Settings (via `useSettings` hook, ticket 1.8)
   - Sync status from `useSyncStatus` hook (ticket 1.14)
 
 ### Layout Structure
@@ -71,7 +84,11 @@ Top bar with app title, sync status indicator, settings gear icon. Responsive la
   </div>
   <div className={styles.actions}>
     <label className={styles.toggle}>
-      <input type="checkbox" checked={showCompleted} onChange={toggleShowCompleted} />
+      <input
+        type="checkbox"
+        checked={settings.showCompletedAssignments}
+        onChange={toggleShowCompleted}
+      />
       <span>Show Completed</span>
     </label>
     <button className={styles.settingsBtn} aria-label="Settings" onClick={openSettings}>
@@ -95,7 +112,7 @@ Top bar with app title, sync status indicator, settings gear icon. Responsive la
 ### Modified Files
 
 - `src/frontend/src/App.tsx` — use Layout, integrate TopBar
-- `src/frontend/src/store/uiStore.ts` — `showCompleted` state (or add to assignmentsStore)
+- `src/frontend/src/store/uiStore.ts` — `showCompletedAssignments` state (or read from settings store)
 
 ---
 
@@ -116,7 +133,7 @@ Top bar with app title, sync status indicator, settings gear icon. Responsive la
 ## Notes
 
 - Sync status indicator is a separate component (ticket 1.14) — integrate here
-- "Show Completed" toggle state persists in settings (`showCompleted` field, ticket 1.8)
+- "Show Completed" toggle state persists in settings (`showCompletedAssignments` field, ticket 1.8)
 - This is the app shell — all other components render within Layout
 
 ---

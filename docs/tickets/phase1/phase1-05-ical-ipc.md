@@ -11,28 +11,30 @@
 
 Implement `ical:fetch` and `ical:import` IPC handlers in `src/backend/main/ipc-handlers.ts` using the fetch, parse, map, and dedup utilities. Emit `ical:progress` events (`fetch` → `parse` → `store`) for UI feedback.
 
+**PREREQUISITE**: Ticket 1.0 (Data Model Alignment) must complete first to extend types and add repository method.
+
 ---
 
 ## Requirements
 
 ### Functional
 
-- [ ] **`ical:fetch` handler** — Request: `{ url: string }`, Response: `ICalEvent[]`
+- [ ] **`ical:fetch` handler** — Request: `{ url: string }`, Response: `IpcResult<ICalEvent[]>`
   - Call `fetchICalFeed(url)` → `parseICalFeed(text)` → return events
   - Emit `ical:progress` events: `{ stage: 'fetch', progress: 33 }` → `{ stage: 'parse', progress: 66 }`
   - Throw typed errors (`NetworkError`, `HttpError`, `TimeoutError`, `ICalParseError`) → wrapped in `IpcResult<ICalEvent[]>`
-- [ ] **`ical:import` handler** — Request: `{ events: ICalEvent[]; sourceUrl: string }`, Response: `ImportResult`
+- [ ] **`ical:import` handler** — Request: `{ events: ICalEvent[]; sourceUrl: string }`, Response: `IpcResult<ImportResult>`
   - Call `mapICalToAssignments(events, sourceUrl)` → `repository.importAssignments(inputs)`
   - Emit `ical:progress` event: `{ stage: 'store', progress: 100 }`
   - Return `{ imported, skipped, updated }` from repository
-- [ ] **Progress events** — Use `eventBus.emit('ical:progress', payload)` for renderer subscription
+- [ ] **Progress events** — Use `sendEventToRenderers('ical:progress', payload)` for renderer subscription
 - [ ] **Error handling** — All errors wrapped in `IpcResult` with `success: false`, `error: { code, message }`
 - [ ] **Validation** — Reject empty events array; validate URL format for `ical:fetch`
 
 ### Non-Functional
 
 - [ ] Handlers registered in `ipc-handlers.ts` via `ipcMain.handle`
-- [ ] Channel names match `docs/architecture/ipc-contract.md` exactly: `ical:fetch`, `ical:import`
+- [ ] Channel names match `src/backend/shared/ipc.ts` exactly: `ical:fetch`, `ical:import`
 - [ ] Event name: `ical:progress` (matches IPC contract)
 - [ ] Zero `any` — typed request/response via `IpcChannels` in `src/backend/shared/ipc.ts`
 - [ ] Timeout: 30s for `ical:fetch`, 10s for `ical:import`
@@ -69,12 +71,12 @@ Implement `ical:fetch` and `ical:import` IPC handlers in `src/backend/main/ipc-h
 ### Modified Files
 
 - `src/backend/main/ipc-handlers.ts` — add `ical:fetch` and `ical:import` handlers
-- `src/backend/shared/ipc.ts` — verify channel definitions match (add if missing)
+- `src/backend/shared/ipc.ts` — **add `ImportResult` to `ical:import` response** (currently returns `{ imported, skipped }`)
 - `src/backend/main/__tests__/ipc.ical.test.ts` — integration tests for handlers
 
-### New Types (if not in shared)
+### New Types (in `src/backend/shared/types.ts`)
 
-- `ImportResult` (from ticket 1.4) — ensure exported from shared types
+- `ImportResult` interface (imported by ipc.ts)
 
 ---
 
@@ -98,6 +100,7 @@ Implement `ical:fetch` and `ical:import` IPC handlers in `src/backend/main/ipc-h
 - These handlers are the bridge between frontend (Settings "Fetch Now" button) and backend iCal logic
 - Frontend calls `window.api.ical.fetch(url)` and `window.api.ical.import(events, sourceUrl)` via preload bridge
 - Progress events enable sync status indicator (ticket 1.14) to show real-time feedback
+- **Critical**: Update `ipc.ts` to change `ical:import` response from `{ imported, skipped }` to `ImportResult` (with `updated`)
 - Error codes should be consistent: `NETWORK_ERROR`, `HTTP_ERROR`, `TIMEOUT_ERROR`, `PARSE_ERROR`, `VALIDATION_ERROR`
 
 ---

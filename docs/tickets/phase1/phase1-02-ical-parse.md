@@ -22,20 +22,20 @@ Add an `parseICalFeed(text: string): ICalEvent[]` function in `src/backend/main/
   - `uid` (string, required) — `UID` property
   - `summary` (string) — `SUMMARY` property
   - `description` (string, optional) — `DESCRIPTION` property (may contain HTML)
-  - `dtstart` (Date, required) — `DTSTART` property (handle DATE vs DATE-TIME, timezone)
-  - `dtend` (Date, optional) — `DTEND` property
+  - `dtStart` (string, required) — `DTSTART` property as ISO 8601 UTC string
+  - `dtEnd` (string, optional) — `DTEND` property as ISO 8601 UTC string
   - `rrule` (string, optional) — `RRULE` property as raw string
   - `url` (string, optional) — `URL` property
   - `categories` (string[]) — `CATEGORIES` property (comma-separated list)
   - `location` (string, optional) — `LOCATION` property
-- [ ] Handle `VTIMEZONE` components for proper timezone conversion
+- [ ] Handle `VTIMEZONE` components for proper timezone conversion → output UTC ISO strings
 - [ ] Skip non-`VEVENT` components (`VTODO`, `VJOURNAL`, etc.) with debug log
 - [ ] Throw descriptive `ICalParseError` on malformed iCal
 
 ### Non-Functional
 
 - [ ] Dependency: `ical.js` (`pnpm add ical.js @types/ical.js`)
-- [ ] Zero `any` — define `ICalEvent` type in `src/backend/shared/types.ts`
+- [ ] Zero `any` — `ICalEvent` type already defined in `src/backend/shared/types.ts`
 - [ ] Pure function — no I/O, no side effects
 - [ ] Handle large feeds efficiently (streaming parse if needed, but `ical.js` loads full text)
 - [ ] Unit tests with real Canvas iCal samples
@@ -49,26 +49,26 @@ Add an `parseICalFeed(text: string): ICalEvent[]` function in `src/backend/main/
 - **Library**: `ical.js` — battle-tested, handles RFC 5545 edge cases (folded lines, escaped chars, timezones)
 - **Alternative evaluated**: `node-ical` — lighter but less maintained; `ical.js` preferred for correctness
 
-### `ICalEvent` Type (in `src/backend/shared/types.ts`)
+### `ICalEvent` Type (already in `src/backend/shared/types.ts`)
 
 ```typescript
 export interface ICalEvent {
   uid: string;
   summary: string;
-  description?: string;
-  dtstart: Date;
-  dtend?: Date;
-  rrule?: string;
-  url?: string;
+  description: string | null;
+  location: string | null;
+  dtStart: string; // ISO 8601 UTC
+  dtEnd: string | null; // ISO 8601 UTC
+  rrule: string | null;
+  url: string | null;
   categories: string[];
-  location?: string;
 }
 ```
 
 ### Timezone Handling
 
 - `ical.js` returns `Date` objects in local timezone or UTC depending on input
-- **Decision**: Store all dates as UTC ISO strings in DB; parser returns `Date` (UTC-normalized)
+- **Decision**: Parser must normalize all dates to **UTC ISO 8601 strings** (`dtStart`, `dtEnd`)
 - Document in `docs/architecture/data-model.md`
 
 ---
@@ -82,7 +82,6 @@ export interface ICalEvent {
 
 ### Modified Files
 
-- `src/backend/shared/types.ts` — add `ICalEvent` interface
 - `package.json` — add `ical.js` and `@types/ical.js` dependencies
 
 ---
@@ -97,7 +96,8 @@ export interface ICalEvent {
 | 4   | Handles `VTIMEZONE` for non-UTC events        | Test with `America/New_York` fixture  |
 | 5   | Throws `ICalParseError` on invalid iCal       | Unit test with malformed input        |
 | 6   | Skips non-VEVENT components gracefully        | Test with `VTODO` in feed             |
-| 7   | All tests pass (`pnpm test`)                  | CI run                                |
+| 7   | All dates output as UTC ISO 8601 strings      | Test assertions on `dtStart`/`dtEnd`  |
+| 8   | All tests pass (`pnpm test`)                  | CI run                                |
 
 ---
 

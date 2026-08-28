@@ -11,6 +11,8 @@
 
 Build a Settings page/modal in React: input for iCal URL, "Fetch Now" button, auto-fetch interval dropdown, theme selector. Accessible via gear icon in top bar (ticket 1.13).
 
+**PREREQUISITE**: Ticket 1.0 (Data Model Alignment) extends `Settings` type with `icalUrl`, `lastSyncAt`, `autoFetchIntervalMs`.
+
 ---
 
 ## Requirements
@@ -25,11 +27,12 @@ Build a Settings page/modal in React: input for iCal URL, "Fetch Now" button, au
   - Disabled while fetch/import in progress
   - Shows spinner during operation
 - [ ] **Auto-fetch Interval Dropdown** — Options: "Off", "15 min", "30 min", "1 hour", "6 hours", "12 hours", "24 hours"
-  - Persists to settings (`autoFetchIntervalMs`)
-  - Default: "1 hour"
+  - Persists to settings (`autoFetchIntervalMs` in **milliseconds**)
+  - Default: "1 hour" (3_600_000 ms)
 - [ ] **Theme Selector** — Options: "System", "Light", "Dark"
   - Persists to settings (`theme`)
   - Applies immediately via `document.documentElement.classList` toggle
+- [ ] **Show Completed Toggle** — Persists to settings (`showCompletedAssignments`)
 - [ ] **Save Button** — Persists all settings via `settings:set` IPC
 - [ ] **Reset Button** — Calls `settings:reset` IPC, reloads defaults
 
@@ -47,15 +50,30 @@ Build a Settings page/modal in React: input for iCal URL, "Fetch Now" button, au
 
 - **Location**: `src/frontend/src/components/SettingsModal.tsx` (or `SettingsPage.tsx` if full page)
 - **State Management**: Zustand store for settings (sync with backend via IPC)
-- **IPC Channels** (from contract):
+- **IPC Channels** (from `src/backend/shared/ipc.ts`):
   - `settings:get` — load on mount
-  - `settings:set` — save on submit
+  - `settings:set` — save on submit (accepts `Partial<Settings>`)
   - `settings:reset` — reset to defaults
   - `ical:fetch` + `ical:import` — for "Fetch Now"
   - `ical:progress` — subscribe for progress updates
+  - `settings:changed` — subscribe for external changes
+- **Settings Type** (after ticket 1.0):
+  ```typescript
+  interface Settings {
+    theme: 'light' | 'dark' | 'system';
+    autoFetchIcal: boolean;
+    icalFetchIntervalMinutes: number;
+    defaultPriority: number;
+    showCompletedAssignments: boolean;
+    notifyDueSoon: boolean;
+    dueSoonThresholdHours: number;
+    icalUrl: string; // decrypted (added by ticket 1.0)
+    lastSyncAt: number | null; // added by ticket 1.0
+    autoFetchIntervalMs: number; // added by ticket 1.0 (replaces icalFetchIntervalMinutes)
+  }
+  ```
 - **Theme Application**:
   ```typescript
-  // In Settings component or app root
   const applyTheme = (theme: 'system' | 'light' | 'dark') => {
     const root = document.documentElement;
     root.classList.remove('light', 'dark');

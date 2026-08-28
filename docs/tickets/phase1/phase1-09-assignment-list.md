@@ -11,6 +11,8 @@
 
 Build `AssignmentList` component: fetch via `window.api.db.assignments.list()`, render chronologically (by `dueDate`), show course color badge, title, due date, status badge.
 
+**PREREQUISITE**: Ticket 1.0 (Data Model Alignment) extends `Assignment` type with `courseName`, `courseColor`, `dueAt`, `status`, `priority`, etc.
+
 ---
 
 ## Requirements
@@ -19,12 +21,12 @@ Build `AssignmentList` component: fetch via `window.api.db.assignments.list()`, 
 
 - [ ] **Component**: `AssignmentList` — main view component
 - [ ] **Data Fetching**: Call `window.api.db.assignments.list()` on mount and on `db:changed` events
-- [ ] **Sorting**: Chronological by `dueAt` (ascending — soonest first)
+- [ ] **Sorting**: Chronological by `dueDate` (ascending — soonest first)
 - [ ] **Row Rendering** per assignment:
   - Course color badge (colored circle/square using `courseColor`)
   - Assignment title (truncate with ellipsis if too long)
   - Due date formatted: "Mon, Jan 15 • 11:59 PM" (local timezone)
-  - Status badge: "Pending" (default), "Completed" (green), "Archived" (gray)
+  - Status badge: "Pending" (default), "Completed" (green), "Archived" (gray), "In Progress" (blue)
   - Checkbox/button to mark complete (ticket 1.11)
 - [ ] **Course Grouping** (optional but recommended): Group by `courseName` with course header
 - [ ] **Responsive**: Works at min-width 800px, stacks on narrow
@@ -34,18 +36,18 @@ Build `AssignmentList` component: fetch via `window.api.db.assignments.list()`, 
 - [ ] **State Management**: Zustand store for assignments (synced via IPC)
 - [ ] **Performance**: Virtualized list if >100 assignments (react-window or simple windowing)
 - [ ] **Accessibility**: Semantic HTML (`<table>` or `<dl>`), proper labels, keyboard navigation
-- [ ] **TypeScript**: Typed `Assignment` from `window.api` types
+- [ ] **TypeScript**: Typed `Assignment` from `window.api` types (matches `src/backend/shared/types.ts`)
 
 ---
 
 ## Designs & Constraints
 
 - **Location**: `src/frontend/src/components/AssignmentList.tsx`
-- **IPC Channels** (from contract):
+- **IPC Channels** (from `src/backend/shared/ipc.ts`):
   - `db:assignments:list` — fetch all assignments
   - `db:assignments:upsert` — mark complete (ticket 1.11)
   - `db:changed` event — subscribe for auto-refresh
-- **Preload API** (to be exposed in `src/backend/preload/index.ts`):
+- **Preload API** (already exposed in `src/backend/preload/index.ts`):
   ```typescript
   db: {
     assignments: {
@@ -56,33 +58,32 @@ Build `AssignmentList` component: fetch via `window.api.db.assignments.list()`, 
   }
   ```
 
-### `Assignment` Type (from shared types)
+### `Assignment` Type (from `src/backend/shared/types.ts` — after ticket 1.0)
 
 ```typescript
 interface Assignment {
-  id: string;
-  canvasId?: string;
+  id: EntityId;
   title: string;
-  description?: string;
+  description: string;
+  courseId: EntityId | null; // Course ID (will be course name for now)
+  dueDate: IsoDateTime | null; // ISO 8601 UTC
+  priority: number; // lower = higher priority
+  status: AssignmentStatus; // 'pending' | 'in_progress' | 'completed' | 'archived'
+  source: AssignmentSource; // 'manual' | 'ical'
+  sourceUrl: string | null; // iCal UID or URL if imported
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+  // Extended fields (added by ticket 1.0):
   courseName: string;
-  courseColor: string;
-  dueAt: number; // Unix ms
-  unlockAt?: number;
-  lockAt?: number;
-  pointsPossible?: number;
-  submissionTypes?: string;
-  workflowState?: string;
-  htmlUrl?: string;
+  courseColor: string; // Hex #RRGGBB
+  dueAt: number; // Unix ms (UTC) — for sorting
+  status: 'pending' | 'completed' | 'archived'; // Simplified for UI
   icalUid: string;
-  source: 'ical' | 'manual';
-  sourceUrl?: string;
-  status: 'pending' | 'completed' | 'archived';
-  priority: number;
-  rrule?: string;
-  createdAt: number;
-  updatedAt: number;
+  rrule: string | null;
 }
 ```
+
+**Note**: Current type is minimal. Ticket 1.0 extends it with all iCal mapping fields.
 
 ---
 
@@ -97,6 +98,8 @@ interface Assignment {
 - `src/frontend/src/__tests__/AssignmentList.test.tsx` — component tests
 
 ### Modified Files
+
+- `src/frontend/src/App.tsx` — integrate AssignmentList
 
 - `src/frontend/src/store/assignmentsStore.ts` — Zustand store
 - `src/frontend/src/App.tsx` — integrate AssignmentList

@@ -59,6 +59,8 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 ```
 
+**Note**: These error codes should match `IpcErrorCode` in `src/backend/shared/ipc.ts` (currently: `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT`, `INTERNAL_ERROR`). Add new codes or map accordingly.
+
 ---
 
 ## Code Changes

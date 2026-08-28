@@ -13,13 +13,28 @@ Click checkbox/btn → `window.api.db.assignments.upsert({ ...status: 'completed
 
 ---
 
+## PREREQUISITE
+
+**This ticket depends on Ticket 1.0 (Data Model Alignment) being completed first.**
+
+The current `AssignmentStatus` type in `src/backend/shared/types.ts` only has:
+
+```typescript
+type AssignmentStatus = 'pending' | 'completed';
+```
+
+Ticket 1.0 will add the full enum with `'in_progress'` and update the database schema. This ticket should use the expanded status values once available.
+
+---
+
 ## Requirements
 
 ### Functional
 
 - [ ] **Interaction**: Checkbox or "Mark Complete" button on each `AssignmentRow`
 - [ ] **Optimistic Update**: Immediately update local Zustand store to `status: 'completed'` before IPC call
-- [ ] **IPC Call**: `window.api.db.assignments.upsert({ id, status: 'completed', updatedAt: Date.now() })`
+- [ ] **IPC Call**: `window.api.db.assignments.upsert({ id, status: 'completed', updatedAt: new Date().toISOString() })`
+  - Note: `updatedAt` must be ISO 8601 string (matching `AssignmentInput` in shared/types.ts), not `Date.now()`
 - [ ] **Success**: Show toast "Marked complete" (via toast system, ticket 1.15)
 - [ ] **Failure**: Revert optimistic update, show error toast "Failed to update. Try again."
 - [ ] **Completed Filter**: Completed assignments hidden from default list (ticket 1.9); "Show Completed" toggle (ticket 1.13/1.14) reveals them with strikethrough style
@@ -38,9 +53,9 @@ Click checkbox/btn → `window.api.db.assignments.upsert({ ...status: 'completed
   - `src/frontend/src/components/AssignmentRow.tsx` — checkbox/button UI
   - `src/frontend/src/hooks/useAssignments.ts` — `markComplete(id)` function
   - `src/frontend/src/store/assignmentsStore.ts` — optimistic update logic
-- **IPC Channel** (from contract):
-  - `db:assignments:upsert` — request: `AssignmentInput`, response: `Assignment`
-- **Preload API**:
+- **IPC Channel** (from contract in `src/backend/shared/ipc.ts`):
+  - `assignments:upsert` — request: `AssignmentInput`, response: `IpcResult<Assignment>`
+- **Preload API** (already implemented in `src/backend/preload/index.ts`):
   ```typescript
   db: {
     assignments: {
@@ -60,7 +75,11 @@ const markComplete = async (id: string) => {
 
   try {
     // 2. IPC call
-    await window.api.db.assignments.upsert({ id, status: 'completed', updatedAt: Date.now() });
+    await window.api.db.assignments.upsert({
+      id,
+      status: 'completed',
+      updatedAt: new Date().toISOString(), // ISO 8601 string, not Date.now()
+    });
     // 3. Success toast
     toast.success('Marked complete');
   } catch (error) {
@@ -80,7 +99,7 @@ const markComplete = async (id: string) => {
 - `src/frontend/src/components/AssignmentRow.tsx` — add checkbox/button, wire `onClick`
 - `src/frontend/src/hooks/useAssignments.ts` — add `markComplete` function
 - `src/frontend/src/store/assignmentsStore.ts` — add `setAssignmentStatus` action
-- `src/backend/preload/index.ts` — expose `db.assignments.upsert`
+- `src/backend/preload/index.ts` — already exposes `db.assignments.upsert` (verify)
 
 ### New Files
 

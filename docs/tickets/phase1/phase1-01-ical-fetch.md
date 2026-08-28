@@ -66,7 +66,7 @@ export class TimeoutError extends ICalFetchError { /* ... */ }
 
 ### Modified Files
 
-- `src/backend/shared/types.ts` — add `ICalEvent` type if not present (shared with parser)
+- `src/backend/shared/types.ts` — verify `ICalEvent` type exists (already defined)
 
 ---
 
@@ -88,6 +88,7 @@ export class TimeoutError extends ICalFetchError { /* ... */ }
 - Canvas iCal feeds are public URLs (no auth in URL), but some institutions may embed tokens — always sanitize
 - Consider adding a `fetchICalFeedWithProgress` variant later for large feeds (Phase 2)
 - This utility will be called by `ical:fetch` IPC handler (ticket 1.5)
+- `ICalEvent` type already exists in `src/backend/shared/types.ts` with fields: `uid`, `summary`, `description`, `location`, `dtStart`, `dtEnd`, `rrule`, `url`, `categories`
 
 ---
 

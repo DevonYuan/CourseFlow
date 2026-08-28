@@ -11,6 +11,8 @@
 
 Wire `settings:get` / `settings:set` / `settings:reset` IPC to the Settings repository. Load settings on app start; apply theme immediately. Implement repository functions for settings CRUD with JSON value storage.
 
+**PREREQUISITE**: Ticket 1.0 (Data Model Alignment) extends `Settings` type and adds encryption for `icalUrl`.
+
 ---
 
 ## Requirements
@@ -18,31 +20,36 @@ Wire `settings:get` / `settings:set` / `settings:reset` IPC to the Settings repo
 ### Functional
 
 - [ ] **Repository Functions** (in `src/backend/main/db/repository.ts`):
-  - `getSettings(): Promise<Settings>` — returns all settings as typed object
-  - `setSettings(partial: Partial<Settings>): Promise<Settings>` — merges and persists
+  - `getAllSettings(): Promise<Settings>` — returns all settings as typed object (decrypts `icalUrl`)
+  - `setSettings(partial: Partial<Settings>): Promise<Settings>` — merges and persists (encrypts `icalUrl`)
   - `resetSettings(): Promise<Settings>` — restores defaults
 - [ ] **IPC Handlers** (in `src/backend/main/ipc-handlers.ts`):
-  - `settings:get` → `repository.getSettings()`
+  - `settings:get` → `repository.getAllSettings()`
   - `settings:set` → `repository.setSettings(partial)`
   - `settings:reset` → `repository.resetSettings()`
 - [ ] **Defaults** (merged with stored values):
   ```typescript
   const DEFAULT_SETTINGS: Settings = {
-    icalUrl: '',
     theme: 'system',
-    autoFetchIntervalMs: 60 * 60 * 1000, // 1 hour
-    lastSyncAt: null,
-    showCompleted: false,
+    autoFetchIcal: false,
+    icalFetchIntervalMinutes: 60,
+    defaultPriority: 100,
+    showCompletedAssignments: true,
+    notifyDueSoon: true,
+    dueSoonThresholdHours: 24,
+    icalUrl: '', // added by ticket 1.0
+    lastSyncAt: null, // added by ticket 1.0
+    autoFetchIntervalMs: 60 * 60 * 1000, // added by ticket 1.0 (1 hour)
   };
   ```
-- [ ] **App Startup**: In `src/backend/main/index.ts`, call `repository.getSettings()` on launch, apply theme to main window
+- [ ] **App Startup**: In `src/backend/main/index.ts`, call `repository.getAllSettings()` on launch, apply theme to main window, emit `settings:changed` event
 - [ ] **Settings Changed Event**: Emit `settings:changed` event with full `Settings` object after any write
 
 ### Non-Functional
 
-- [ ] **Storage**: `settings` table (key-value, JSON string values) — schema from Phase 0.3
+- [ ] **Storage**: `settings` table (key-value, JSON string values) — schema from Phase 0
 - [ ] **Encryption**: `icalUrl` handled transparently via encryption module (ticket 1.7)
-- [ ] **Typed**: `Settings` interface in `src/backend/shared/types.ts`
+- [ ] **Typed**: `Settings` interface in `src/backend/shared/types.ts` (extended by ticket 1.0)
 - [ ] **Atomic Writes**: Single transaction for multi-key updates
 
 ---
@@ -61,15 +68,20 @@ Wire `settings:get` / `settings:set` / `settings:reset` IPC to the Settings repo
 'settings:changed': Settings;
 ```
 
-### `Settings` Type (in `src/backend/shared/types.ts`)
+### `Settings` Type (in `src/backend/shared/types.ts` — extended by ticket 1.0)
 
 ```typescript
 export interface Settings {
-  icalUrl: string; // Decrypted (empty if not set)
-  theme: 'system' | 'light' | 'dark';
-  autoFetchIntervalMs: number; // 0 = disabled
-  lastSyncAt: number | null; // Unix ms of last successful import
-  showCompleted: boolean; // UI toggle
+  theme: 'light' | 'dark' | 'system';
+  autoFetchIcal: boolean;
+  icalFetchIntervalMinutes: number;
+  defaultPriority: number;
+  showCompletedAssignments: boolean;
+  notifyDueSoon: boolean;
+  dueSoonThresholdHours: number;
+  icalUrl: string; // Decrypted (empty if not set) — added by ticket 1.0
+  lastSyncAt: number | null; // Unix ms of last successful import — added by ticket 1.0
+  autoFetchIntervalMs: number; // 0 = disabled — added by ticket 1.0
 }
 ```
 
@@ -77,9 +89,8 @@ export interface Settings {
 
 ```typescript
 // In main/index.ts after window created
-const settings = await repository.getSettings();
-mainWindow.webContents.send('settings:changed', settings); // Or apply via preload
-// Renderer listens for settings:changed and applies theme
+const settings = await repository.getAllSettings();
+mainWindow.webContents.send('settings:changed', settings); // Renderer listens and applies theme
 ```
 
 ---
@@ -88,10 +99,10 @@ mainWindow.webContents.send('settings:changed', settings); // Or apply via prelo
 
 ### Modified Files
 
-- `src/backend/main/db/repository.ts` — add `getSettings`, `setSettings`, `resetSettings`
+- `src/backend/main/db/repository.ts` — add `getAllSettings`, `setSettings`, `resetSettings`
 - `src/backend/main/ipc-handlers.ts` — add three settings handlers
 - `src/backend/main/index.ts` — load settings on startup, apply theme
-- `src/backend/shared/types.ts` — verify `Settings` interface complete
+- `src/backend/shared/types.ts` — verify `Settings` interface complete (extended by ticket 1.0)
 - `src/backend/main/db/__tests__/repository.settings.test.ts` — integration tests
 
 ### New Files
