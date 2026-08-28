@@ -219,14 +219,14 @@ export function isValidAssignment(input: unknown): input is AssignmentInput {
   if (!input || typeof input !== 'object') return false;
   const obj = input as Record<string, unknown>;
   return (
-    typeof obj.title === 'string' &&
-    typeof obj.description === 'string' &&
-    (obj.courseId === null || typeof obj.courseId === 'string') &&
-    (obj.dueDate === null || typeof obj.dueDate === 'string') &&
-    typeof obj.priority === 'number' &&
-    ['pending', 'in_progress', 'completed', 'archived'].includes(obj.status as string) &&
-    ['manual', 'ical'].includes(obj.source as string) &&
-    (obj.sourceUrl === null || typeof obj.sourceUrl === 'string')
+    typeof obj['title'] === 'string' &&
+    typeof obj['description'] === 'string' &&
+    (obj['courseId'] === null || typeof obj['courseId'] === 'string') &&
+    (obj['dueDate'] === null || typeof obj['dueDate'] === 'string') &&
+    typeof obj['priority'] === 'number' &&
+    ['pending', 'in_progress', 'completed', 'archived'].includes(obj['status'] as string) &&
+    ['manual', 'ical'].includes(obj['source'] as string) &&
+    (obj['sourceUrl'] === null || typeof obj['sourceUrl'] === 'string')
   );
 }
 
@@ -234,37 +234,37 @@ export function isValidSubTaskInput(input: unknown): input is SubTaskInput {
   if (!input || typeof input !== 'object') return false;
   const obj = input as Record<string, unknown>;
   return (
-    typeof obj.assignmentId === 'string' &&
-    typeof obj.title === 'string' &&
-    typeof obj.completed === 'boolean' &&
-    typeof obj.order === 'number'
+    typeof obj['assignmentId'] === 'string' &&
+    typeof obj['title'] === 'string' &&
+    typeof obj['completed'] === 'boolean' &&
+    typeof obj['order'] === 'number'
   );
 }
 
 export function isValidNoteInput(input: unknown): input is NoteInput {
   if (!input || typeof input !== 'object') return false;
   const obj = input as Record<string, unknown>;
-  return typeof obj.assignmentId === 'string' && typeof obj.content === 'string';
+  return typeof obj['assignmentId'] === 'string' && typeof obj['content'] === 'string';
 }
 
 export function isValidPriorityOrderInput(input: unknown): input is PriorityOrderInput {
   if (!input || typeof input !== 'object') return false;
   const obj = input as Record<string, unknown>;
-  return typeof obj.assignmentId === 'string' && typeof obj.order === 'number';
+  return typeof obj['assignmentId'] === 'string' && typeof obj['order'] === 'number';
 }
 
 export function isValidSettings(input: unknown): input is Partial<Settings> {
   if (!input || typeof input !== 'object') return false;
   const obj = input as Record<string, unknown>;
   return (
-    (obj.theme === undefined || ['light', 'dark', 'system'].includes(obj.theme as string)) &&
-    (obj.autoFetchIcal === undefined || typeof obj.autoFetchIcal === 'boolean') &&
-    (obj.icalFetchIntervalMinutes === undefined ||
-      typeof obj.icalFetchIntervalMinutes === 'number') &&
-    (obj.defaultPriority === undefined || typeof obj.defaultPriority === 'number') &&
-    (obj.showCompletedAssignments === undefined ||
-      typeof obj.showCompletedAssignments === 'boolean') &&
-    (obj.notifyDueSoon === undefined || typeof obj.notifyDueSoon === 'boolean') &&
-    (obj.dueSoonThresholdHours === undefined || typeof obj.dueSoonThresholdHours === 'number')
+    (obj['theme'] === undefined || ['light', 'dark', 'system'].includes(obj['theme'] as string)) &&
+    (obj['autoFetchIcal'] === undefined || typeof obj['autoFetchIcal'] === 'boolean') &&
+    (obj['icalFetchIntervalMinutes'] === undefined ||
+      typeof obj['icalFetchIntervalMinutes'] === 'number') &&
+    (obj['defaultPriority'] === undefined || typeof obj['defaultPriority'] === 'number') &&
+    (obj['showCompletedAssignments'] === undefined ||
+      typeof obj['showCompletedAssignments'] === 'boolean') &&
+    (obj['notifyDueSoon'] === undefined || typeof obj['notifyDueSoon'] === 'boolean') &&
+    (obj['dueSoonThresholdHours'] === undefined || typeof obj['dueSoonThresholdHours'] === 'number')
   );
 }

@@ -3,6 +3,8 @@ import typescriptEslint from 'typescript-eslint';
 import importPlugin from 'eslint-plugin-import';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import unicornPlugin from 'eslint-plugin-unicorn';
+import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default typescriptEslint.config(
@@ -94,7 +96,7 @@ export default typescriptEslint.config(
               message: 'Main process must not import from Preload or Renderer',
             },
             {
-              group: ['@/../preload/**', '@/../frontend/**'],
+              group: ['@backend/preload/**', '@backend/frontend/**'],
               message: 'Main process must not import from Preload or Renderer',
             },
           ],
@@ -124,7 +126,7 @@ export default typescriptEslint.config(
               message: 'Preload must not import from Main or Renderer',
             },
             {
-              group: ['@/../main/**', '@/../frontend/**'],
+              group: ['@backend/main/**', '@backend/frontend/**'],
               message: 'Preload must not import from Main or Renderer',
             },
           ],
@@ -153,7 +155,7 @@ export default typescriptEslint.config(
               message: 'Renderer must not import from Main or Preload — use @shared instead',
             },
             {
-              group: ['@/../backend/main/**', '@/../backend/preload/**'],
+              group: ['@backend/main/**', '@backend/preload/**'],
               message: 'Renderer must not import from Main or Preload — use @shared instead',
             },
           ],
@@ -184,9 +186,36 @@ export default typescriptEslint.config(
               group: ['../main/**', '../preload/**', '../../frontend/**'],
               message: 'Shared code must not import from Main, Preload, or Renderer',
             },
+            {
+              group: ['@backend/main/**', '@backend/preload/**', '@backend/frontend/**'],
+              message: 'Shared code must not import from Main, Preload, or Renderer',
+            },
           ],
         },
       ],
     },
   },
+  // Unicorn (opinionated good practices) - flat config with overly strict rules disabled
+  {
+    ...unicornPlugin.configs['flat/recommended'],
+    rules: {
+      ...unicornPlugin.configs['flat/recommended'].rules,
+      'unicorn/expiring-todo-comments': 'off',
+      'unicorn/no-null': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/import-style': 'off',
+      'unicorn/prefer-module': 'off',
+      'unicorn/no-array-callback-reference': 'off',
+      'unicorn/no-for-loop': 'off',
+      'unicorn/catch-error-name': 'off',
+      'unicorn/no-useless-undefined': 'off',
+      'unicorn/prefer-top-level-await': 'off',
+      'unicorn/filename-case': 'off',
+      'unicorn/prefer-query-selector': 'off',
+      'unicorn/prefer-global-this': 'off',
+      'unicorn/no-array-for-each': 'off',
+    },
+  },
+  // Prettier compat (turn off conflicting rules)
+  prettierConfig,
 );

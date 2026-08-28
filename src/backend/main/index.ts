@@ -23,7 +23,7 @@ function createWindow(): void {
     },
   });
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     void mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {

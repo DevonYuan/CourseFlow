@@ -218,9 +218,9 @@ const handlers: IpcHandlers = {
       const ids = repo.getPriorityOrder();
       const orders: PriorityOrder[] = ids.map((id, index) => ({
         id: id as PriorityOrder['id'],
-        assignmentId: id,
+        assignmentId: id as PriorityOrder['assignmentId'],
         order: index,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString() as PriorityOrder['updatedAt'],
       }));
       return Promise.resolve(ok(orders));
     } catch (error) {
@@ -344,7 +344,8 @@ export function registerIpcHandlers(): void {
     const handler = handlers[channel];
     ipcMain.handle(channel, async (_event, request: unknown): Promise<IpcResult<unknown>> => {
       try {
-        return await handler(request);
+        // Type-safe handler invocation - handlers are typed by channel
+        return await (handler as (request: unknown) => Promise<IpcResult<unknown>>)(request);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
 

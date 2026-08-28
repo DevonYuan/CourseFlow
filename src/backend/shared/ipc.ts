@@ -163,7 +163,7 @@ export interface IpcChannels {
 export interface IpcEvents {
   'db:changed': {
     table: string;
-    action: 'insert' | 'update' | 'delete';
+    action: 'insert' | 'update' | 'delete' | 'upsert' | 'reorder';
     id: string;
   };
   'ical:progress': {

@@ -98,6 +98,45 @@ flowchart TB
 
 *<small>Backup details and pricing are still being decided.</small>
 
+## Contributing
+
+### Commit Message Convention
+
+This project follows the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code (white-space, formatting, etc)
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools and libraries
+- `ci`: Changes to CI configuration files and scripts
+- `build`: Changes that affect the build system or external dependencies
+
+**Scope examples:** `main`, `renderer`, `preload`, `shared`, `db`, `ipc`, `ical`, `ui`, `deps`
+
+**Examples:**
+
+```
+feat(ipc): add getAssignments channel
+fix(parser): handle missing due_at in iCal events
+docs: update architecture diagram
+refactor(db): extract repository pattern
+chore(deps): update electron to v34
+```
+
 ## Getting Started
 
 ### Prerequisites

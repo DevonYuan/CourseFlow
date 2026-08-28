@@ -70,7 +70,7 @@ export async function initializeDatabase(): Promise<Database> {
   const wasmPath = getWasmPath();
   const wasmBuffer = readFileSync(wasmPath);
   const SQL = await initSqlJs({
-    wasmBinary: wasmBuffer,
+    wasmBinary: new Uint8Array(wasmBuffer).buffer,
   });
 
   // Load existing database or create new

@@ -22,7 +22,7 @@ import type {
   DbAssignment,
   DbSubTask,
   DbSettings,
-} from '../shared/types.js';
+} from '../../shared/types.js';
 
 import { getDatabase, saveDatabase } from './connection.js';
 
@@ -45,7 +45,7 @@ function mapDbAssignmentToAssignment(row: DbAssignment): Assignment {
     title: row.title,
     description: row.description ?? '',
     courseId: row.course_name as Assignment['courseId'],
-    dueDate: toIsoDateTime(row.due_at),
+    dueDate: toIsoDateTime(row.due_at) as Assignment['dueDate'],
     // Derive priority from due date (sooner = higher priority)
     priority: row.due_at,
     // Map workflow_state to status
@@ -53,8 +53,8 @@ function mapDbAssignmentToAssignment(row: DbAssignment): Assignment {
     // Determine source from ical_uid
     source: row.ical_uid ? 'ical' : 'manual',
     sourceUrl: row.html_url ?? row.ical_uid,
-    createdAt: toIsoDateTime(row.created_at),
-    updatedAt: toIsoDateTime(row.updated_at),
+    createdAt: toIsoDateTime(row.created_at) as Assignment['createdAt'],
+    updatedAt: toIsoDateTime(row.updated_at) as Assignment['updatedAt'],
   };
 }
 
@@ -65,8 +65,8 @@ function mapDbSubTaskToSubTask(row: DbSubTask): SubTask {
     title: row.title,
     completed: row.completed === 1,
     order: row.position,
-    createdAt: toIsoDateTime(row.created_at),
-    updatedAt: toIsoDateTime(row.updated_at),
+    createdAt: toIsoDateTime(row.created_at) as SubTask['createdAt'],
+    updatedAt: toIsoDateTime(row.updated_at) as SubTask['updatedAt'],
   };
 }
 
@@ -339,7 +339,7 @@ export const repo = {
       // Insert new order
       for (let i = 0; i < ids.length; i++) {
         run('INSERT OR REPLACE INTO priority_order (assignment_id, position) VALUES (?, ?)', [
-          ids[i],
+          ids[i]!,
           i,
         ]);
       }
@@ -360,10 +360,10 @@ export const repo = {
       input.order,
     ]);
     return {
-      id: input.assignmentId as PriorityOrder['id'],
+      id: input.assignmentId,
       assignmentId: input.assignmentId,
       order: input.order,
-      updatedAt: toIsoDateTime(now),
+      updatedAt: toIsoDateTime(now) as PriorityOrder['updatedAt'],
     };
   },
 
@@ -430,7 +430,7 @@ export const repo = {
     exec('BEGIN TRANSACTION');
     try {
       for (let i = 0; i < ids.length; i++) {
-        run('UPDATE sub_tasks SET position = ?, updated_at = ? WHERE id = ?', [i, now, ids[i]]);
+        run('UPDATE sub_tasks SET position = ?, updated_at = ? WHERE id = ?', [i, now, ids[i]!]);
       }
       exec('COMMIT');
     } catch (e) {
@@ -454,8 +454,8 @@ export const repo = {
       id: row.assignment_id as Note['id'],
       assignmentId: row.assignment_id as Note['assignmentId'],
       content: row.content,
-      createdAt: toIsoDateTime(row.updated_at),
-      updatedAt: toIsoDateTime(row.updated_at),
+      createdAt: toIsoDateTime(row.updated_at) as Note['createdAt'],
+      updatedAt: toIsoDateTime(row.updated_at) as Note['updatedAt'],
     };
   },
 
@@ -478,8 +478,8 @@ export const repo = {
       id: assignmentId as Note['id'],
       assignmentId: assignmentId as Note['assignmentId'],
       content,
-      createdAt: toIsoDateTime(now),
-      updatedAt: toIsoDateTime(now),
+      createdAt: toIsoDateTime(now) as Note['createdAt'],
+      updatedAt: toIsoDateTime(now) as Note['updatedAt'],
     };
   },
 

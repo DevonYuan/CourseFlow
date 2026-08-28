@@ -16,22 +16,44 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          name: 'frontend',
-          environment: 'jsdom',
-          include: ['src/frontend/**/*.test.{ts,tsx}'],
-          setupFiles: ['src/frontend/test/setup.ts'],
+          name: 'main',
+          environment: 'node',
+          include: ['src/backend/main/**/*.test.ts'],
           globals: true,
         },
       },
       {
         extends: true,
         test: {
-          name: 'backend',
+          name: 'preload',
           environment: 'node',
-          include: ['src/backend/**/*.test.ts'],
+          include: ['src/backend/preload/**/*.test.ts'],
+          globals: true,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'shared',
+          environment: 'node',
+          include: ['src/backend/shared/**/*.test.ts'],
+          globals: true,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'renderer',
+          environment: 'jsdom',
+          include: ['src/frontend/**/*.test.{ts,tsx}'],
+          setupFiles: ['src/frontend/test/setup.ts'],
           globals: true,
         },
       },
     ],
+    coverage: {
+      provider: 'v8',
+      thresholds: { lines: 0, branches: 0, functions: 0, statements: 0 },
+    },
   },
 });
