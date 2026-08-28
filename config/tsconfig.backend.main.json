@@ -16,14 +16,11 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
-    "skipLibCheck": true
+    "outDir": "../dist/backend/main",
+    "rootDir": "../src/backend/main",
+    "skipLibCheck": true,
+    "types": ["electron", "node"]
   },
-  "references": [
-    { "path": "./tsconfig.backend.main.json" },
-    { "path": "./tsconfig.backend.preload.json" },
-    { "path": "./tsconfig.frontend.json" },
-    { "path": "./tsconfig.backend.shared.json" }
-  ],
-  "files": [],
-  "exclude": ["node_modules", "dist"]
+  "include": ["../src/backend/main/**/*"],
+  "references": [{ "path": "./tsconfig.backend.shared.json" }]
 }

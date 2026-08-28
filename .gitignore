@@ -29,6 +29,9 @@ pnpm-debug.log*
 # Testing
 coverage/
 
+# TypeScript build info
+config/*.tsbuildinfo
+
 # Environment
 .env
 .env.local

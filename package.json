@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --build",
+    "typecheck": "tsc --build config/tsconfig.json",
     "prepare": "husky"
   },
   "engines": {

@@ -16,11 +16,9 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
-    "outDir": "dist/backend/preload",
-    "rootDir": "src/backend/preload",
-    "skipLibCheck": true,
-    "types": ["electron"]
+    "outDir": "../dist/backend/shared",
+    "rootDir": "../src/backend/shared",
+    "skipLibCheck": true
   },
-  "include": ["src/backend/preload/**/*"],
-  "references": [{ "path": "./tsconfig.backend.shared.json" }]
+  "include": ["../src/backend/shared/**/*"]
 }

@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -16,9 +16,12 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
-    "outDir": "dist/backend/shared",
-    "rootDir": "src/backend/shared",
-    "skipLibCheck": true
+    "outDir": "../dist/frontend",
+    "rootDir": "../src/frontend",
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   },
-  "include": ["src/backend/shared/**/*"]
+  "include": ["../src/frontend/**/*"],
+  "references": [{ "path": "./tsconfig.backend.shared.json" }]
 }

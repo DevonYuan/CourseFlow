@@ -61,7 +61,7 @@ The scaffold must produce a runnable "Hello World" Electron window (main + rende
   - `typecheck` — `tsc --noEmit`
 - **electron-vite config**: three entries (main, preload, renderer) with proper `outDir` mapping to `dist/`
 - **electron-builder config**: NSIS for Windows, `appId: "com.courseflow.app"`, `productName: "CourseFlow"`
-- **TSConfig**: project references (`tsconfig.json` root + `tsconfig.main.json`, `tsconfig.preload.json`, `tsconfig.renderer.json`, `tsconfig.shared.json`)
+- **TSConfig**: project references (`config/tsconfig.json` root + `config/tsconfig.backend.main.json`, `config/tsconfig.backend.preload.json`, `config/tsconfig.frontend.json`, `config/tsconfig.backend.shared.json`)
 - **ESLint**: `typescript-eslint`, `eslint-plugin-import`, `eslint-plugin-react`, `eslint-plugin-react-hooks`; `import/order` enforced
 - **Prettier**: single quotes, trailing commas, 100 char line width
 - **Husky**: `pre-commit` runs `lint-staged` (ESLint + Prettier on staged files)

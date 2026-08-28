@@ -18,7 +18,7 @@ export default typescriptEslint.config(
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.*.json'],
+        project: ['./config/tsconfig.json', './config/tsconfig.*.json'],
         tsconfigRootDir: import.meta.dirname,
       },
       globals: {

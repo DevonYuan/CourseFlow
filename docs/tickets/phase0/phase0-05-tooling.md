@@ -38,19 +38,18 @@ Harden the developer tooling configured in the scaffold (phase0-01) with project
 ### TypeScript Project References Structure
 
 ```
-tsconfig.json                    # Root: references = ["./tsconfig.main.json", ...]
-tsconfig.main.json               # { "extends": "./tsconfig.base.json", "compilerOptions": { "outDir": "dist/main", "rootDir": "src/main" }, "include": ["src/main"] }
-tsconfig.preload.json            # ... outDir: "dist/preload", rootDir: "src/preload"
-tsconfig.renderer.json           # ... outDir: "dist/renderer", rootDir: "src/renderer", jsx: "react-jsx"
-tsconfig.shared.json             # ... outDir: "dist/shared", rootDir: "src/shared"
-tsconfig.base.json               # Shared compilerOptions (strict, target, moduleResolution, etc.)
+config/tsconfig.json                     # Root: references = ["./tsconfig.backend.main.json", ...]
+config/tsconfig.backend.main.json        # { "compilerOptions": { "outDir": "../dist/backend/main", "rootDir": "../src/backend/main" }, "include": ["../src/backend/main"] }
+config/tsconfig.backend.preload.json     # ... outDir: "../dist/backend/preload", rootDir: "../src/backend/preload"
+config/tsconfig.frontend.json            # ... outDir: "../dist/frontend", rootDir: "../src/frontend", jsx: "react-jsx"
+config/tsconfig.backend.shared.json      # ... outDir: "../dist/backend/shared", rootDir: "../src/backend/shared"
 ```
 
 ### ESLint Flat Config (eslint.config.js)
 
 ```js
 export default [
-  { ignores: ['dist/', 'node_modules/', '*.config.*', '*.local'] },
+  { ignores: ['dist/', 'node_modules/', '*.config.*', '*.local', 'config/'] },
   // TypeScript base
   ...tseslint.configs.recommended,
   // Import ordering
@@ -69,23 +68,23 @@ export default [
         {
           zones: [
             {
-              target: './src/renderer',
-              from: './src/main',
+              target: './src/frontend',
+              from: './src/backend/main',
               message: 'Renderer cannot import from main',
             },
             {
-              target: './src/renderer',
-              from: './src/preload',
+              target: './src/frontend',
+              from: './src/backend/preload',
               message: 'Renderer cannot import from preload',
             },
             {
-              target: './src/main',
-              from: './src/renderer',
+              target: './src/backend/main',
+              from: './src/frontend',
               message: 'Main cannot import from renderer',
             },
             {
-              target: './src/preload',
-              from: './src/renderer',
+              target: './src/backend/preload',
+              from: './src/frontend',
               message: 'Preload cannot import from renderer',
             },
           ],
