@@ -21,10 +21,20 @@ import type {
   PriorityOrderInput,
   ICalEvent,
   Settings,
+  ImportResult,
 } from '../shared/types.js';
 
 import { repo } from './db/repository.js';
 import { sendEventToRenderers } from './events.js';
+import {
+  fetchICalFeed,
+  parseICalFeed,
+  mapICalToAssignments,
+  NetworkError,
+  HttpError,
+  TimeoutError,
+  ICalParseError,
+} from './ical/index.js';
 
 /**
  * Error factory for consistent error responses.
@@ -266,14 +276,90 @@ const handlers: IpcHandlers = {
 
   // ── iCal Integration ───────────────────────────────────────────────────
 
-  'ical:fetch': (_input: { url: string }): Promise<IpcResult<ICalEvent[]>> =>
-    Promise.resolve(err('Not implemented: ical:fetch', 'INTERNAL_ERROR')),
+  'ical:fetch': async (input: { url: string }): Promise<IpcResult<ICalEvent[]>> => {
+    try {
+      // Validate URL
+      if (!input.url || typeof input.url !== 'string') {
+        return err('URL is required', 'VALIDATION_ERROR');
+      }
+      try {
+        new URL(input.url);
+      } catch {
+        return err('Invalid URL format', 'VALIDATION_ERROR');
+      }
 
-  'ical:import': (_input: {
+      // Emit fetch progress
+      sendEventToRenderers('ical:progress', { stage: 'fetch', progress: 33 });
+
+      // Fetch iCal feed with 30s timeout
+      const icalText = await fetchICalFeed(input.url, { timeoutMs: 30_000 });
+
+      // Emit parse progress
+      sendEventToRenderers('ical:progress', { stage: 'parse', progress: 66 });
+
+      // Parse iCal feed
+      const events = parseICalFeed(icalText);
+
+      // Emit completion progress
+      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100 });
+
+      return ok(events);
+    } catch (error) {
+      // Emit error progress
+      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100, message: 'error' });
+
+      if (error instanceof NetworkError) {
+        return err(`Network error: ${error.message}`, 'NETWORK_ERROR');
+      }
+      if (error instanceof HttpError) {
+        return err(`HTTP error ${error.status}: ${error.message}`, 'HTTP_ERROR');
+      }
+      if (error instanceof TimeoutError) {
+        return err(`Request timeout: ${error.message}`, 'TIMEOUT_ERROR');
+      }
+      if (error instanceof ICalParseError) {
+        return err(`Failed to parse iCal feed: ${error.message}`, 'PARSE_ERROR');
+      }
+      return err(
+        `Failed to fetch iCal feed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'INTERNAL_ERROR',
+      );
+    }
+  },
+
+  'ical:import': async (input: {
     events: ICalEvent[];
-    url: string;
-  }): Promise<IpcResult<{ imported: number; updated: number; skipped: number }>> =>
-    Promise.resolve(err('Not implemented: ical:import', 'INTERNAL_ERROR')),
+    sourceUrl: string;
+  }): Promise<IpcResult<ImportResult>> => {
+    try {
+      // Validate input
+      if (!input.events || !Array.isArray(input.events) || input.events.length === 0) {
+        return err('Events array is required and cannot be empty', 'VALIDATION_ERROR');
+      }
+      if (!input.sourceUrl || typeof input.sourceUrl !== 'string') {
+        return err('sourceUrl is required', 'VALIDATION_ERROR');
+      }
+
+      // Map iCal events to assignments
+      const assignments = mapICalToAssignments(input.events, input.sourceUrl);
+
+      // Import assignments with deduplication
+      const result = repo.importAssignments(assignments);
+
+      // Emit store progress
+      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100 });
+
+      return ok(result);
+    } catch (error) {
+      // Emit error progress
+      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100, message: 'error' });
+
+      return err(
+        `Failed to import assignments: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'INTERNAL_ERROR',
+      );
+    }
+  },
 
   // ── Settings ───────────────────────────────────────────────────────────
 

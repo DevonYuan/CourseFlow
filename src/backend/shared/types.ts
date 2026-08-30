@@ -147,6 +147,15 @@ export interface Settings {
 }
 
 /**
+ * Result of an iCal import operation with deduplication.
+ */
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+  updated: number;
+}
+
+/**
  * iCal Event — parsed from iCal feed, used for import preview.
  */
 export interface ICalEvent {

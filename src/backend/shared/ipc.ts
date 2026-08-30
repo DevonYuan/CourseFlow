@@ -122,7 +122,7 @@ export interface IpcChannels {
     response: ICalEvent[];
   };
   'ical:import': {
-    request: { events: ICalEvent[]; url: string };
+    request: { events: ICalEvent[]; sourceUrl: string };
     response: { imported: number; updated: number; skipped: number };
   };
 
@@ -167,7 +167,7 @@ export interface IpcEvents {
     id: string;
   };
   'ical:progress': {
-    stage: 'fetching' | 'parsing' | 'importing' | 'complete' | 'error';
+    stage: 'fetch' | 'parse' | 'store';
     progress: number;
     message?: string;
   };

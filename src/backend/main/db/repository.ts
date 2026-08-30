@@ -24,6 +24,7 @@ import type {
   DbSubTask,
   DbSettings,
   IsoDateTime,
+  ImportResult,
 } from '../../shared/types.js';
 
 import { getDatabase, saveDatabase } from './connection.js';
@@ -380,6 +381,151 @@ export const repo = {
     }
 
     return results;
+  },
+
+  /**
+   * Import assignments with deduplication by ical_uid.
+   * Matches existing assignments by ical_uid and applies conflict resolution:
+   * - New ical_uid → INSERT (counted as imported)
+   * - Existing ical_uid with newer updatedAt → UPDATE (counted as updated)
+   * - Existing ical_uid with older/equal updatedAt → SKIP (counted as skipped)
+   *
+   * On UPDATE, preserves user-edited fields: description, status (if completed or archived), priority.
+   * Emits db:changed events for each insert/update.
+   * Transactional — all or nothing.
+   */
+  importAssignments(inputs: AssignmentInput[]): ImportResult {
+    const now = Date.now();
+    const result: ImportResult = { imported: 0, skipped: 0, updated: 0 };
+
+    // Prepared statements for performance
+    const db = getDatabase();
+
+    const selectStmt = db.prepare('SELECT id, description, status, updated_at FROM assignments WHERE ical_uid = ?');
+    const insertStmt = db.prepare(`
+      INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at, unlock_at, lock_at,
+        points_possible, submission_types, workflow_state, html_url, ical_uid, status, source, source_url, rrule, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const updateStmt = db.prepare(`
+      UPDATE assignments SET
+        title = ?, due_at = ?, workflow_state = ?, html_url = ?, course_color = ?, points_possible = ?,
+        submission_types = ?, unlock_at = ?, lock_at = ?, rrule = ?, source = ?, source_url = ?, status = ?, updated_at = ?
+      WHERE id = ?
+    `);
+
+    // Helper to convert undefined to null for SQL binding
+    const toNullable = (v: unknown): string | number | null => (v === undefined ? null : v as string | number | null);
+
+    exec('BEGIN TRANSACTION');
+    try {
+      for (const input of inputs) {
+        const icalUid = input.icalUid;
+        if (!icalUid) {
+          // Skip assignments without ical_uid (should not happen in normal iCal import)
+          continue;
+        }
+
+        // Check if assignment with this ical_uid exists
+        selectStmt.bind([icalUid]);
+        const existing = selectStmt.step() ? selectStmt.getAsObject() : null;
+        selectStmt.reset();
+
+        const incomingUpdatedAt = input.updatedAt ? new Date(input.updatedAt).getTime() : now;
+
+        if (!existing) {
+          // INSERT: new ical_uid
+          const id = input.id ?? randomUUID();
+          const dbRow = mapAssignmentInputToDb(input, now);
+
+          insertStmt.bind([
+            id,
+            dbRow.canvas_id ?? null,
+            dbRow.title ?? '',
+            dbRow.description ?? '',
+            dbRow.course_name ?? '',
+            dbRow.course_color ?? '#6366f1',
+            dbRow.due_at ?? now,
+            dbRow.unlock_at ?? null,
+            dbRow.lock_at ?? null,
+            dbRow.points_possible ?? null,
+            dbRow.submission_types ?? '[]',
+            dbRow.workflow_state ?? 'published',
+            dbRow.html_url ?? '',
+            dbRow.ical_uid ?? '',
+            dbRow.status ?? 'pending',
+            dbRow.source ?? 'ical',
+            dbRow.source_url ?? null,
+            dbRow.rrule ?? null,
+            dbRow.created_at ?? now,
+            dbRow.updated_at ?? now,
+          ]);
+          insertStmt.step();
+          insertStmt.reset();
+
+          result.imported++;
+          sendEventToRenderers('db:changed', { table: 'assignments', action: 'insert', id });
+        } else {
+          // Check if incoming is newer
+          const storedUpdatedAt = existing['updated_at'] as number;
+          if (incomingUpdatedAt > storedUpdatedAt) {
+            // UPDATE: incoming is newer — but preserve protected fields
+            const existingId = existing['id'] as string;
+            const existingDescription = (existing['description'] as string) ?? '';
+            const existingStatus = (existing['status'] as string) ?? 'pending';
+            // Priority is stored in priority_order table, not in assignments
+
+            // Update safe-to-overwrite fields (including status, which we may restore after)
+            updateStmt.bind([
+              input.title ?? existing['title'] ?? '', // title
+              input.dueAt ? new Date(input.dueAt).getTime() : toNullable(existing['due_at']), // due_at
+              input.workflowState ?? existing['workflow_state'] ?? 'published', // workflow_state
+              input.htmlUrl ?? existing['html_url'] ?? '', // html_url
+              input.courseColor ?? existing['course_color'] ?? '#6366f1', // course_color
+              input.pointsPossible ?? toNullable(existing['points_possible']), // points_possible
+              input.submissionTypes ? JSON.stringify(input.submissionTypes) : toNullable(existing['submission_types']), // submission_types
+              input.unlockAt ? new Date(input.unlockAt).getTime() : toNullable(existing['unlock_at']), // unlock_at
+              input.lockAt ? new Date(input.lockAt).getTime() : toNullable(existing['lock_at']), // lock_at
+              input.rrule ?? toNullable(existing['rrule']), // rrule
+              input.source ?? existing['source'] ?? 'ical', // source
+              input.sourceUrl ?? toNullable(existing['source_url']), // source_url
+              input.status ?? existingStatus, // status (may be restored below if protected)
+              now, // updated_at
+              existingId, // WHERE id = ?
+            ]);
+            updateStmt.step();
+            updateStmt.reset();
+
+            // Preserve protected fields by restoring them if they were overwritten
+            // Description: restore user-edited description
+            if (existingDescription && input.description !== undefined && input.description !== existingDescription) {
+              run('UPDATE assignments SET description = ? WHERE id = ?', [existingDescription, existingId]);
+            }
+            // Status: preserve if user marked as completed (or archived in future)
+            if (existingStatus === 'completed' && input.status !== undefined && input.status !== 'completed') {
+              run('UPDATE assignments SET status = ? WHERE id = ?', ['completed', existingId]);
+            }
+            // Priority: stored in priority_order table, not affected by assignment UPDATE
+
+            result.updated++;
+            sendEventToRenderers('db:changed', { table: 'assignments', action: 'update', id: existingId });
+          } else {
+            // SKIP: incoming is not newer
+            result.skipped++;
+          }
+        }
+      }
+      exec('COMMIT');
+    } catch (e) {
+      exec('ROLLBACK');
+      throw e;
+    } finally {
+      selectStmt.free();
+      insertStmt.free();
+      updateStmt.free();
+    }
+
+    return result;
   },
 
   // --- Priority Order ---
