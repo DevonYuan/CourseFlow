@@ -1,0 +1,39 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Canvas//Canvas Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:multi-event-001@example.com
+SUMMARY:This is a very long summary that gets folded across multiple lines as per RFC 5545 line folding specification which requires lines to be no longer than 75 octets
+DESCRIPTION:This description also gets
+ folded across multiple lines
+ to demonstrate RFC 5545
+ compliance.
+DTSTART:20250115T143000Z
+DTEND:20250115T160000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:multi-event-002@example.com
+SUMMARY:Second Event
+DTSTART:20250116T100000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:multi-event-003@example.com
+SUMMARY:Third Event with HTML Description
+DESCRIPTION:<p>This is an <strong>HTML</strong> description from Canvas.</p><ul><li>Item 1</li><li>Item 2</li></ul>
+DTSTART:20250117T090000Z
+DTEND:20250117T110000Z
+CATEGORIES:CS101,Project,Group Work
+END:VEVENT
+BEGIN:VTODO
+UID:todo-001@example.com
+SUMMARY:This is a VTODO (should be skipped)
+DTSTART:20250115T143000Z
+END:VTODO
+BEGIN:VJOURNAL
+UID:journal-001@example.com
+SUMMARY:This is a VJOURNAL (should be skipped)
+DTSTART:20250115T143000Z
+END:VJOURNAL
+END:VCALENDAR

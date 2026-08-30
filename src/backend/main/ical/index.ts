@@ -9,7 +9,6 @@
 export {
   fetchICalFeed,
   fetchAndParseICalFeed,
-  parseICalFeed,
   FetchICalOptions,
   ICalFetchError,
   NetworkError,
@@ -17,4 +16,11 @@ export {
   TimeoutError,
 } from './fetch.js';
 
+export {
+  parseICalFeed,
+  parseICalFeedWithMeta,
+  ICalParseError,
+} from './parse.js';
+
 export type { FetchICalOptions } from './fetch.js';
+export type { ICalEvent, ParseResult } from './parse.js';
