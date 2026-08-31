@@ -26,14 +26,14 @@ import type {
 /**
  * Convert Unix milliseconds to ISO 8601 UTC string.
  */
-function toIsoDateTime(ms: number): string {
+export function toIsoDateTime(ms: number): string {
   return new Date(ms).toISOString();
 }
 
 /**
  * Convert ISO 8601 string to Unix milliseconds (or null).
  */
-function toUnixMs(iso: string | null | undefined): number | null {
+export function toUnixMs(iso: string | null | undefined): number | null {
   if (!iso) return null;
   return new Date(iso).getTime();
 }

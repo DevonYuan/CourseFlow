@@ -35,18 +35,9 @@ import {
   mapDbSubTaskToSubTask,
   mapSubTaskInputToDb,
   mapDbSettingsToSettings,
+  toIsoDateTime,
+  toUnixMs,
 } from './mappers.js';
-      const value = JSON.parse(row.value);
-      // Type-safe assignment - we trust the stored JSON matches Settings structure
-      (result as Record<string, unknown>)[row.key] = value;
-    } catch {
-      // Ignore invalid JSON, keep default
-    }
-  }
-  // Compute autoFetchIntervalMs from icalFetchIntervalMinutes
-  result.autoFetchIntervalMs = result.icalFetchIntervalMinutes * 60 * 1000;
-  return result;
-}
 
 // ============================================================================
 // SQL Helpers

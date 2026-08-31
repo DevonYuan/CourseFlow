@@ -1,10 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Settings } from '@backend/shared/types';
+import { useIcalSync } from '../hooks/useIcalSync';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+/**
+ * Apply theme to document element immediately.
+ */
+function applyTheme(theme: 'light' | 'dark' | 'system'): void {
+  const root = document.documentElement;
+  root.classList.remove('light', 'dark');
+  if (theme === 'system') {
+    // Check if matchMedia is available and has matches property (may not be in test environment)
+    const mediaQuery = typeof window.matchMedia === 'function' 
+      ? window.matchMedia('(prefers-color-scheme: dark)') 
+      : null;
+    const prefersDark = mediaQuery?.matches ?? false;
+    root.classList.add(prefersDark ? 'dark' : 'light');
+  } else {
+    root.classList.add(theme);
+  }
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -13,6 +32,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Settings>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  const { isLoading: isSyncing, progress, stage, message, error: syncError, lastResult, fetchAndImport, reset: resetSync } = useIcalSync();
+
+  // Apply theme immediately when it changes in form
+  useEffect(() => {
+    if (formData.theme) {
+      applyTheme(formData.theme);
+    }
+  }, [formData.theme]);
 
   // Load settings on mount and when modal opens
   const loadSettings = useCallback(async () => {
@@ -23,6 +52,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       if (result.ok) {
         setSettings(result.data);
         setFormData(result.data);
+        // Apply theme on load
+        applyTheme(result.data.theme);
       } else {
         setError(result.error);
       }
@@ -42,7 +73,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   // Listen for external settings changes
   useEffect(() => {
     if (!isOpen) return;
-    const unsubscribe = window.api.onSettingsChanged((newSettings) => {
+    const unsubscribe = window.api.onSettingsChanged((newSettings: Settings) => {
       setSettings(newSettings);
       setFormData(newSettings);
     });
@@ -105,8 +136,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" data-testid="modal-overlay" onClick={onClose}>
+      <div className="modal" data-testid="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Settings</h2>
           <button className="close-button" onClick={onClose} aria-label="Close settings">
@@ -129,10 +160,78 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 type="url"
                 placeholder="https://canvas.institution.edu/feeds/calendars/..."
                 value={formData.icalUrl || ''}
-                onChange={e => handleInputChange('icalUrl', e.target.value)}
-                disabled={isSaving}
+                onChange={(e) => {
+                  handleInputChange('icalUrl', e.target.value);
+                  setUrlError(null);
+                }}
+                disabled={isSaving || isSyncing}
+                aria-invalid={!!urlError}
+                aria-describedby={urlError ? 'icalUrl-error' : undefined}
               />
+              {urlError && (
+                <small id="icalUrl-error" className="error-text" role="alert">
+                  {urlError}
+                </small>
+              )}
               <small className="help-text">Your Canvas calendar iCal feed URL</small>
+            </div>
+
+            {/* Fetch Now Section */}
+            <div className="form-group">
+              <label htmlFor="fetchNow">Fetch & Import</label>
+              <div className="fetch-now-group">
+                <button
+                  id="fetchNow"
+                  type="button"
+                  className="secondary"
+                  onClick={() => {
+                    const url = formData.icalUrl?.trim();
+                    if (!url) {
+                      setUrlError('Please enter an iCal URL first');
+                      return;
+                    }
+                    try {
+                      new URL(url);
+                    } catch {
+                      setUrlError('Invalid URL format');
+                      return;
+                    }
+                    fetchAndImport(url);
+                  }}
+                  disabled={isSaving || isSyncing || !formData.icalUrl?.trim()}
+                  aria-busy={isSyncing}
+                >
+                  {isSyncing ? (
+                    <>
+                      <span className="spinner" aria-hidden="true"></span>
+                      {stage === 'fetch' && 'Fetching...'}
+                      {stage === 'parse' && 'Parsing...'}
+                      {stage === 'store' && 'Importing...'}
+                      {!stage || stage === 'idle' && 'Working...'}
+                    </>
+                  ) : (
+                    'Fetch Now'
+                  )}
+                </button>
+                {isSyncing && (
+                  <div className="fetch-progress" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Fetch and import progress">
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+                    </div>
+                    <small className="progress-message">{message}</small>
+                  </div>
+                )}
+                {lastResult && !isSyncing && (
+                  <div className="fetch-result success" role="status">
+                    Imported: {lastResult.imported} new, {lastResult.updated} updated, {lastResult.skipped} skipped
+                  </div>
+                )}
+                {syncError && !isSyncing && (
+                  <div className="fetch-result error" role="alert">
+                    {syncError}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-group">

@@ -20,7 +20,12 @@
     "rootDir": "../src/frontend",
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@backend/shared/*": ["../src/backend/shared/*"],
+      "@shared/*": ["../src/backend/shared/*"]
+    }
   },
   "include": ["../src/frontend/**/*"],
   "references": [{ "path": "./tsconfig.backend.shared.json" }]

@@ -14,7 +14,6 @@ export default defineConfig({
     passWithNoTests: true,
     projects: [
       {
-        extends: true,
         test: {
           name: 'main',
           environment: 'node',
@@ -23,7 +22,6 @@ export default defineConfig({
         },
       },
       {
-        extends: true,
         test: {
           name: 'preload',
           environment: 'node',
@@ -32,7 +30,6 @@ export default defineConfig({
         },
       },
       {
-        extends: true,
         test: {
           name: 'shared',
           environment: 'node',
@@ -41,10 +38,10 @@ export default defineConfig({
         },
       },
       {
-        extends: true,
         test: {
           name: 'renderer',
           environment: 'jsdom',
+          root: '.',
           include: ['src/frontend/**/*.test.{ts,tsx}'],
           setupFiles: ['src/frontend/test/setup.ts'],
           globals: true,
