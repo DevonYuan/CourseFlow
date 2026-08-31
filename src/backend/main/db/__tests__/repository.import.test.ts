@@ -19,7 +19,7 @@ import type { Database } from 'sql.js';
 import {
   mapDbAssignmentToAssignment,
   mapAssignmentInputToDb,
-} from '../repository.js';
+} from '../mappers.js';
 import type {
   Assignment,
   AssignmentInput,
