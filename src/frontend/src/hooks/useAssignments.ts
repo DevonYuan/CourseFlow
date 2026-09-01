@@ -2,14 +2,15 @@
  * useAssignments Hook — Assignment Data Fetching & State Management
  *
  * Fetches assignments from the backend via IPC, handles loading/error/empty states,
- * and provides retry functionality. Listens for db:changed events to auto-refresh.
- * Uses Zustand store's memoized selector hooks for optimal performance.
+ * and provides retry functionality. Subscribes to db:changed events to auto-refresh
+ * with debouncing. Uses Zustand store's memoized selector hooks for optimal performance.
  *
  * @module @frontend/hooks/useAssignments
  */
 
+import type { IpcEvents } from '@backend/shared/ipc';
 import type { Assignment } from '@backend/shared/types';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useToast } from '../context/ToastContext';
 import {
@@ -19,6 +20,7 @@ import {
   useAssignmentsStore,
   useSetAssignmentStatus,
 } from '../store/assignmentsStore';
+import { debounce } from '../utils/debounce';
 
 interface UseAssignmentsReturn {
   /** Current list of assignments */
@@ -58,6 +60,30 @@ export function useAssignments(): UseAssignmentsReturn {
 
   const refetch = useCallback(() => useAssignmentsStore.getState().fetchAssignments(), []);
   const clearError = useCallback(() => useAssignmentsStore.getState().clearError(), []);
+
+  // Debounced refetch for auto-refresh (100ms debounce to handle batch imports)
+  const debouncedRefetchRef = useRef(
+    debounce(() => useAssignmentsStore.getState().fetchAssignments(), 100),
+  );
+
+  // Subscribe to db:changed events for auto-refresh
+  useEffect(() => {
+    const unsubscribe = window.api.onDbChanged((event: IpcEvents['db:changed']) => {
+      // Only re-fetch on assignments table changes (insert, update, delete, upsert)
+      if (event.table === 'assignments') {
+        debouncedRefetchRef.current();
+      }
+    });
+
+    // Capture ref for cleanup to avoid react-hooks/exhaustive-deps warning
+    const debouncedRefetch = debouncedRefetchRef.current;
+
+    // Cleanup on unmount
+    return () => {
+      unsubscribe();
+      debouncedRefetch.cancel();
+    };
+  }, []);
 
   const markComplete = useCallback(
     async (id: string) => {

@@ -129,23 +129,12 @@ export const useAssignmentsEmpty = () => useAssignmentsStore((state) => state.is
 export const useSetAssignmentStatus = () => useAssignmentsStore((state) => state.setAssignmentStatus);
 
 /**
- * Subscribe to db:changed events.
- * Call this once during app initialization.
- */
-export function subscribeToDbChanges(): () => void {
-  const unsubscribe = window.api.onDbChanged((payload: IpcEvents['db:changed']) => {
-    useAssignmentsStore.getState().handleDbChanged(payload);
-  });
-  return unsubscribe;
-}
-
-/**
- * Initialize the store — fetches assignments and sets up event subscription.
- * Returns cleanup function.
+ * Initialize the store — fetches assignments.
+ * The useAssignments hook handles db:changed event subscription with debouncing.
+ * Returns cleanup function (currently no-op, kept for API compatibility).
  */
 export function initializeAssignmentsStore(): () => void {
   const store = useAssignmentsStore.getState();
   store.fetchAssignments();
-  const unsubscribe = subscribeToDbChanges();
-  return unsubscribe;
+  return () => {};
 }
