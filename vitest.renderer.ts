@@ -11,10 +11,10 @@ export default defineConfig({
     },
   },
   test: {
-    passWithNoTests: true,
-    coverage: {
-      provider: 'v8',
-      thresholds: { lines: 0, branches: 0, functions: 0, statements: 0 },
-    },
+    name: 'renderer',
+    environment: 'jsdom',
+    include: ['src/frontend/**/*.test.{ts,tsx}'],
+    setupFiles: ['src/frontend/test/setup.ts'],
+    globals: true,
   },
 });
