@@ -12,6 +12,7 @@ import { AssignmentList } from '../components/AssignmentList';
 import type { Assignment, IsoDateTime } from '@backend/shared/types';
 import type { IpcEvents } from '@backend/shared/ipc';
 import { useAssignmentsStore } from '../store/assignmentsStore';
+import { ToastProvider } from '../context/ToastContext';
 
 // Mock window.api
 const mockApi = {
@@ -90,7 +91,11 @@ describe('AssignmentList', () => {
   it('shows skeleton while loading', () => {
     mockApi.db.assignments.list.mockImplementation(() => new Promise(() => {}));
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading assignments');
     expect(screen.getAllByTestId('skeleton-row')).toHaveLength(4);
@@ -99,7 +104,11 @@ describe('AssignmentList', () => {
   it('shows empty state when no assignments and not loading', async () => {
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: [] });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('No assignments yet')).toBeInTheDocument();
@@ -111,7 +120,11 @@ describe('AssignmentList', () => {
   it('shows assignments when data is available', async () => {
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: mockAssignments });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Test Assignment 1')).toBeInTheDocument();
@@ -130,7 +143,11 @@ describe('AssignmentList', () => {
       code: 'INTERNAL_ERROR',
     });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -144,7 +161,11 @@ describe('AssignmentList', () => {
   it('calls onOpenSettings when empty state CTA is clicked', async () => {
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: [] });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Open Settings' })).toBeInTheDocument();
@@ -158,7 +179,11 @@ describe('AssignmentList', () => {
   it('calls onAssignmentClick when assignment row is clicked', async () => {
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: mockAssignments });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Test Assignment 1')).toBeInTheDocument();
@@ -179,7 +204,11 @@ describe('AssignmentList', () => {
       })
       .mockResolvedValueOnce({ ok: true, data: mockAssignments });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
@@ -203,7 +232,11 @@ describe('AssignmentList', () => {
       })
       .mockResolvedValueOnce({ ok: true, data: [] });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
@@ -243,7 +276,11 @@ describe('AssignmentList', () => {
     };
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: [overdueAssignment] });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     // Wait for assignment to appear first
     await waitFor(() => {
@@ -261,7 +298,11 @@ describe('AssignmentList', () => {
     ];
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: assignments });
 
-    render(<AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />);
+    render(
+      <ToastProvider>
+        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
+      </ToastProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Assignment 2')).toBeInTheDocument();

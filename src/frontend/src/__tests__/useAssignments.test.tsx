@@ -8,10 +8,12 @@
 
 import type { IpcEvents } from '@backend/shared/ipc';
 import type { Assignment, IsoDateTime } from '@backend/shared/types';
+import React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAssignments } from '../hooks/useAssignments';
 import { useAssignmentsStore } from '../store/assignmentsStore';
+import { ToastProvider } from '../context/ToastContext';
 
 // Mock window.api
 type AssignmentsListResult = { ok: true; data: Assignment[] } | { ok: false; error: string; code?: string };
@@ -91,6 +93,11 @@ function resetStore() {
   });
 }
 
+// Wrapper component to provide ToastContext
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ToastProvider>{children}</ToastProvider>
+);
+
 describe('useAssignments', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -109,7 +116,7 @@ describe('useAssignments', () => {
   });
 
   it('returns correct initial state shape', () => {
-    const { result } = renderHook(() => useAssignments());
+    const { result } = renderHook(() => useAssignments(), { wrapper });
 
     expect(result.current).toHaveProperty('assignments');
     expect(result.current).toHaveProperty('isLoading');
@@ -126,7 +133,7 @@ describe('useAssignments', () => {
   it('fetches assignments when fetchAssignments is called', async () => {
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: mockAssignments });
 
-    const { result } = renderHook(() => useAssignments());
+    const { result } = renderHook(() => useAssignments(), { wrapper });
 
     // Trigger fetch via store
     await act(async () => {
@@ -146,7 +153,7 @@ describe('useAssignments', () => {
   it('shows empty state when no assignments', async () => {
     mockApi.db.assignments.list.mockResolvedValue({ ok: true, data: [] });
 
-    const { result } = renderHook(() => useAssignments());
+    const { result } = renderHook(() => useAssignments(), { wrapper });
 
     await act(async () => {
       await useAssignmentsStore.getState().fetchAssignments();
@@ -169,7 +176,7 @@ describe('useAssignments', () => {
       code: 'INTERNAL_ERROR',
     });
 
-    const { result } = renderHook(() => useAssignments());
+    const { result } = renderHook(() => useAssignments(), { wrapper });
 
     await act(async () => {
       await useAssignmentsStore.getState().fetchAssignments();
@@ -192,7 +199,7 @@ describe('useAssignments', () => {
       code: 'NETWORK_ERROR',
     });
 
-    const { result } = renderHook(() => useAssignments());
+    const { result } = renderHook(() => useAssignments(), { wrapper });
 
     await act(async () => {
       await useAssignmentsStore.getState().fetchAssignments();
@@ -211,7 +218,7 @@ describe('useAssignments', () => {
       .mockResolvedValueOnce({ ok: true, data: [] })
       .mockResolvedValueOnce({ ok: true, data: mockAssignments });
 
-    const { result } = renderHook(() => useAssignments());
+    const { result } = renderHook(() => useAssignments(), { wrapper });
 
     await act(async () => {
       await useAssignmentsStore.getState().fetchAssignments();
@@ -241,7 +248,7 @@ describe('useAssignments', () => {
       code: 'INTERNAL_ERROR',
     });
 
-    const { result } = renderHook(() => useAssignments());
+    const { result } = renderHook(() => useAssignments(), { wrapper });
 
     await act(async () => {
       await useAssignmentsStore.getState().fetchAssignments();

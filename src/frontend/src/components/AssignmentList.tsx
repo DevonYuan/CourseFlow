@@ -21,6 +21,7 @@ import {
   initializeAssignmentsStore,
 } from '../store/assignmentsStore';
 import type { Assignment } from '@backend/shared/types';
+import { useAssignments as useAssignmentsHook } from '../hooks/useAssignments';
 import './AssignmentList.css';
 
 // Virtualization threshold - use virtualized list when > 100 items
@@ -39,9 +40,9 @@ interface AssignmentListProps {
  * Row renderer for react-window FixedSizeList.
  */
 function AssignmentRowRenderer(
-  props: { index: number; style: React.CSSProperties; ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' }; assignments: Assignment[]; onClick?: (assignment: Assignment) => void }
+  props: { index: number; style: React.CSSProperties; ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' }; assignments: Assignment[]; onClick?: (assignment: Assignment) => void; onMarkComplete?: (id: string) => Promise<void> }
 ): React.ReactElement | null {
-  const { index, style, assignments, onClick, ...rest } = props;
+  const { index, style, assignments, onClick, onMarkComplete, ...rest } = props;
   const assignment = assignments[index];
   // react-window only calls renderer with valid indices, but TypeScript needs assurance
   if (!assignment) {
@@ -49,7 +50,7 @@ function AssignmentRowRenderer(
   }
   return (
     <div style={style} {...rest}>
-      <AssignmentRow assignment={assignment} onClick={onClick} />
+      <AssignmentRow assignment={assignment} onClick={onClick} onMarkComplete={onMarkComplete} />
     </div>
   );
 }
@@ -73,6 +74,9 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
   const isLoading = useAssignmentsLoading();
   const error = useAssignmentsError();
   const isEmpty = useAssignmentsEmpty();
+
+  // Get markComplete from hook
+  const { markComplete } = useAssignmentsHook();
 
   // Memoize refetch and clearError from store actions
   const refetch = useMemo(
@@ -132,6 +136,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
               <VirtualizedAssignmentList
                 assignments={assignments}
                 onAssignmentClick={onAssignmentClick}
+                onMarkComplete={markComplete}
               />
             ) : (
               assignments.map((assignment) => (
@@ -139,6 +144,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
                   key={assignment.id}
                   assignment={assignment}
                   onClick={onAssignmentClick}
+                  onMarkComplete={markComplete}
                 />
               ))
             )}
@@ -157,6 +163,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
         <VirtualizedAssignmentList
           assignments={assignments}
           onAssignmentClick={onAssignmentClick}
+          onMarkComplete={markComplete}
         />
       ) : (
         assignments.map((assignment) => (
@@ -164,6 +171,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
             key={assignment.id}
             assignment={assignment}
             onClick={onAssignmentClick}
+            onMarkComplete={markComplete}
           />
         ))
       )}
@@ -178,17 +186,19 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
 function VirtualizedAssignmentList({
   assignments,
   onAssignmentClick,
+  onMarkComplete,
 }: {
   assignments: Assignment[];
   onAssignmentClick?: (assignment: Assignment) => void;
+  onMarkComplete?: (id: string) => Promise<void>;
 }): JSX.Element {
   const itemData = useMemo(
-    () => ({ assignments, onClick: onAssignmentClick }),
-    [assignments, onAssignmentClick]
+    () => ({ assignments, onClick: onAssignmentClick, onMarkComplete }),
+    [assignments, onAssignmentClick, onMarkComplete]
   );
 
   return (
-    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void }>
+    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void; onMarkComplete?: (id: string) => Promise<void> }>
       className="assignment-list__virtualized"
       style={{ height: 600, width: '100%' }}
       rowCount={assignments.length}

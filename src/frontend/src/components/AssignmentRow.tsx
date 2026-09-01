@@ -7,8 +7,9 @@
  * @module @frontend/components/AssignmentRow
  */
 
-import { CourseColorBadge } from './CourseColorBadge';
 import type { Assignment } from '@backend/shared/types';
+
+import { CourseColorBadge } from './CourseColorBadge';
 import './AssignmentRow.css';
 
 interface AssignmentRowProps {
@@ -16,6 +17,8 @@ interface AssignmentRowProps {
   assignment: Assignment;
   /** Callback when row is clicked */
   onClick?: (assignment: Assignment) => void;
+  /** Callback when mark complete is triggered */
+  onMarkComplete?: (id: string) => Promise<void>;
 }
 
 /**
@@ -54,9 +57,10 @@ const statusColors: Record<Assignment['status'], string> = {
 /**
  * Individual assignment row with click/keyboard handling.
  */
-export function AssignmentRow({ assignment, onClick }: AssignmentRowProps): JSX.Element {
+export function AssignmentRow({ assignment, onClick, onMarkComplete }: AssignmentRowProps): JSX.Element {
   const isOverdue = assignment.dueAt ? new Date(assignment.dueAt) < new Date() : false;
   const dueDate = formatDueDate(assignment.dueAt);
+  const isCompleted = assignment.status === 'completed';
 
   const handleClick = () => {
     if (onClick) {
@@ -71,9 +75,27 @@ export function AssignmentRow({ assignment, onClick }: AssignmentRowProps): JSX.
     }
   };
 
+  const handleMarkComplete = (event: React.MouseEvent) => {
+    // Prevent row click from firing
+    event.stopPropagation();
+    if (onMarkComplete && !isCompleted) {
+      void onMarkComplete(assignment.id);
+    }
+  };
+
+  const handleMarkCompleteKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (onMarkComplete && !isCompleted) {
+        void onMarkComplete(assignment.id);
+      }
+    }
+  };
+
   return (
     <div
-      className="assignment-row"
+      className={`assignment-row${isCompleted ? ' assignment-row--completed' : ''}`}
       role="listitem"
       tabIndex={onClick ? 0 : undefined}
       onClick={handleClick}
@@ -92,7 +114,7 @@ export function AssignmentRow({ assignment, onClick }: AssignmentRowProps): JSX.
       </div>
       <div className="assignment-row__title">{assignment.title}</div>
       <div className="assignment-row__due" aria-label={`Due ${dueDate}`}>
-        {isOverdue && (
+        {isOverdue && !isCompleted && (
           <span className="assignment-row__overdue-badge" aria-label="Overdue">
             !
           </span>
@@ -106,6 +128,28 @@ export function AssignmentRow({ assignment, onClick }: AssignmentRowProps): JSX.
         >
           {statusLabels[assignment.status]}
         </span>
+      </div>
+      <div className="assignment-row__action">
+        {isCompleted ? (
+          <span className="assignment-row__completed-icon" aria-label="Completed">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="assignment-row__complete-btn"
+            onClick={handleMarkComplete}
+            onKeyDown={handleMarkCompleteKeyDown}
+            aria-label={`Mark "${assignment.title}" as complete`}
+            aria-pressed={false}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );

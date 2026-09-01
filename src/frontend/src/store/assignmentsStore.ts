@@ -7,9 +7,10 @@
  * @module @frontend/store/assignmentsStore
  */
 
-import { create } from 'zustand';
-import type { Assignment } from '@backend/shared/types';
 import type { IpcEvents } from '@backend/shared/ipc';
+import type { Assignment } from '@backend/shared/types';
+import { create } from 'zustand';
+
 import { mapErrorToMessage } from '../utils/errorMessages';
 
 interface AssignmentsState {
@@ -28,6 +29,8 @@ interface AssignmentsActions {
   fetchAssignments: () => Promise<void>;
   /** Sets assignments directly (used for initial load or external updates) */
   setAssignments: (assignments: Assignment[]) => void;
+  /** Updates the status of a single assignment (optimistic update) */
+  setAssignmentStatus: (id: string, status: Assignment['status']) => void;
   /** Clears the current error state */
   clearError: () => void;
   /** Handles db:changed event payload */
@@ -99,6 +102,14 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
       set({ error: null });
     },
 
+    setAssignmentStatus: (id: string, status: Assignment['status']) => {
+      set((state) => ({
+        assignments: state.assignments.map((assignment) =>
+          assignment.id === id ? { ...assignment, status } : assignment
+        ),
+      }));
+    },
+
     handleDbChanged: (payload: IpcEvents['db:changed']) => {
       if (payload.table === 'assignments') {
         // Re-fetch on any assignment change
@@ -115,6 +126,7 @@ export const useAssignments = () => useAssignmentsStore((state) => state.assignm
 export const useAssignmentsLoading = () => useAssignmentsStore((state) => state.isLoading);
 export const useAssignmentsError = () => useAssignmentsStore((state) => state.error);
 export const useAssignmentsEmpty = () => useAssignmentsStore((state) => state.isEmpty);
+export const useSetAssignmentStatus = () => useAssignmentsStore((state) => state.setAssignmentStatus);
 
 /**
  * Subscribe to db:changed events.
