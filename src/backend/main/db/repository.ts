@@ -633,10 +633,97 @@ export const repo = {
           settings.icalUrl = await decryptIcalUrl(parsed);
         }
       } catch {
-        // If decryption fails, keep the default empty string
+        // If decryption fails, reset to default empty string
+        settings.icalUrl = '';
       }
     }
 
     return settings;
+  },
+
+  /**
+   * Set multiple settings at once (merge with existing).
+   * Automatically encrypts 'icalUrl' before storing.
+   * Uses a single transaction for atomicity.
+   */
+  async setSettings(partial: Partial<Settings>): Promise<Settings> {
+    const current = await this.getAllSettings();
+    const merged = { ...current, ...partial };
+
+    // Recompute autoFetchIntervalMs if icalFetchIntervalMinutes changed
+    if (partial.icalFetchIntervalMinutes !== undefined) {
+      merged.autoFetchIntervalMs = partial.icalFetchIntervalMinutes * 60 * 1000;
+    }
+
+    exec('BEGIN TRANSACTION');
+    try {
+      for (const [key, value] of Object.entries(merged)) {
+        let valueToStore: unknown = value;
+        // Encrypt icalUrl before storing
+        if (key === 'icalUrl' && typeof value === 'string' && value.length > 0) {
+          const encrypted = await encryptIcalUrl(value);
+          valueToStore = encrypted;
+        }
+        // Don't persist autoFetchIntervalMs (computed field)
+        if (key !== 'autoFetchIntervalMs') {
+          run(
+            'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+            [key, JSON.stringify(valueToStore)],
+          );
+        }
+      }
+      exec('COMMIT');
+    } catch (e) {
+      exec('ROLLBACK');
+      throw e;
+    }
+
+    // Emit settings changed event
+    sendEventToRenderers('settings:changed', merged);
+    return merged;
+  },
+
+  /**
+   * Reset all settings to defaults.
+   * Clears the settings table and re-inserts default values.
+   */
+  async resetSettings(): Promise<Settings> {
+    const defaults: Settings = {
+      theme: 'system',
+      autoFetchIcal: false,
+      icalFetchIntervalMinutes: 60,
+      defaultPriority: 'medium',
+      showCompletedAssignments: true,
+      notifyDueSoon: true,
+      dueSoonThresholdHours: 24,
+      icalUrl: '',
+      lastSyncAt: null,
+      autoFetchIntervalMs: 60 * 60 * 1000, // 60 minutes in ms
+    };
+
+    exec('BEGIN TRANSACTION');
+    try {
+      run('DELETE FROM settings');
+      // Insert all defaults
+      for (const [key, value] of Object.entries(defaults)) {
+        let valueToStore: unknown = value;
+        if (key === 'icalUrl' && typeof value === 'string' && value.length > 0) {
+          const encrypted = await encryptIcalUrl(value);
+          valueToStore = encrypted;
+        }
+        run(
+          'INSERT INTO settings (key, value) VALUES (?, ?)',
+          [key, JSON.stringify(valueToStore)],
+        );
+      }
+      exec('COMMIT');
+    } catch (e) {
+      exec('ROLLBACK');
+      throw e;
+    }
+
+    // Emit settings changed event
+    sendEventToRenderers('settings:changed', defaults);
+    return defaults;
   },
 };

@@ -374,13 +374,8 @@ const handlers: IpcHandlers = {
 
   'settings:set': async (partial: Partial<Settings>): Promise<IpcResult<Settings>> => {
     try {
-      const current = await repo.getAllSettings();
-      const updated = { ...current, ...partial };
-      for (const [key, value] of Object.entries(updated)) {
-        await repo.setSetting(key, value);
-      }
-      sendEventToRenderers('settings:changed', updated);
-      return ok(updated);
+      const settings = await repo.setSettings(partial);
+      return ok(settings);
     } catch (error) {
       return err(`Failed to set settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -388,23 +383,8 @@ const handlers: IpcHandlers = {
 
   'settings:reset': async (): Promise<IpcResult<Settings>> => {
     try {
-      const defaults: Settings = {
-        theme: 'system',
-        autoFetchIcal: false,
-        icalFetchIntervalMinutes: 60,
-        defaultPriority: 'medium',
-        showCompletedAssignments: true,
-        notifyDueSoon: true,
-        dueSoonThresholdHours: 24,
-        icalUrl: '',
-        lastSyncAt: null,
-        autoFetchIntervalMs: 60 * 60 * 1000,
-      };
-      for (const [key, value] of Object.entries(defaults)) {
-        await repo.setSetting(key, value);
-      }
-      sendEventToRenderers('settings:changed', defaults);
-      return ok(defaults);
+      const settings = await repo.resetSettings();
+      return ok(settings);
     } catch (error) {
       return err(
         `Failed to reset settings: ${error instanceof Error ? error.message : 'Unknown error'}`,

@@ -4,6 +4,7 @@ import { app, BrowserWindow } from 'electron';
 
 import { initializeDatabase, closeDatabase } from './db/connection.js';
 import { migrate } from './db/migrate.js';
+import { repo } from './db/repository.js';
 import { registerIpcHandlers } from './ipc-handlers.js';
 
 let mainWindow: BrowserWindow | null = null;
@@ -43,7 +44,16 @@ void app.whenReady().then(async () => {
   // Register all IPC handlers before creating windows
   registerIpcHandlers();
 
+  // Load settings on startup
+  const settings = await repo.getAllSettings();
+
   void createWindow();
+
+  // Apply theme to main window and emit settings:changed event
+  if (mainWindow) {
+    // Send theme to renderer via webContents (will be received by preload)
+    mainWindow.webContents.send('settings:changed', settings);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

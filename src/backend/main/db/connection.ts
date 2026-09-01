@@ -142,3 +142,11 @@ export function closeDatabase(): void {
 export function isDatabaseInitialized(): boolean {
   return dbInstance !== null;
 }
+
+/**
+ * Set a test database instance (for testing only).
+ * This allows tests to inject their own database instance.
+ */
+export function setTestDatabase(db: Database | null): void {
+  dbInstance = db;
+}
