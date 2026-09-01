@@ -1,0 +1,121 @@
+/**
+ * EmptyState Styles
+ *
+ * Centered empty state with illustration, message, and CTA button.
+ * Responsive and accessible.
+ */
+
+/* Container */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  min-height: 300px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Illustration */
+.empty-state__illustration {
+  color: var(--empty-illustration-color, #a0a0a0);
+  margin-bottom: 24px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.empty-state:hover .empty-state__illustration {
+  opacity: 1;
+}
+
+/* Message */
+.empty-state__message {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  line-height: 1.4;
+}
+
+/* Subtext */
+.empty-state__subtext {
+  margin: 0 0 24px;
+  font-size: 0.95rem;
+  color: var(--text-secondary, #666);
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+/* CTA Button */
+.empty-state__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--cta-bg, #0066cc);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state__cta:hover {
+  background: var(--cta-bg-hover, #0052a3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.empty-state__cta:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state__cta:focus-visible {
+  outline: 3px solid var(--focus-ring, rgba(0, 102, 204, 0.4));
+  outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .empty-state__message {
+    color: var(--text-primary-dark, #f0f0f0);
+  }
+
+  .empty-state__subtext {
+    color: var(--text-secondary-dark, #aaa);
+  }
+
+  .empty-state__cta {
+    background: var(--cta-bg-dark, #4d9fff);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .empty-state__cta:hover {
+    background: var(--cta-bg-hover-dark, #6db3ff);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .empty-state__cta {
+    transition: none;
+  }
+
+  .empty-state__illustration {
+    transition: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .empty-state__cta {
+    border: 2px solid currentColor;
+  }
+}

@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { SettingsModal } from './components/SettingsModal';
+import { AssignmentList } from './components/AssignmentList';
 
 export function App(): JSX.Element {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const handleOpenSettings = () => {
+    setIsSettingsOpen(true);
+  };
 
   return (
     <div style={{ 
@@ -13,11 +18,11 @@ export function App(): JSX.Element {
     }}>
       <header style={{
         padding: '1rem 2rem',
-        borderBottom: '1px solid #e0e0e0',
+        borderBottom: '1px solid var(--border-color, #e0e0e0)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#fff'
+        backgroundColor: 'var(--surface-color, #fff)'
       }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>CourseFlow</h1>
         <button
@@ -27,8 +32,9 @@ export function App(): JSX.Element {
             fontSize: '1rem',
             cursor: 'pointer',
             background: 'none',
-            border: '1px solid #ccc',
+            border: '1px solid var(--border-color, #ccc)',
             borderRadius: '4px',
+            color: 'var(--text-primary, #1a1a1a)',
           }}
           aria-label="Open settings"
         >
@@ -38,14 +44,14 @@ export function App(): JSX.Element {
       
       <main style={{ 
         flex: 1, 
-        padding: '2rem',
+        padding: '1rem',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center'
       }}>
-        <p>Hello World from React + Electron + TypeScript!</p>
-        <p>Assignments will appear here once iCal is configured.</p>
+        <AssignmentList 
+          onOpenSettings={handleOpenSettings}
+        />
       </main>
 
       <SettingsModal 

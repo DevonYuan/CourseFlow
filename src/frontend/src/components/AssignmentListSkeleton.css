@@ -1,0 +1,178 @@
+/**
+ * AssignmentListSkeleton Styles
+ *
+ * CSS-only shimmer animation for skeleton loaders.
+ * Matches the visual structure of AssignmentRow.
+ */
+
+/* Container */
+.assignment-list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Skeleton row matching AssignmentRow layout */
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 140px 100px;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--surface-color, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  min-height: 60px;
+}
+
+/* Shimmer animation keyframes */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Base skeleton cell */
+.skeleton-cell {
+  display: flex;
+  align-items: center;
+}
+
+/* Course column: colored dot + course name */
+.skeleton-course {
+  gap: 8px;
+}
+
+.skeleton-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #e0e0e0) 25%,
+    var(--skeleton-highlight, #f5f5f5) 50%,
+    var(--skeleton-base, #e0e0e0) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.skeleton-course-name {
+  width: 80px;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #e0e0e0) 25%,
+    var(--skeleton-highlight, #f5f5f5) 50%,
+    var(--skeleton-base, #e0e0e0) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Title column */
+.skeleton-title {
+  min-width: 0;
+}
+
+.skeleton-title-text {
+  width: 100%;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #e0e0e0) 25%,
+    var(--skeleton-highlight, #f5f5f5) 50%,
+    var(--skeleton-base, #e0e0e0) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Due date column */
+.skeleton-due {
+  justify-content: flex-end;
+}
+
+.skeleton-due-text {
+  width: 100px;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #e0e0e0) 25%,
+    var(--skeleton-highlight, #f5f5f5) 50%,
+    var(--skeleton-base, #e0e0e0) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Status column */
+.skeleton-status {
+  justify-content: flex-end;
+}
+
+.skeleton-badge {
+  width: 80px;
+  height: 24px;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #e0e0e0) 25%,
+    var(--skeleton-highlight, #f5f5f5) 50%,
+    var(--skeleton-base, #e0e0e0) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .skeleton-row {
+    background: var(--surface-color-dark, #2d2d2d);
+    border-color: var(--border-color-dark, #444);
+  }
+
+  .skeleton-dot,
+  .skeleton-course-name,
+  .skeleton-title-text,
+  .skeleton-due-text,
+  .skeleton-badge {
+    background: linear-gradient(
+      90deg,
+      var(--skeleton-base-dark, #3d3d3d) 25%,
+      var(--skeleton-highlight-dark, #4a4a4a) 50%,
+      var(--skeleton-base-dark, #3d3d3d) 75%
+    );
+    background-size: 200% 100%;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-dot,
+  .skeleton-course-name,
+  .skeleton-title-text,
+  .skeleton-due-text,
+  .skeleton-badge {
+    animation: none;
+    background: var(--skeleton-base, #e0e0e0);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .skeleton-dot,
+    .skeleton-course-name,
+    .skeleton-title-text,
+    .skeleton-due-text,
+    .skeleton-badge {
+      background: var(--skeleton-base-dark, #3d3d3d);
+    }
+  }
+}
