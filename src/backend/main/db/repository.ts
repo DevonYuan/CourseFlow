@@ -27,8 +27,10 @@ import type {
   ImportResult,
 } from '../../shared/types.js';
 
-import { getDatabase, saveDatabase } from './connection.js';
 import { sendEventToRenderers } from '../events.js';
+import type { EncryptedSetting } from '../security/encryption.js';
+import { encryptIcalUrl, decryptIcalUrl, isEncryptedSetting, EncryptionError, DecryptionError } from '../security/encryption.js';
+import { getDatabase, saveDatabase } from './connection.js';
 import {
   mapDbAssignmentToAssignment,
   mapAssignmentInputToDb,
@@ -579,12 +581,19 @@ export const repo = {
 
   /**
    * Get a setting value with a default fallback.
+   * Automatically decrypts 'icalUrl' if encrypted.
    */
-  getSetting<T>(key: string, defaultValue: T): T {
+  async getSetting<T>(key: string, defaultValue: T): Promise<T> {
     const row = get<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
     if (!row) return defaultValue;
     try {
-      return JSON.parse(row.value) as T;
+      const parsed = JSON.parse(row.value);
+      // Decrypt icalUrl if it's encrypted
+      if (key === 'icalUrl' && isEncryptedSetting(parsed)) {
+        const decrypted = await decryptIcalUrl(parsed);
+        return decrypted as T;
+      }
+      return parsed as T;
     } catch {
       return defaultValue;
     }
@@ -592,19 +601,42 @@ export const repo = {
 
   /**
    * Set a setting value (JSON stringified).
+   * Automatically encrypts 'icalUrl' before storing.
    */
-  setSetting<T>(key: string, value: T): void {
+  async setSetting<T>(key: string, value: T): Promise<void> {
+    let valueToStore: T = value;
+    // Encrypt icalUrl before storing
+    if (key === 'icalUrl' && typeof value === 'string' && value.length > 0) {
+      const encrypted = await encryptIcalUrl(value);
+      valueToStore = JSON.stringify(encrypted) as T;
+    }
     run(
       'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-      [key, JSON.stringify(value)],
+      [key, JSON.stringify(valueToStore)],
     );
   },
 
   /**
    * Get all settings as a Settings object.
+   * Automatically decrypts 'icalUrl' if encrypted.
    */
-  getAllSettings(): Settings {
+  async getAllSettings(): Promise<Settings> {
     const rows = all<DbSettings>('SELECT * FROM settings');
-    return mapDbSettingsToSettings(rows);
+    const settings = mapDbSettingsToSettings(rows);
+
+    // Decrypt icalUrl if it's encrypted
+    const icalUrlRow = rows.find((r) => r.key === 'icalUrl');
+    if (icalUrlRow) {
+      try {
+        const parsed = JSON.parse(icalUrlRow.value);
+        if (isEncryptedSetting(parsed)) {
+          settings.icalUrl = await decryptIcalUrl(parsed);
+        }
+      } catch {
+        // If decryption fails, keep the default empty string
+      }
+    }
+
+    return settings;
   },
 };

@@ -363,33 +363,30 @@ const handlers: IpcHandlers = {
 
   // ── Settings ───────────────────────────────────────────────────────────
 
-  'settings:get': (): Promise<IpcResult<Settings>> => {
+  'settings:get': async (): Promise<IpcResult<Settings>> => {
     try {
-      return Promise.resolve(ok(repo.getAllSettings()));
+      const settings = await repo.getAllSettings();
+      return ok(settings);
     } catch (error) {
-      return Promise.resolve(
-        err(`Failed to get settings: ${error instanceof Error ? error.message : 'Unknown error'}`),
-      );
+      return err(`Failed to get settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 
-  'settings:set': (partial: Partial<Settings>): Promise<IpcResult<Settings>> => {
+  'settings:set': async (partial: Partial<Settings>): Promise<IpcResult<Settings>> => {
     try {
-      const current = repo.getAllSettings();
+      const current = await repo.getAllSettings();
       const updated = { ...current, ...partial };
       for (const [key, value] of Object.entries(updated)) {
-        repo.setSetting(key, value);
+        await repo.setSetting(key, value);
       }
       sendEventToRenderers('settings:changed', updated);
-      return Promise.resolve(ok(updated));
+      return ok(updated);
     } catch (error) {
-      return Promise.resolve(
-        err(`Failed to set settings: ${error instanceof Error ? error.message : 'Unknown error'}`),
-      );
+      return err(`Failed to set settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 
-  'settings:reset': (): Promise<IpcResult<Settings>> => {
+  'settings:reset': async (): Promise<IpcResult<Settings>> => {
     try {
       const defaults: Settings = {
         theme: 'system',
@@ -404,15 +401,13 @@ const handlers: IpcHandlers = {
         autoFetchIntervalMs: 60 * 60 * 1000,
       };
       for (const [key, value] of Object.entries(defaults)) {
-        repo.setSetting(key, value);
+        await repo.setSetting(key, value);
       }
       sendEventToRenderers('settings:changed', defaults);
-      return Promise.resolve(ok(defaults));
+      return ok(defaults);
     } catch (error) {
-      return Promise.resolve(
-        err(
-          `Failed to reset settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        ),
+      return err(
+        `Failed to reset settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   },
