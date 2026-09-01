@@ -1,0 +1,23 @@
+/**
+ * CourseColorBadge Styles
+ */
+
+.course-color-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.course-color-badge--dot {
+  border-radius: 50%;
+}
+
+.course-color-badge--square {
+  border-radius: 4px;
+}
+
+/* Size variants via CSS variable */
+.course-color-badge {
+  width: var(--badge-size, 10px);
+  height: var(--badge-size, 10px);
+}

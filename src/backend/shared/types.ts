@@ -73,7 +73,7 @@ export interface AssignmentInput {
   updatedAt?: IsoDateTime;
 }
 
-export type AssignmentStatus = 'pending' | 'in_progress' | 'completed';
+export type AssignmentStatus = 'pending' | 'in_progress' | 'completed' | 'archived';
 
 export type AssignmentSource = 'manual' | 'ical';
 

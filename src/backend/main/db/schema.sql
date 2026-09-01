@@ -17,7 +17,7 @@ CREATE TABLE assignments (
   workflow_state TEXT,                    -- 'published', 'unpublished', etc.
   html_url TEXT,                          -- Canvas URL
   ical_uid TEXT UNIQUE,                   -- iCal UID for dedup across syncs
-  status TEXT CHECK (status IN ('pending', 'in_progress', 'completed')) DEFAULT 'pending',
+  status TEXT CHECK (status IN ('pending', 'in_progress', 'completed', 'archived')) DEFAULT 'pending',
   source TEXT CHECK (source IN ('manual', 'ical')) DEFAULT 'manual',
   source_url TEXT,                        -- iCal feed URL this came from
   rrule TEXT,                             -- RRULE string for recurring

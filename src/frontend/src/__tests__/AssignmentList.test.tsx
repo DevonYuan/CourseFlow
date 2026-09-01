@@ -11,6 +11,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { AssignmentList } from '../components/AssignmentList';
 import type { Assignment, IsoDateTime } from '@backend/shared/types';
 import type { IpcEvents } from '@backend/shared/ipc';
+import { useAssignmentsStore } from '../store/assignmentsStore';
 
 // Mock window.api
 const mockApi = {
@@ -59,9 +60,20 @@ const mockAssignments: Assignment[] = [
 const mockOnOpenSettings = vi.fn();
 const mockOnAssignmentClick = vi.fn();
 
+// Helper to reset Zustand store to initial state
+function resetStore() {
+  useAssignmentsStore.setState({
+    assignments: [],
+    isLoading: true,
+    error: null,
+    isEmpty: true,
+  });
+}
+
 describe('AssignmentList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetStore();
     // Reset mock implementations to avoid leakage between tests
     mockApi.db.assignments.list.mockReset();
     dbChangedCallback = null;
@@ -107,8 +119,8 @@ describe('AssignmentList', () => {
 
     expect(screen.getByText('CS101')).toBeInTheDocument();
     expect(screen.getByText('Pending')).toBeInTheDocument();
-    // Due date format includes time
-    expect(screen.getByText('Dec 1, 03:59 PM')).toBeInTheDocument();
+    // Due date format: "Mon, Dec 1 • 03:59 PM" (weekday, month, day • time)
+    expect(screen.getByText('Mon, Dec 1 • 03:59 PM')).toBeInTheDocument();
   });
 
   it('shows error state when fetch fails', async () => {

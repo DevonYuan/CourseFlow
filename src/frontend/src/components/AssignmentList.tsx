@@ -2,16 +2,31 @@
  * AssignmentList — Main Assignment List Component
  *
  * Displays assignments with loading skeleton, empty state, and error handling.
- * Integrates useAssignments hook for data fetching and state management.
+ * Uses Zustand store for state management and react-window for virtualization.
  *
  * @module @frontend/components/AssignmentList
  */
 
+import { useEffect, useMemo } from 'react';
+import { List } from 'react-window';
 import { AssignmentListSkeleton } from './AssignmentListSkeleton';
 import { EmptyState } from './EmptyState';
-import { useAssignments } from '../hooks/useAssignments';
+import { AssignmentRow } from './AssignmentRow';
+import {
+  useAssignmentsStore,
+  useAssignments,
+  useAssignmentsLoading,
+  useAssignmentsError,
+  useAssignmentsEmpty,
+  initializeAssignmentsStore,
+} from '../store/assignmentsStore';
 import type { Assignment } from '@backend/shared/types';
 import './AssignmentList.css';
+
+// Virtualization threshold - use virtualized list when > 100 items
+const VIRTUALIZATION_THRESHOLD = 100;
+// Estimated row height for virtualization
+const ROW_HEIGHT = 72;
 
 interface AssignmentListProps {
   /** Callback fired when user clicks "Open Settings" from empty state */
@@ -21,23 +36,57 @@ interface AssignmentListProps {
 }
 
 /**
+ * Row renderer for react-window FixedSizeList.
+ */
+function AssignmentRowRenderer(
+  props: { index: number; style: React.CSSProperties; ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' }; assignments: Assignment[]; onClick?: (assignment: Assignment) => void }
+): React.ReactElement | null {
+  const { index, style, assignments, onClick, ...rest } = props;
+  const assignment = assignments[index];
+  // react-window only calls renderer with valid indices, but TypeScript needs assurance
+  if (!assignment) {
+    return <div style={style} {...rest} />;
+  }
+  return (
+    <div style={style} {...rest}>
+      <AssignmentRow assignment={assignment} onClick={onClick} />
+    </div>
+  );
+}
+
+/**
  * Main assignment list component with full state handling:
  * - Skeleton loaders while fetching
  * - Empty state with CTA to Settings
  * - Error state with retry button
- * - Assignment rows when data is available
+ * - Assignment rows when data available (virtualized if > 100)
  */
 export function AssignmentList({ onOpenSettings, onAssignmentClick }: AssignmentListProps): JSX.Element {
-  const { assignments, isLoading, error, isEmpty, refetch, clearError } = useAssignments();
+  // Initialize store on first mount
+  useEffect(() => {
+    const cleanup = initializeAssignmentsStore();
+    return cleanup;
+  }, []);
+
+  // Select state from Zustand store
+  const assignments = useAssignments();
+  const isLoading = useAssignmentsLoading();
+  const error = useAssignmentsError();
+  const isEmpty = useAssignmentsEmpty();
+
+  // Memoize refetch and clearError from store actions
+  const refetch = useMemo(
+    () => useAssignmentsStore.getState().fetchAssignments,
+    []
+  );
+  const clearError = useMemo(
+    () => useAssignmentsStore.getState().clearError,
+    []
+  );
 
   // Show skeleton while loading
   if (isLoading) {
     return <AssignmentListSkeleton count={4} />;
-  }
-
-  // Show empty state when no assignments and no error
-  if (isEmpty) {
-    return <EmptyState onOpenSettings={onOpenSettings} />;
   }
 
   // Show error state when fetch failed
@@ -79,13 +128,20 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
         </div>
         {assignments.length > 0 && (
           <div className="assignment-list__rows" role="list" aria-label="Assignments">
-            {assignments.map((assignment) => (
-              <AssignmentRow
-                key={assignment.id}
-                assignment={assignment}
-                onClick={onAssignmentClick}
+            {assignments.length > VIRTUALIZATION_THRESHOLD ? (
+              <VirtualizedAssignmentList
+                assignments={assignments}
+                onAssignmentClick={onAssignmentClick}
               />
-            ))}
+            ) : (
+              assignments.map((assignment) => (
+                <AssignmentRow
+                  key={assignment.id}
+                  assignment={assignment}
+                  onClick={onAssignmentClick}
+                />
+              ))
+            )}
           </div>
         )}
       </div>
@@ -97,6 +153,11 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
     <div className="assignment-list" role="list" aria-label="Assignments">
       {assignments.length === 0 ? (
         <EmptyState onOpenSettings={onOpenSettings} />
+      ) : assignments.length > VIRTUALIZATION_THRESHOLD ? (
+        <VirtualizedAssignmentList
+          assignments={assignments}
+          onAssignmentClick={onAssignmentClick}
+        />
       ) : (
         assignments.map((assignment) => (
           <AssignmentRow
@@ -111,77 +172,31 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
 }
 
 /**
- * Individual assignment row component.
- * Extracted for clarity and potential reuse.
+ * Virtualized assignment list using react-window.
+ * Only renders visible rows for performance with large lists.
  */
-interface AssignmentRowProps {
-  assignment: Assignment;
-  onClick?: (assignment: Assignment) => void;
-}
-
-function AssignmentRow({ assignment, onClick }: AssignmentRowProps): JSX.Element {
-  const isOverdue = assignment.dueAt ? new Date(assignment.dueAt) < new Date() : false;
-  const dueDate = assignment.dueAt
-    ? new Date(assignment.dueAt).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : 'No due date';
-
-  const statusLabels: Record<Assignment['status'], string> = {
-    pending: 'Pending',
-    in_progress: 'In Progress',
-    completed: 'Completed',
-  };
-
-  const statusColors: Record<Assignment['status'], string> = {
-    pending: 'var(--status-pending, #f59e0b)',
-    in_progress: 'var(--status-in-progress, #3b82f6)',
-    completed: 'var(--status-completed, #10b981)',
-  };
-
-  const handleClick = () => {
-    if (onClick) {
-      onClick(assignment);
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleClick();
-    }
-  };
+function VirtualizedAssignmentList({
+  assignments,
+  onAssignmentClick,
+}: {
+  assignments: Assignment[];
+  onAssignmentClick?: (assignment: Assignment) => void;
+}): JSX.Element {
+  const itemData = useMemo(
+    () => ({ assignments, onClick: onAssignmentClick }),
+    [assignments, onAssignmentClick]
+  );
 
   return (
-    <div
-      className="assignment-row"
-      role="listitem"
-      tabIndex={onClick ? 0 : undefined}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      style={{ '--course-color': assignment.courseColor } as React.CSSProperties}
-      aria-label={`${assignment.title}, ${assignment.courseName}, due ${dueDate}, ${statusLabels[assignment.status]}`}
-    >
-      <div className="assignment-row__course">
-        <span className="assignment-row__dot" aria-hidden="true" />
-        <span className="assignment-row__course-name">{assignment.courseName}</span>
-      </div>
-      <div className="assignment-row__title">{assignment.title}</div>
-      <div className="assignment-row__due" aria-label={`Due ${dueDate}`}>
-        {isOverdue && <span className="assignment-row__overdue-badge" aria-label="Overdue">!</span>}
-        <time dateTime={assignment.dueAt || undefined}>{dueDate}</time>
-      </div>
-      <div className="assignment-row__status">
-        <span
-          className="assignment-row__badge"
-          style={{ backgroundColor: statusColors[assignment.status] }}
-        >
-          {statusLabels[assignment.status]}
-        </span>
-      </div>
-    </div>
+    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void }>
+      className="assignment-list__virtualized"
+      style={{ height: 600, width: '100%' }}
+      rowCount={assignments.length}
+      rowHeight={ROW_HEIGHT}
+      rowProps={itemData}
+      role="list"
+      aria-label="Assignments"
+      rowComponent={AssignmentRowRenderer}
+    />
   );
 }

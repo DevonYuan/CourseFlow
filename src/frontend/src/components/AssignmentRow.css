@@ -1,20 +1,6 @@
 /**
- * AssignmentList Styles
- *
- * Styles for assignment list container, rows, error banner, and states.
+ * AssignmentRow Styles
  */
-
-/* List container */
-.assignment-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 16px;
-  box-sizing: border-box;
-}
 
 /* Assignment row */
 .assignment-row {
@@ -47,14 +33,6 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-}
-
-.assignment-row__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--course-color, #888);
-  flex-shrink: 0;
 }
 
 .assignment-row__course-name {
@@ -126,77 +104,6 @@
   white-space: nowrap;
 }
 
-/* Error banner */
-.assignment-list__error {
-  width: 100%;
-}
-
-.error-banner {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  background: var(--error-bg, #fef2f2);
-  border: 1px solid var(--error-border, #fecaca);
-  border-radius: 8px;
-  color: var(--error-text, #991b1b);
-}
-
-.error-banner__icon {
-  flex-shrink: 0;
-  color: var(--error-icon, #dc2626);
-}
-
-.error-banner__content {
-  flex: 1;
-  min-width: 0;
-}
-
-.error-banner__message {
-  margin: 0 0 12px;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.error-banner__actions {
-  display: flex;
-  gap: 8px;
-}
-
-.error-banner__retry,
-.error-banner__dismiss {
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.error-banner__retry {
-  background: var(--error-retry-bg, #dc2626);
-  color: #fff;
-}
-
-.error-banner__retry:hover {
-  background: var(--error-retry-hover, #b91c1c);
-}
-
-.error-banner__dismiss {
-  background: var(--error-dismiss-bg, #e5e7eb);
-  color: var(--error-dismiss-color, #374151);
-}
-
-.error-banner__dismiss:hover {
-  background: var(--error-dismiss-hover, #d1d5db);
-}
-
-.error-banner__retry:focus-visible,
-.error-banner__dismiss:focus-visible {
-  outline: 3px solid var(--focus-ring, rgba(0, 102, 204, 0.4));
-  outline-offset: 2px;
-}
-
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .assignment-row {
@@ -225,43 +132,11 @@
     background: var(--overdue-bg-dark, #7f1d1d);
     color: var(--overdue-color-dark, #fca5a5);
   }
-
-  .error-banner {
-    background: var(--error-bg-dark, #7f1d1d);
-    border-color: var(--error-border-dark, #991b1b);
-    color: var(--error-text-dark, #fca5a5);
-  }
-
-  .error-banner__icon {
-    color: var(--error-icon-dark, #f87171);
-  }
-
-  .error-banner__retry {
-    background: var(--error-retry-bg-dark, #ef4444);
-  }
-
-  .error-banner__retry:hover {
-    background: var(--error-retry-hover-dark, #f87171);
-  }
-
-  .error-banner__dismiss {
-    background: var(--error-dismiss-bg-dark, #374151);
-    color: var(--error-dismiss-color-dark, #f3f4f6);
-  }
-
-  .error-banner__dismiss:hover {
-    background: var(--error-dismiss-hover-dark, #4b5563);
-  }
 }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .assignment-row {
-    transition: none;
-  }
-
-  .error-banner__retry,
-  .error-banner__dismiss {
     transition: none;
   }
 }
@@ -274,15 +149,6 @@
 
   .assignment-row:focus-visible {
     outline-width: 4px;
-  }
-
-  .error-banner {
-    border-width: 2px;
-  }
-
-  .error-banner__retry,
-  .error-banner__dismiss {
-    border: 2px solid currentColor;
   }
 }
 
@@ -298,42 +164,4 @@
   .assignment-row__course {
     grid-column: 1;
   }
-
-  .assignment-row__title {
-    grid-column: 1;
-  }
-
-  .assignment-row__due {
-    grid-column: 1;
-    justify-content: flex-start;
-  }
-
-  .assignment-row__status {
-    grid-column: 1;
-    justify-content: flex-start;
-  }
-}
-
-/* Virtualized list */
-.assignment-list__virtualized {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 16px;
-  box-sizing: border-box;
-}
-
-.assignment-list__virtualized > div {
-  /* react-window inner container */
-  width: 100%;
-}
-
-/* Ensure rows in virtualized list have proper spacing */
-.assignment-list__virtualized .assignment-row {
-  margin-bottom: 8px;
-}
-
-.assignment-list__virtualized .assignment-row:last-child {
-  margin-bottom: 0;
-}
 }

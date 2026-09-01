@@ -79,7 +79,7 @@ const MIGRATIONS: Record<number, string> = {
 
   2: `
     -- Migration v2: Add missing Assignment columns
-    ALTER TABLE assignments ADD COLUMN status TEXT CHECK (status IN ('pending', 'in_progress', 'completed')) DEFAULT 'pending';
+    ALTER TABLE assignments ADD COLUMN status TEXT CHECK (status IN ('pending', 'in_progress', 'completed', 'archived')) DEFAULT 'pending';
     ALTER TABLE assignments ADD COLUMN source TEXT CHECK (source IN ('manual', 'ical')) DEFAULT 'manual';
     ALTER TABLE assignments ADD COLUMN source_url TEXT;
     ALTER TABLE assignments ADD COLUMN rrule TEXT;
