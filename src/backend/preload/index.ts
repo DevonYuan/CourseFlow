@@ -28,6 +28,7 @@ function on<E extends keyof IpcEvents>(
 /**
  * ContextBridge API exposed to renderer as `window.api`.
  * Fully typed — no `any`, no raw ipcRenderer exposure.
+ * All channels match src/backend/shared/ipc.ts contracts exactly.
  */
 const api = {
   db: {

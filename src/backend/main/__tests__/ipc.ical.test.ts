@@ -151,9 +151,9 @@ describe('iCal IPC Handlers', () => {
       }
 
       // Verify progress events emitted
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'fetch', progress: 33 });
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'parse', progress: 66 });
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'store', progress: 100 });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'fetching', progress: 10, message: 'Fetching calendar...' });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'parsing', progress: 30, message: 'Parsing events...' });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'complete', progress: 100, message: `Fetched ${mockEvents.length} events` });
     });
 
     it('rejects empty URL', async () => {
@@ -287,14 +287,18 @@ describe('iCal IPC Handlers', () => {
       // Verify repo.importAssignments called with mapped assignments
       expect(repo.importAssignments).toHaveBeenCalledWith(mockAssignments);
 
-      // Verify progress event emitted
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'store', progress: 100 });
+      // Verify progress events emitted
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'importing', progress: 10, message: 'Importing assignments...' });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'complete', progress: 100, message: `Imported ${mockImportResult.imported}, updated ${mockImportResult.updated}, skipped ${mockImportResult.skipped}` });
 
       // Verify setSettings called to update lastSyncAt
       expect(repo.setSettings).toHaveBeenCalled();
-      const setSettingsArg = vi.mocked(repo.setSettings).mock.calls[0][0];
+      const setSettingsMock = vi.mocked(repo.setSettings);
+      const lastCall = setSettingsMock.mock.lastCall;
+      expect(lastCall).toBeDefined();
+      const setSettingsArg = lastCall?.[0] as Partial<Settings>;
       expect(setSettingsArg).toHaveProperty('lastSyncAt');
-      expect(typeof setSettingsArg.lastSyncAt).toBe('string');
+      expect(typeof setSettingsArg?.lastSyncAt).toBe('string');
     });
 
     it('rejects empty events array', async () => {
@@ -362,9 +366,9 @@ describe('iCal IPC Handlers', () => {
       await invokeHandler('ical:import', { events: testEvents, sourceUrl: testSourceUrl });
 
       expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {
-        stage: 'store',
+        stage: 'error',
         progress: 100,
-        message: 'error'
+        message: 'Mapping error'
       });
     });
   });

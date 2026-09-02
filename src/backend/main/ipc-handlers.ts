@@ -22,6 +22,7 @@ import type {
   ICalEvent,
   Settings,
   ImportResult,
+  IsoDateTime,
 } from '../shared/types.js';
 
 import { repo } from './db/repository.js';
@@ -81,10 +82,13 @@ const handlers: IpcHandlers = {
 
   'db:assignments:upsert': (input: AssignmentInput): Promise<IpcResult<Assignment>> => {
     try {
+      // Check if assignment exists to determine insert vs update
+      const existing = repo.getAssignment(input.id);
+      const action = existing ? 'update' : 'insert';
       const assignment = repo.upsertAssignment(input);
       sendEventToRenderers('db:changed', {
         table: 'assignments',
-        action: 'upsert',
+        action,
         id: assignment.id,
       });
       return Promise.resolve(ok(assignment));
@@ -128,7 +132,8 @@ const handlers: IpcHandlers = {
   'db:subtasks:upsert': (input: SubTaskInput): Promise<IpcResult<SubTask>> => {
     try {
       const subTask = repo.upsertSubTask(input);
-      sendEventToRenderers('db:changed', { table: 'sub_tasks', action: 'upsert', id: subTask.id });
+      // SubTaskInput has no ID, so this is always an insert
+      sendEventToRenderers('db:changed', { table: 'sub_tasks', action: 'insert', id: subTask.id });
       return Promise.resolve(ok(subTask));
     } catch (error) {
       return Promise.resolve(
@@ -195,10 +200,13 @@ const handlers: IpcHandlers = {
 
   'db:notes:upsert': (input: NoteInput): Promise<IpcResult<Note>> => {
     try {
+      // Check if note exists to determine insert vs update
+      const existing = repo.getNote(input.assignmentId);
+      const action = existing ? 'update' : 'insert';
       const note = repo.setNote(input.assignmentId, input.content);
       sendEventToRenderers('db:changed', {
         table: 'notes',
-        action: 'upsert',
+        action,
         id: input.assignmentId,
       });
       return Promise.resolve(ok(note));
@@ -258,10 +266,14 @@ const handlers: IpcHandlers = {
 
   'db:priority:upsert': (input: PriorityOrderInput): Promise<IpcResult<PriorityOrder>> => {
     try {
+      // Check if priority order entry exists to determine insert vs update
+      const existingOrder = repo.getPriorityOrder();
+      const exists = existingOrder.includes(input.assignmentId);
+      const action = exists ? 'update' : 'insert';
       const order = repo.upsertPriorityOrder(input);
       sendEventToRenderers('db:changed', {
         table: 'priority_order',
-        action: 'upsert',
+        action,
         id: input.assignmentId,
       });
       return Promise.resolve(ok(order));
@@ -289,24 +301,25 @@ const handlers: IpcHandlers = {
       }
 
       // Emit fetch progress
-      sendEventToRenderers('ical:progress', { stage: 'fetch', progress: 33 });
+      sendEventToRenderers('ical:progress', { stage: 'fetching', progress: 10, message: 'Fetching calendar...' });
 
       // Fetch iCal feed with 30s timeout
       const icalText = await fetchICalFeed(input.url, { timeoutMs: 30_000 });
 
       // Emit parse progress
-      sendEventToRenderers('ical:progress', { stage: 'parse', progress: 66 });
+      sendEventToRenderers('ical:progress', { stage: 'parsing', progress: 30, message: 'Parsing events...' });
 
       // Parse iCal feed
       const events = parseICalFeed(icalText);
 
       // Emit completion progress
-      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100 });
+      sendEventToRenderers('ical:progress', { stage: 'complete', progress: 100, message: `Fetched ${events.length} events` });
 
       return ok(events);
     } catch (error) {
       // Emit error progress
-      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100, message: 'error' });
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      sendEventToRenderers('ical:progress', { stage: 'error', progress: 100, message });
 
       if (error instanceof NetworkError) {
         return err(`Network error: ${error.message}`, 'NETWORK_ERROR');
@@ -321,7 +334,7 @@ const handlers: IpcHandlers = {
         return err(`Failed to parse iCal feed: ${error.message}`, 'PARSE_ERROR');
       }
       return err(
-        `Failed to fetch iCal feed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to fetch iCal feed: ${message}`,
         'INTERNAL_ERROR',
       );
     }
@@ -340,26 +353,34 @@ const handlers: IpcHandlers = {
         return err('sourceUrl is required', 'VALIDATION_ERROR');
       }
 
+      // Emit importing progress
+      sendEventToRenderers('ical:progress', { stage: 'importing', progress: 10, message: 'Importing assignments...' });
+
       // Map iCal events to assignments
       const assignments = mapICalToAssignments(input.events, input.sourceUrl);
 
       // Import assignments with deduplication
       const result = repo.importAssignments(assignments);
 
-      // Emit store progress
-      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100 });
-
       // Update lastSyncAt in settings on successful import
-      const now = new Date().toISOString();
+      const now = new Date().toISOString() as IsoDateTime;
       await repo.setSettings({ lastSyncAt: now });
+
+      // Emit completion progress
+      sendEventToRenderers('ical:progress', {
+        stage: 'complete',
+        progress: 100,
+        message: `Imported ${result.imported}, updated ${result.updated}, skipped ${result.skipped}`,
+      });
 
       return ok(result);
     } catch (error) {
       // Emit error progress
-      sendEventToRenderers('ical:progress', { stage: 'store', progress: 100, message: 'error' });
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      sendEventToRenderers('ical:progress', { stage: 'error', progress: 100, message });
 
       return err(
-        `Failed to import assignments: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to import assignments: ${message}`,
         'INTERNAL_ERROR',
       );
     }
@@ -379,6 +400,7 @@ const handlers: IpcHandlers = {
   'settings:set': async (partial: Partial<Settings>): Promise<IpcResult<Settings>> => {
     try {
       const settings = await repo.setSettings(partial);
+      sendEventToRenderers('settings:changed', settings);
       return ok(settings);
     } catch (error) {
       return err(`Failed to set settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -388,6 +410,7 @@ const handlers: IpcHandlers = {
   'settings:reset': async (): Promise<IpcResult<Settings>> => {
     try {
       const settings = await repo.resetSettings();
+      sendEventToRenderers('settings:changed', settings);
       return ok(settings);
     } catch (error) {
       return err(

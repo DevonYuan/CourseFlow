@@ -678,8 +678,6 @@ export const repo = {
       throw e;
     }
 
-    // Emit settings changed event
-    sendEventToRenderers('settings:changed', merged);
     return merged;
   },
 
@@ -722,8 +720,6 @@ export const repo = {
       throw e;
     }
 
-    // Emit settings changed event
-    sendEventToRenderers('settings:changed', defaults);
     return defaults;
   },
 };

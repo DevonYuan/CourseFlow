@@ -167,11 +167,11 @@ export interface IpcChannels {
 export interface IpcEvents {
   'db:changed': {
     table: string;
-    action: 'insert' | 'update' | 'delete' | 'upsert' | 'reorder';
+    action: 'insert' | 'update' | 'delete' | 'reorder';
     id: string;
   };
   'ical:progress': {
-    stage: 'fetch' | 'parse' | 'store';
+    stage: 'fetching' | 'parsing' | 'importing' | 'complete' | 'error';
     progress: number;
     message?: string;
   };
