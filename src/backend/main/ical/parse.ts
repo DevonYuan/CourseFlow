@@ -8,13 +8,13 @@
  */
 
 import ICAL from 'ical.js';
-import type { ICalEvent } from '@backend/shared/types';
+import type { ICalEvent, IsoDateTime } from '@backend/shared/types';
 
 /**
  * Custom error class for iCal parsing errors.
  */
 export class ICalParseError extends Error {
-  public readonly cause?: Error;
+  override readonly cause?: Error;
   public readonly line?: number;
 
   constructor(message: string, cause?: Error, line?: number) {
@@ -204,8 +204,8 @@ function parseVEvent(component: ICAL.Component): ICalEvent | null {
     summary,
     description,
     location,
-    dtStart,
-    dtEnd: finalDtEnd,
+    dtStart: dtStart as IsoDateTime,
+    dtEnd: finalDtEnd as IsoDateTime | null,
     rrule,
     url,
     categories,
@@ -334,6 +334,3 @@ export function parseICalFeedWithMeta(icalText: string): ParseResult {
     totalVevents: vevents.length,
   };
 }
-
-// Re-export ICalEvent for convenience
-export type { ICalEvent } from '@backend/shared/types';

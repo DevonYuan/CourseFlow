@@ -172,7 +172,7 @@ describe('Settings Repository', () => {
       stmt.free();
 
       expect(row).not.toBeNull();
-      const parsed = JSON.parse(row!.value as string);
+      const parsed = JSON.parse(row!['value'] as string);
       expect(parsed.v).toBe(1);
       expect(parsed.ciphertext).toBeDefined();
       expect(parsed.iv).toBeDefined();
@@ -188,7 +188,7 @@ describe('Settings Repository', () => {
       const row = stmt.step() ? stmt.getAsObject() : null;
       stmt.free();
 
-      const parsed = JSON.parse(row!.value as string);
+      const parsed = JSON.parse(row!['value'] as string);
       expect(parsed).toBe(''); // stored as empty string, not encrypted
     });
 
@@ -259,7 +259,7 @@ describe('Settings Repository', () => {
       const rows = db.prepare('SELECT key FROM settings');
       const keys: string[] = [];
       while (rows.step()) {
-        keys.push(rows.getAsObject().key as string);
+        keys.push(rows.getAsObject()['key'] as string);
       }
       rows.free();
 

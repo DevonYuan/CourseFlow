@@ -9,7 +9,6 @@
 export {
   fetchICalFeed,
   fetchAndParseICalFeed,
-  FetchICalOptions,
   ICalFetchError,
   NetworkError,
   HttpError,
@@ -29,4 +28,5 @@ export {
 } from './map.js';
 
 export type { FetchICalOptions } from './fetch.js';
-export type { ICalEvent, ParseResult } from './parse.js';
+export type { ParseResult } from './parse.js';
+export type { ICalEvent } from '@backend/shared/types';

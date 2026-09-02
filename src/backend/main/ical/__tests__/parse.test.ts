@@ -28,7 +28,7 @@ describe('iCal Parser (ical.js)', () => {
       const events = parseICalFeed(icalText);
 
       expect(events).toHaveLength(1);
-      const event = events[0];
+      const event = events[0]!;
 
       expect(event.uid).toBe('canvas-assignment-12345@example.com');
       expect(event.summary).toBe('CS 101 - Homework 1');
@@ -48,7 +48,7 @@ describe('iCal Parser (ical.js)', () => {
       expect(events).toHaveLength(2);
 
       // First event: 2025-03-15 14:00 EDT = 2025-03-15 18:00 UTC
-      const event1 = events[0];
+      const event1 = events[0]!;
       expect(event1.uid).toBe('event-with-tz-001@example.com');
       expect(event1.summary).toBe('Math 201 - Midterm Exam');
       expect(event1.dtStart).toBe('2025-03-15T18:00:00.000Z'); // EDT is UTC-4
@@ -57,7 +57,7 @@ describe('iCal Parser (ical.js)', () => {
       expect(event1.categories).toEqual(['MATH201', 'Exam']);
 
       // Second event: 2025-03-20 10:00 EDT = 2025-03-20 14:00 UTC
-      const event2 = events[1];
+      const event2 = events[1]!;
       expect(event2.uid).toBe('event-with-tz-002@example.com');
       expect(event2.dtStart).toBe('2025-03-20T14:00:00.000Z');
       expect(event2.dtEnd).toBe('2025-03-20T16:00:00.000Z');
@@ -71,7 +71,7 @@ describe('iCal Parser (ical.js)', () => {
       expect(events).toHaveLength(2);
 
       // First all-day event: 2025-03-10 to 2025-03-15 (exclusive end)
-      const event1 = events[0];
+      const event1 = events[0]!;
       expect(event1.uid).toBe('allday-event-001@example.com');
       expect(event1.summary).toBe('Spring Break - No Classes');
       expect(event1.dtStart).toBe('2025-03-10T00:00:00.000Z');
@@ -79,7 +79,7 @@ describe('iCal Parser (ical.js)', () => {
       expect(event1.categories).toEqual(['Holiday']);
 
       // Second all-day event: no DTEND
-      const event2 = events[1];
+      const event2 = events[1]!;
       expect(event2.uid).toBe('allday-event-002@example.com');
       expect(event2.dtStart).toBe('2025-05-05T00:00:00.000Z');
       expect(event2.dtEnd).toBeNull();
@@ -93,18 +93,18 @@ describe('iCal Parser (ical.js)', () => {
       // Should only parse 3 VEVENTs, skip VTODO and VJOURNAL
       expect(events).toHaveLength(3);
 
-      expect(events[0].uid).toBe('multi-event-001@example.com');
-      expect(events[0].summary).toBe(
+      expect(events[0]!.uid).toBe('multi-event-001@example.com');
+      expect(events[0]!.summary).toBe(
         'This is a very long summary that gets folded across multiple lines as per RFC 5545 line folding specification which requires lines to be no longer than 75 octets'
       );
-      expect(events[0].description).toContain('This description also gets folded across multiple lines');
+      expect(events[0]!.description).toContain('This description also gets folded across multiple lines');
 
-      expect(events[1].uid).toBe('multi-event-002@example.com');
-      expect(events[1].summary).toBe('Second Event');
+      expect(events[1]!.uid).toBe('multi-event-002@example.com');
+      expect(events[1]!.summary).toBe('Second Event');
 
-      expect(events[2].uid).toBe('multi-event-003@example.com');
-      expect(events[2].description).toContain('<p>This is an <strong>HTML</strong> description');
-      expect(events[2].categories).toEqual(['CS101', 'Project', 'Group Work']);
+      expect(events[2]!.uid).toBe('multi-event-003@example.com');
+      expect(events[2]!.description).toContain('<p>This is an <strong>HTML</strong> description');
+      expect(events[2]!.categories).toEqual(['CS101', 'Project', 'Group Work']);
     });
 
     it('handles events with missing optional fields gracefully', () => {
@@ -120,7 +120,7 @@ END:VCALENDAR`;
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
 
-      const event = events[0];
+      const event = events[0]!;
       expect(event.uid).toBe('minimal-event@example.com');
       expect(event.summary).toBe('Minimal Event');
       expect(event.description).toBeNull();
@@ -137,8 +137,8 @@ END:VCALENDAR`;
 
       // Only the valid event should be parsed
       expect(events).toHaveLength(1);
-      expect(events[0].uid).toBe('malformed-002@example.com');
-      expect(events[0].summary).toBe('Valid Event');
+      expect(events[0]!.uid).toBe('malformed-002@example.com');
+      expect(events[0]!.summary).toBe('Valid Event');
     });
 
     it('returns empty array for empty calendar', () => {
@@ -232,7 +232,7 @@ END:VCALENDAR`;
 
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
-      expect(events[0].rrule).toBe('FREQ=WEEKLY;UNTIL=20250601T000000Z');
+      expect(events[0]!.rrule).toBe('FREQ=WEEKLY;UNTIL=20250601T000000Z');
     });
 
     it('handles multiple CATEGORIES properties', () => {
@@ -250,7 +250,7 @@ END:VCALENDAR`;
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
       // Should deduplicate and combine
-      expect(events[0].categories).toEqual(['CS101', 'Homework', 'Project']);
+      expect(events[0]!.categories).toEqual(['CS101', 'Homework', 'Project']);
     });
 
     it('handles escaped characters in DESCRIPTION', () => {
@@ -267,8 +267,8 @@ END:VCALENDAR`;
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
       // ical.js should unescape these
-      expect(events[0].description).toContain('Line 1');
-      expect(events[0].description).toContain('Line 2');
+      expect(events[0]!.description).toContain('Line 1');
+      expect(events[0]!.description).toContain('Line 2');
     });
 
     it('handles events with DURATION instead of DTEND', () => {
@@ -285,7 +285,7 @@ END:VCALENDAR`;
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
       // ical.js calculates DTEND from DTSTART + DURATION
-      expect(events[0].dtEnd).toBe('2025-01-15T16:00:00.000Z');
+      expect(events[0]!.dtEnd).toBe('2025-01-15T16:00:00.000Z');
     });
   });
 });

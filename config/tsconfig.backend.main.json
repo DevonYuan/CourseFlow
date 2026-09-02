@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -19,7 +19,12 @@
     "outDir": "../dist/backend/main",
     "rootDir": "../src/backend/main",
     "skipLibCheck": true,
-    "types": ["electron", "node"]
+    "types": ["electron", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@backend/shared/*": ["../src/backend/shared/*"],
+      "@shared/*": ["../src/backend/shared/*"]
+    }
   },
   "include": ["../src/backend/main/**/*"],
   "references": [{ "path": "./tsconfig.backend.shared.json" }]

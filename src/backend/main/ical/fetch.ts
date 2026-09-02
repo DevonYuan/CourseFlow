@@ -7,7 +7,7 @@
  * @module @backend/main/ical/fetch
  */
 
-import type { ICalEvent } from '@backend/shared/types';
+import type { ICalEvent, IsoDateTime } from '@backend/shared/types';
 
 /**
  * Configuration options for fetchICalFeed.
@@ -50,7 +50,7 @@ function sanitizeUrlForLogging(url: string): string {
  * Base error class for all iCal fetch errors.
  */
 export class ICalFetchError extends Error {
-  public readonly cause?: Error;
+  override readonly cause?: Error;
 
   constructor(message: string, cause?: Error) {
     super(message);
@@ -116,23 +116,23 @@ function delay(ms: number): Promise<void> {
  * - DATE only: YYYYMMDD
  * - DATE-TIME: YYYYMMDDTHHMMSSZ or with timezone
  */
-function parseICalDateTime(value: string): string {
+function parseICalDateTime(value: string): IsoDateTime {
   // Handle various iCal date formats and convert to ISO 8601
   // Basic format: 20250115T143000Z or 20250115
   // Also handles: DTSTART;VALUE=DATE:20250115 (parameter in property name, not value)
   const cleaned = value.replace(/^.*:/, ''); // Remove any parameter prefix from value
   if (cleaned.length === 8) {
     // DATE only: YYYYMMDD
-    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}T00:00:00.000Z`;
+    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}T00:00:00.000Z` as IsoDateTime;
   }
   if (cleaned.length >= 15) {
     // DATE-TIME: YYYYMMDDTHHMMSSZ or with timezone
     const datePart = cleaned.slice(0, 8);
     const timePart = cleaned.slice(9, 15);
-    return `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}T${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}.000Z`;
+    return `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}T${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}.000Z` as IsoDateTime;
   }
   // Fallback: return as-is if already ISO-like
-  return cleaned;
+  return cleaned as IsoDateTime;
 }
 
 /**
@@ -276,20 +276,224 @@ export async function fetchICalFeed(
  * @param icalText - Raw iCal feed text
  * @returns Array of parsed ICalEvent objects
  */
+/**
+ * Flushes the current property value into the current event.
+ * Returns the updated currentProperty and currentValue (both reset to empty).
+ */
+function flushProperty(
+  currentEvent: Partial<ICalEvent> | null,
+  currentProperty: string,
+  currentValue: string,
+): { currentProperty: string; currentValue: string } {
+  if (!currentEvent || !currentProperty) {
+    return { currentProperty: '', currentValue: '' };
+  }
+
+  const value = currentValue.trim();
+
+  switch (currentProperty.toUpperCase()) {
+    case 'UID': {
+      currentEvent.uid = value;
+      break;
+    }
+    case 'SUMMARY': {
+      currentEvent.summary = value;
+      break;
+    }
+    case 'DESCRIPTION': {
+      currentEvent.description = value || null;
+      break;
+    }
+    case 'LOCATION': {
+      currentEvent.location = value || null;
+      break;
+    }
+    case 'DTSTART':
+    case 'DTSTART;VALUE=DATE-TIME':
+    case 'DTSTART;VALUE=DATE': {
+      currentEvent.dtStart = parseICalDateTime(value);
+      break;
+    }
+    case 'DTEND':
+    case 'DTEND;VALUE=DATE-TIME':
+    case 'DTEND;VALUE=DATE': {
+      currentEvent.dtEnd = value ? parseICalDateTime(value) : null;
+      break;
+    }
+    case 'RRULE': {
+      currentEvent.rrule = value;
+      break;
+    }
+    case 'URL': {
+      currentEvent.url = value || null;
+      break;
+    }
+    case 'CATEGORIES': {
+      currentEvent.categories = value.split(',').map((c) => c.trim()).filter(Boolean);
+      break;
+    }
+  }
+
+  return { currentProperty: '', currentValue: '' };
+}
+
 export function parseICalFeed(icalText: string): ICalEvent[] {
   const events: ICalEvent[] = [];
   const lines = icalText.split(/\r?\n/);
 
-  let currentEvent: Partial<ICalEvent> | null = null;
+  // During parsing, dtStart can be empty string before being set to a valid ISO date
+type ParsingEvent = Omit<Partial<ICalEvent>, 'dtStart'> & { dtStart: string };
+
+let currentEvent: ParsingEvent | null = null;
   let inEvent = false;
   let currentProperty = '';
   let currentValue = '';
 
-  function flushProperty(): void {
-    if (!currentEvent || !currentProperty) return;
+  for (const line of lines) {
+    // Handle line folding (RFC 5545: lines can be folded with space/tab continuation)
+    // Only append to currentValue if we're currently parsing a property
+    if ((line.startsWith(' ') || line.startsWith('\t')) && currentProperty) {
+      currentValue += ' ' + line.slice(1);
+      continue;
+    }
 
+    if (line === 'BEGIN:VEVENT') {
+      inEvent = true;
+      currentEvent = {
+        uid: '',
+        summary: '',
+        description: null,
+        location: null,
+        dtStart: '',
+        dtEnd: null,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+      continue;
+    }
+
+    if (line === 'END:VEVENT') {
+      // Flush any pending property before finalizing the event
+      if (currentEvent && currentProperty) {
+        const value = currentValue.trim();
+        switch (currentProperty.toUpperCase()) {
+          case 'UID': {
+            currentEvent.uid = value;
+            break;
+          }
+          case 'SUMMARY': {
+            currentEvent.summary = value;
+            break;
+          }
+          case 'DESCRIPTION': {
+            currentEvent.description = value || null;
+            break;
+          }
+          case 'LOCATION': {
+            currentEvent.location = value || null;
+            break;
+          }
+          case 'DTSTART':
+          case 'DTSTART;VALUE=DATE-TIME':
+          case 'DTSTART;VALUE=DATE': {
+            currentEvent.dtStart = parseICalDateTime(value);
+            break;
+          }
+          case 'DTEND':
+          case 'DTEND;VALUE=DATE-TIME':
+          case 'DTEND;VALUE=DATE': {
+            currentEvent.dtEnd = value ? parseICalDateTime(value) : null;
+            break;
+          }
+          case 'RRULE': {
+            currentEvent.rrule = value;
+            break;
+          }
+          case 'URL': {
+            currentEvent.url = value || null;
+            break;
+          }
+          case 'CATEGORIES': {
+            currentEvent.categories = value.split(',').map((c) => c.trim()).filter(Boolean);
+            break;
+          }
+        }
+      }
+      // DEBUG: Log event before push
+      if (currentEvent && currentEvent.uid && currentEvent.summary && currentEvent.dtStart !== '') {
+        events.push(currentEvent as ICalEvent);
+      }
+      inEvent = false;
+      currentEvent = null;
+      currentProperty = '';
+      currentValue = '';
+      continue;
+    }
+
+    if (!inEvent) continue;
+
+    // Parse property line: NAME:VALUE or NAME;PARAM=VAL:VALUE
+    const colonIndex = line.indexOf(':');
+    if (colonIndex === -1) continue;
+
+    // Flush previous property before starting new one
+    if (currentEvent && currentProperty) {
+      const value = currentValue.trim();
+      switch (currentProperty.toUpperCase()) {
+        case 'UID': {
+          currentEvent.uid = value;
+          break;
+        }
+        case 'SUMMARY': {
+          currentEvent.summary = value;
+          break;
+        }
+        case 'DESCRIPTION': {
+          currentEvent.description = value || null;
+          break;
+        }
+        case 'LOCATION': {
+          currentEvent.location = value || null;
+          break;
+        }
+        case 'DTSTART':
+        case 'DTSTART;VALUE=DATE-TIME':
+        case 'DTSTART;VALUE=DATE': {
+          currentEvent.dtStart = parseICalDateTime(value);
+          break;
+        }
+        case 'DTEND':
+        case 'DTEND;VALUE=DATE-TIME':
+        case 'DTEND;VALUE=DATE': {
+          currentEvent.dtEnd = value ? parseICalDateTime(value) : null;
+          break;
+        }
+        case 'RRULE': {
+          currentEvent.rrule = value;
+          break;
+        }
+        case 'URL': {
+          currentEvent.url = value || null;
+          break;
+        }
+        case 'CATEGORIES': {
+          currentEvent.categories = value.split(',').map((c) => c.trim()).filter(Boolean);
+          break;
+        }
+      }
+    }
+    currentProperty = '';
+    currentValue = '';
+
+    // Start new property
+    currentProperty = line.slice(0, colonIndex);
+    currentValue = line.slice(colonIndex + 1);
+  }
+
+  // Flush any remaining property (in case file ends without END:VEVENT)
+  if (currentEvent && currentProperty) {
     const value = currentValue.trim();
-
     switch (currentProperty.toUpperCase()) {
       case 'UID': {
         currentEvent.uid = value;
@@ -332,63 +536,7 @@ export function parseICalFeed(icalText: string): ICalEvent[] {
         break;
       }
     }
-
-    currentProperty = '';
-    currentValue = '';
   }
-
-  for (const line of lines) {
-    // Handle line folding (RFC 5545: lines can be folded with space/tab continuation)
-    // Only append to currentValue if we're currently parsing a property
-    if ((line.startsWith(' ') || line.startsWith('\t')) && currentProperty) {
-      currentValue += ' ' + line.slice(1);
-      continue;
-    }
-
-    if (line === 'BEGIN:VEVENT') {
-      inEvent = true;
-      currentEvent = {
-        uid: '',
-        summary: '',
-        description: null,
-        location: null,
-        dtStart: '',
-        dtEnd: null,
-        rrule: null,
-        url: null,
-        categories: [],
-      };
-      continue;
-    }
-
-    if (line === 'END:VEVENT') {
-      // Flush any pending property before finalizing the event
-      flushProperty();
-      if (currentEvent && currentEvent.uid && currentEvent.summary && currentEvent.dtStart) {
-        events.push(currentEvent as ICalEvent);
-      }
-      inEvent = false;
-      currentEvent = null;
-      currentProperty = '';
-      currentValue = '';
-      continue;
-    }
-
-    if (!inEvent) continue;
-
-    // Parse property line: NAME:VALUE or NAME;PARAM=VAL:VALUE
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1) continue;
-
-    // Flush previous property before starting new one
-    flushProperty();
-
-    currentProperty = line.slice(0, colonIndex);
-    currentValue = line.slice(colonIndex + 1);
-  }
-
-  // Flush any remaining property (in case file ends without END:VEVENT)
-  flushProperty();
 
   return events;
 }

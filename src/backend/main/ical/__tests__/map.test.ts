@@ -10,7 +10,7 @@ import {
   extractCourseName,
   generateCourseColor,
 } from '../map.js';
-import type { ICalEvent } from '@backend/shared/types';
+import type { ICalEvent, IsoDateTime } from '@backend/shared/types';
 
 // Helper to create a minimal valid ICalEvent
 function createEvent(overrides: Partial<ICalEvent> = {}): ICalEvent {
@@ -19,8 +19,8 @@ function createEvent(overrides: Partial<ICalEvent> = {}): ICalEvent {
     summary: 'Test Assignment',
     description: 'Test description',
     location: 'Online',
-    dtStart: '2025-01-15T23:59:00.000Z',
-    dtEnd: '2025-01-16T00:59:00.000Z',
+    dtStart: '2025-01-15T23:59:00.000Z' as IsoDateTime,
+    dtEnd: '2025-01-16T00:59:00.000Z' as IsoDateTime,
     rrule: null,
     url: 'https://canvas.example.com/assignments/123',
     categories: [],
@@ -146,7 +146,7 @@ describe('iCal Mapper', () => {
           uid: 'event-1',
           summary: 'CS101 - Homework 1',
           categories: ['CS101', 'Homework'],
-          dtStart: '2025-01-15T23:59:00.000Z',
+          dtStart: '2025-01-15T23:59:00.000Z' as IsoDateTime,
           url: 'https://canvas.example.com/assignments/1',
         }),
       ];
@@ -154,7 +154,7 @@ describe('iCal Mapper', () => {
       const result = mapICalToAssignments(events, sourceUrl);
 
       expect(result).toHaveLength(1);
-      const assignment = result[0];
+      const assignment = result[0]!;
 
       expect(assignment.title).toBe('CS101 - Homework 1');
       expect(assignment.courseName).toBe('CS101');
@@ -180,7 +180,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].sourceUrl).toBe(sourceUrl);
+      expect(result[0]!.sourceUrl).toBe(sourceUrl);
     });
 
     it('uses event.url when available', () => {
@@ -192,7 +192,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].sourceUrl).toBe('https://canvas.example.com/assignments/123');
+      expect(result[0]!.sourceUrl).toBe('https://canvas.example.com/assignments/123');
     });
 
     it('preserves rrule from event', () => {
@@ -204,7 +204,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].rrule).toBe('FREQ=WEEKLY;COUNT=10');
+      expect(result[0]!.rrule).toBe('FREQ=WEEKLY;COUNT=10');
     });
 
     it('sets rrule to undefined when null', () => {
@@ -216,7 +216,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].rrule).toBeUndefined();
+      expect(result[0]!.rrule).toBeUndefined();
     });
 
     it('calculates priority based on due date (high for overdue, medium for soon, low for future)', () => {
@@ -225,19 +225,19 @@ describe('iCal Mapper', () => {
       // Overdue event
       const overdueEvent = createEvent({
         uid: 'overdue',
-        dtStart: '2025-01-05T12:00:00.000Z',
+        dtStart: '2025-01-05T12:00:00.000Z' as IsoDateTime,
       });
 
       // Due soon event
       const dueSoonEvent = createEvent({
         uid: 'due-soon',
-        dtStart: '2025-01-12T12:00:00.000Z', // 2 days
+        dtStart: '2025-01-12T12:00:00.000Z' as IsoDateTime, // 2 days
       });
 
       // Far future event
       const farEvent = createEvent({
         uid: 'far',
-        dtStart: '2025-02-01T12:00:00.000Z', // 22 days
+        dtStart: '2025-02-01T12:00:00.000Z' as IsoDateTime, // 22 days
       });
 
       // Mock Date.now for consistent results
@@ -245,9 +245,9 @@ describe('iCal Mapper', () => {
 
       const result = mapICalToAssignments([overdueEvent, dueSoonEvent, farEvent], sourceUrl);
 
-      expect(result[0].priority).toBe('high'); // overdue
-      expect(result[1].priority).toBe('medium'); // due soon (2 days)
-      expect(result[2].priority).toBe('low'); // far future
+      expect(result[0]!.priority).toBe('high'); // overdue
+      expect(result[1]!.priority).toBe('medium'); // due soon (2 days)
+      expect(result[2]!.priority).toBe('low'); // far future
 
       vi.restoreAllMocks();
     });
@@ -262,9 +262,9 @@ describe('iCal Mapper', () => {
       const result = mapICalToAssignments(events, sourceUrl);
 
       expect(result).toHaveLength(3);
-      expect(result[0].courseName).toBe('CS101');
-      expect(result[1].courseName).toBe('MATH201');
-      expect(result[2].courseName).toBe('PHYS101');
+      expect(result[0]!.courseName).toBe('CS101');
+      expect(result[1]!.courseName).toBe('MATH201');
+      expect(result[2]!.courseName).toBe('PHYS101');
     });
 
     it('generates unique IDs for each assignment', () => {
@@ -274,7 +274,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].id).not.toBe(result[1].id);
+      expect(result[0]!.id).not.toBe(result[1]!.id);
     });
 
     it('sets description from event.description', () => {
@@ -286,7 +286,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].description).toBe('Complete Chapter 1\n\nDue: Friday');
+      expect(result[0]!.description).toBe('Complete Chapter 1\n\nDue: Friday');
     });
 
     it('handles null description', () => {
@@ -298,7 +298,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].description).toBeNull();
+      expect(result[0]!.description).toBeUndefined();
     });
 
     it('calculates priority based on due date', () => {
@@ -307,19 +307,19 @@ describe('iCal Mapper', () => {
       // Overdue event
       const overdueEvent = createEvent({
         uid: 'overdue',
-        dtStart: '2025-01-05T12:00:00.000Z',
+        dtStart: '2025-01-05T12:00:00.000Z' as IsoDateTime,
       });
 
       // Due soon event
       const dueSoonEvent = createEvent({
         uid: 'due-soon',
-        dtStart: '2025-01-12T12:00:00.000Z', // 2 days
+        dtStart: '2025-01-12T12:00:00.000Z' as IsoDateTime, // 2 days
       });
 
       // Far future event
       const farEvent = createEvent({
         uid: 'far',
-        dtStart: '2025-02-01T12:00:00.000Z', // 22 days
+        dtStart: '2025-02-01T12:00:00.000Z' as IsoDateTime, // 22 days
       });
 
       // Mock Date.now for consistent results
@@ -327,9 +327,9 @@ describe('iCal Mapper', () => {
 
       const result = mapICalToAssignments([overdueEvent, dueSoonEvent, farEvent], sourceUrl);
 
-      expect(result[0].priority).toBe('high'); // overdue
-      expect(result[1].priority).toBe('medium'); // due soon (2 days)
-      expect(result[2].priority).toBe('low'); // far future
+      expect(result[0]!.priority).toBe('high'); // overdue
+      expect(result[1]!.priority).toBe('medium'); // due soon (2 days)
+      expect(result[2]!.priority).toBe('low'); // far future
 
       vi.restoreAllMocks();
     });
@@ -343,18 +343,18 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].title).toBe('Homework 1');
+      expect(result[0]!.title).toBe('Homework 1');
     });
 
     it('sets default values for fields not in iCal', () => {
       const events = [createEvent({ uid: 'event-1' })];
       const result = mapICalToAssignments(events, sourceUrl);
 
-      expect(result[0].unlockAt).toBeNull();
-      expect(result[0].lockAt).toBeNull();
-      expect(result[0].pointsPossible).toBeNull();
-      expect(result[0].submissionTypes).toEqual([]);
-      expect(result[0].workflowState).toBe('published');
+      expect(result[0]!.unlockAt).toBeNull();
+      expect(result[0]!.lockAt).toBeNull();
+      expect(result[0]!.pointsPossible).toBeNull();
+      expect(result[0]!.submissionTypes).toEqual([]);
+      expect(result[0]!.workflowState).toBe('published');
     });
 
     it('generates consistent course colors for same course', () => {
@@ -364,7 +364,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].courseColor).toBe(result[1].courseColor);
+      expect(result[0]!.courseColor).toBe(result[1]!.courseColor);
     });
 
     it('generates different colors for different courses', () => {
@@ -374,7 +374,7 @@ describe('iCal Mapper', () => {
       ];
 
       const result = mapICalToAssignments(events, sourceUrl);
-      expect(result[0].courseColor).not.toBe(result[1].courseColor);
+      expect(result[0]!.courseColor).not.toBe(result[1]!.courseColor);
     });
   });
 });

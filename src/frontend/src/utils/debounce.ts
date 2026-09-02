@@ -8,17 +8,26 @@
  */
 
 /**
+ * Debounced function with cancel and flush methods.
+ */
+export interface DebouncedFunction<T extends (...args: Parameters<T>) => ReturnType<T>> {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
+  flush: () => void;
+}
+
+/**
  * Creates a debounced version of a function.
  *
  * @template T - Function type
  * @param func - Function to debounce
  * @param wait - Milliseconds to wait before invoking
- * @returns Debounced function with same signature
+ * @returns Debounced function with cancel and flush methods
  */
 export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   wait: number,
-): (...args: Parameters<T>) => void {
+): DebouncedFunction<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   const debounced = (...args: Parameters<T>) => {
@@ -48,5 +57,5 @@ export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
     }
   };
 
-  return debounced;
+  return debounced as DebouncedFunction<T>;
 }

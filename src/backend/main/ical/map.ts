@@ -207,7 +207,7 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
     return {
       id: generateEntityId(),
       title: event.summary.trim(),
-      description: event.description,
+      description: event.description ?? undefined,
       courseName,
       courseColor,
       dueAt: event.dtStart, // Already ISO 8601 UTC from parser

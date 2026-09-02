@@ -1,0 +1,20 @@
+{
+  "name": "@backend/shared",
+  "version": "0.1.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    },
+    "./types": {
+      "import": "./types/index.ts",
+      "types": "./types/index.ts"
+    },
+    "./ipc": {
+      "import": "./ipc.ts",
+      "types": "./ipc.ts"
+    }
+  }
+}

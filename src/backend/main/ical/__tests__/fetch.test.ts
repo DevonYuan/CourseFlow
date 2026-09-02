@@ -4,7 +4,7 @@
  * @module @backend/main/ical/__tests__/fetch.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import {
   fetchICalFeed,
   fetchAndParseICalFeed,
@@ -147,10 +147,13 @@ describe('iCal Fetch Utility', () => {
       await fetchICalFeed(testUrl);
 
       const call = mockFetch.mock.calls[0];
-      const options = call[1] as RequestInit;
-      expect(options.headers).toMatchObject({
-        'User-Agent': expect.stringContaining('CourseFlow'),
-      });
+      expect(call).toBeDefined();
+      if (call) {
+        const options = call[1] as RequestInit;
+        expect(options.headers).toMatchObject({
+          'User-Agent': expect.stringContaining('CourseFlow'),
+        });
+      }
     });
 
     it('accepts custom timeout', async () => {
@@ -262,7 +265,7 @@ END:VCALENDAR`;
 
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
-      expect(events[0].dtStart).toBe('2025-01-15T00:00:00.000Z');
+      expect(events[0]?.dtStart).toBe('2025-01-15T00:00:00.000Z');
     });
 
     it('returns empty array for empty calendar', () => {
@@ -288,8 +291,8 @@ END:VCALENDAR`;
 
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(2);
-      expect(events[0].uid).toBe('event-1');
-      expect(events[1].uid).toBe('event-2');
+      expect(events[0]?.uid).toBe('event-1');
+      expect(events[1]?.uid).toBe('event-2');
     });
 
     it('handles folded lines (RFC 5545 line folding)', () => {
@@ -305,7 +308,7 @@ END:VCALENDAR`;
 
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
-      expect(events[0].summary).toBe('This is a very long summary that gets folded across multiple lines');
+      expect(events[0]?.summary).toBe('This is a very long summary that gets folded across multiple lines');
     });
 
     it('skips events missing required fields', () => {
@@ -332,7 +335,7 @@ END:VCALENDAR`;
 
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
-      expect(events[0].uid).toBe('valid-1');
+      expect(events[0]?.uid).toBe('valid-1');
     });
   });
 
@@ -356,8 +359,8 @@ END:VCALENDAR`;
 
       const events = await fetchAndParseICalFeed('https://test.com/feed.ics');
       expect(events).toHaveLength(1);
-      expect(events[0].uid).toBe('combined-1');
-      expect(events[0].summary).toBe('Combined Test');
+      expect(events[0]?.uid).toBe('combined-1');
+      expect(events[0]?.summary).toBe('Combined Test');
     });
 
     it('propagates fetch errors', async () => {
