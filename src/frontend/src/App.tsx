@@ -3,6 +3,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { AssignmentList } from './components/AssignmentList';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './context/ToastContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useSettings } from './hooks/useSettings';
 
 export function App(): JSX.Element {
@@ -21,17 +22,19 @@ export function App(): JSX.Element {
   );
 
   return (
-    <ToastProvider>
-      <Layout
-        onOpenSettings={handleOpenSettings}
-        onToggleShowCompleted={handleToggleShowCompleted}
-      >
-        <AssignmentList onOpenSettings={handleOpenSettings} />
-      </Layout>
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <Layout
+          onOpenSettings={handleOpenSettings}
+          onToggleShowCompleted={handleToggleShowCompleted}
+        >
+          <AssignmentList onOpenSettings={handleOpenSettings} />
+        </Layout>
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

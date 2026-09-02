@@ -14,9 +14,10 @@
 // @vitest-environment jsdom
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsModal } from '../components/SettingsModal';
+import { ToastProvider } from '../context/ToastContext';
 import type { Settings } from '@backend/shared/types';
 import type { IpcEvents } from '@backend/shared/ipc';
 
@@ -60,7 +61,11 @@ let progressCallback: ((payload: IpcEvents['ical:progress']) => void) | null = n
 let settingsUnsubscribe: (() => void) | null = null;
 
 function renderSettingsModal(props: { isOpen: boolean; onClose: () => void } = { isOpen: true, onClose: vi.fn() }) {
-  return render(<SettingsModal {...props} />);
+  return render(
+    <ToastProvider>
+      <SettingsModal {...props} />
+    </ToastProvider>
+  );
 }
 
 async function waitForModalReady() {
@@ -219,7 +224,8 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitFor(() => {
-        expect(screen.getByText('Failed to load')).toBeInTheDocument();
+        const modal = screen.getByRole('dialog');
+        expect(within(modal).getByText('Failed to load')).toBeInTheDocument();
       });
     });
 
@@ -238,7 +244,11 @@ describe('SettingsModal', () => {
         expect(mockApi.onSettingsChanged).toHaveBeenCalled();
       });
       expect(settingsUnsubscribe).toBeDefined();
-      rerender(<SettingsModal isOpen={false} onClose={vi.fn()} />);
+      rerender(
+        <ToastProvider>
+          <SettingsModal isOpen={false} onClose={vi.fn()} />
+        </ToastProvider>
+      );
       expect(settingsUnsubscribe).toHaveBeenCalled();
     });
   });
@@ -491,7 +501,8 @@ describe('SettingsModal', () => {
       await waitForFormReady();
       fireEvent.click(screen.getByText('Save'));
       await waitFor(() => {
-        expect(screen.getByText('Save failed')).toBeInTheDocument();
+        const modal = screen.getByRole('dialog');
+        expect(within(modal).getByText('Save failed')).toBeInTheDocument();
       });
     });
 
@@ -545,7 +556,8 @@ describe('SettingsModal', () => {
       await waitForFormReady();
       fireEvent.click(screen.getByText('Reset to Defaults'));
       await waitFor(() => {
-        expect(screen.getByText('Reset failed')).toBeInTheDocument();
+        const modal = screen.getByRole('dialog');
+        expect(within(modal).getByText('Reset failed')).toBeInTheDocument();
       });
     });
   });

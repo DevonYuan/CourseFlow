@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Settings } from '@backend/shared/types';
 import { useIcalSync } from '../hooks/useIcalSync';
+import { useToast } from '../context/ToastContext';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
@@ -34,6 +35,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
 
+  const { success: toastSuccess, error: toastError } = useToast();
+
   const { isLoading: isSyncing, progress, stage, message, error: syncError, lastResult, fetchAndImport, reset: resetSync } = useIcalSync();
 
   // Apply theme immediately when it changes in form
@@ -56,13 +59,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         applyTheme(result.data.theme);
       } else {
         setError(result.error);
+        toastError(result.error);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load settings');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load settings';
+      setError(errorMessage);
+      toastError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toastError]);
 
   useEffect(() => {
     if (isOpen) {
@@ -92,12 +98,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       if (result.ok) {
         setSettings(result.data);
         setFormData(result.data);
+        toastSuccess('Settings saved');
         onClose();
       } else {
         setError(result.error);
+        toastError(result.error);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save settings';
+      setError(errorMessage);
+      toastError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -111,11 +121,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       if (result.ok) {
         setSettings(result.data);
         setFormData(result.data);
+        toastSuccess('Settings reset to defaults');
       } else {
         setError(result.error);
+        toastError(result.error);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reset settings');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reset settings';
+      setError(errorMessage);
+      toastError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -196,7 +210,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       setUrlError('Invalid URL format');
                       return;
                     }
-                    fetchAndImport(url);
+                    fetchAndImport(url)
+                      .then(() => {
+                        if (lastResult) {
+                          toastSuccess(
+                            `Synced: ${lastResult.imported} new, ${lastResult.updated} updated, ${lastResult.skipped} skipped`
+                          );
+                        }
+                      })
+                      .catch(() => {
+                        if (syncError) {
+                          toastError(syncError);
+                        }
+                      });
                   }}
                   disabled={isSaving || isSyncing || !formData.icalUrl?.trim()}
                   aria-busy={isSyncing}

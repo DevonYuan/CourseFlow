@@ -34,6 +34,10 @@ export const IpcErrorCode = {
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   CONFLICT: 'CONFLICT',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  HTTP_ERROR: 'HTTP_ERROR',
+  TIMEOUT_ERROR: 'TIMEOUT_ERROR',
+  PARSE_ERROR: 'PARSE_ERROR',
 } as const;
 
 export type IpcErrorCode = (typeof IpcErrorCode)[keyof typeof IpcErrorCode];
