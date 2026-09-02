@@ -1,40 +1,35 @@
-import { useCallback, useState } from 'react';
-import { SettingsModal } from './components/SettingsModal';
-import { AssignmentList } from './components/AssignmentList';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './context/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AssignmentListPage } from './pages/AssignmentListPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { useSettings } from './hooks/useSettings';
 
-export function App(): JSX.Element {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { settings, updateSettings } = useSettings();
+function ThemedApp(): JSX.Element {
+  const { settings } = useSettings();
 
-  const handleOpenSettings = useCallback(() => {
-    setIsSettingsOpen(true);
-  }, []);
-
-  const handleToggleShowCompleted = useCallback(
-    (show: boolean) => {
-      updateSettings({ showCompletedAssignments: show });
-    },
-    [updateSettings],
-  );
+  useEffect(() => {
+    if (settings) {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+    }
+  }, [settings?.theme]);
 
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <Layout
-          onOpenSettings={handleOpenSettings}
-          onToggleShowCompleted={handleToggleShowCompleted}
-        >
-          <AssignmentList onOpenSettings={handleOpenSettings} />
+        <Layout>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<AssignmentListPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </BrowserRouter>
         </Layout>
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-        />
       </ToastProvider>
     </ErrorBoundary>
   );
 }
+
+export default ThemedApp;

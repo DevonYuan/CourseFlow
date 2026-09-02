@@ -6,22 +6,21 @@
  * @module @frontend/components/TopBar
  */
 
+import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../hooks/useSettings';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import './TopBar.css';
 
-interface TopBarProps {
-  /** Callback when settings button is clicked */
-  onOpenSettings: () => void;
-  /** Callback when show completed toggle changes */
-  onToggleShowCompleted: (show: boolean) => void;
-}
-
-export function TopBar({ onOpenSettings, onToggleShowCompleted }: TopBarProps): JSX.Element {
-  const { settings, isLoading } = useSettings();
+export function TopBar(): JSX.Element {
+  const navigate = useNavigate();
+  const { settings, isLoading, updateSettings } = useSettings();
 
   const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onToggleShowCompleted(event.target.checked);
+    updateSettings({ showCompletedAssignments: event.target.checked });
+  };
+
+  const handleOpenSettings = () => {
+    navigate('/settings');
   };
 
   if (isLoading || !settings) {
@@ -66,7 +65,7 @@ export function TopBar({ onOpenSettings, onToggleShowCompleted }: TopBarProps): 
 
           <button
             className="top-bar__settings-btn"
-            onClick={onOpenSettings}
+            onClick={handleOpenSettings}
             aria-label="Open settings"
             type="button"
           >

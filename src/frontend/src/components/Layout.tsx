@@ -12,23 +12,12 @@ import './Layout.css';
 interface LayoutProps {
   /** Child content to render in the main area */
   children: React.ReactNode;
-  /** Callback when settings should be opened */
-  onOpenSettings: () => void;
-  /** Callback when show completed toggle changes */
-  onToggleShowCompleted: (show: boolean) => void;
 }
 
-export function Layout({
-  children,
-  onOpenSettings,
-  onToggleShowCompleted,
-}: LayoutProps): JSX.Element {
+export function Layout({ children }: LayoutProps): JSX.Element {
   return (
     <div className="layout">
-      <TopBar
-        onOpenSettings={onOpenSettings}
-        onToggleShowCompleted={onToggleShowCompleted}
-      />
+      <TopBar />
       <main className="layout__main" role="main" tabIndex={-1}>
         <div className="layout__content">{children}</div>
       </main>
