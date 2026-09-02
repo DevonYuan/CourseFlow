@@ -349,6 +349,10 @@ const handlers: IpcHandlers = {
       // Emit store progress
       sendEventToRenderers('ical:progress', { stage: 'store', progress: 100 });
 
+      // Update lastSyncAt in settings on successful import
+      const now = new Date().toISOString();
+      await repo.setSettings({ lastSyncAt: now });
+
       return ok(result);
     } catch (error) {
       // Emit error progress

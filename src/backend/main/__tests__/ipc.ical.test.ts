@@ -56,6 +56,7 @@ vi.mock('../ical/index.js', () => ({
 vi.mock('../db/repository.js', () => ({
   repo: {
     importAssignments: vi.fn(),
+    setSettings: vi.fn(),
   },
 }));
 
@@ -69,7 +70,7 @@ import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpE
 import { repo } from '../db/repository.js';
 import { sendEventToRenderers } from '../events.js';
 import { registerIpcHandlers } from '../ipc-handlers.js';
-import type { ICalEvent, ImportResult } from '../../shared/types.js';
+import type { ICalEvent, ImportResult, Settings } from '../../shared/types.js';
 
 // Helper to create test ICalEvent
 function createICalEvent(overrides: Partial<ICalEvent> = {}): ICalEvent {
@@ -268,6 +269,7 @@ describe('iCal IPC Handlers', () => {
     it('maps events and imports with deduplication', async () => {
       vi.mocked(mapICalToAssignments).mockReturnValueOnce(mockAssignments as any);
       vi.mocked(repo.importAssignments).mockReturnValueOnce(mockImportResult);
+      vi.mocked(repo.setSettings).mockResolvedValueOnce({} as Settings);
 
       const result = await invokeHandler<{ ok: boolean; data?: ImportResult; error?: string; code?: string }>(
         'ical:import',
@@ -287,6 +289,12 @@ describe('iCal IPC Handlers', () => {
 
       // Verify progress event emitted
       expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'store', progress: 100 });
+
+      // Verify setSettings called to update lastSyncAt
+      expect(repo.setSettings).toHaveBeenCalled();
+      const setSettingsArg = vi.mocked(repo.setSettings).mock.calls[0][0];
+      expect(setSettingsArg).toHaveProperty('lastSyncAt');
+      expect(typeof setSettingsArg.lastSyncAt).toBe('string');
     });
 
     it('rejects empty events array', async () => {
