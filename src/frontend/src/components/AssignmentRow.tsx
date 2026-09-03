@@ -2,7 +2,7 @@
  * AssignmentRow — Individual Assignment Row Component
  *
  * Displays a single assignment with course color, title, due date, and status.
- * Supports keyboard navigation and click handling.
+ * Supports keyboard navigation, click handling, and drag-and-drop reordering.
  *
  * @module @frontend/components/AssignmentRow
  */
@@ -10,6 +10,7 @@
 import type { Assignment } from '@backend/shared/types';
 
 import { CourseColorBadge } from './CourseColorBadge';
+import { DragHandle } from './AssignmentList/DragHandle';
 import './AssignmentRow.css';
 
 interface AssignmentRowProps {
@@ -19,6 +20,14 @@ interface AssignmentRowProps {
   onClick?: (assignment: Assignment) => void;
   /** Callback when mark complete is triggered */
   onMarkComplete?: (id: string) => Promise<void>;
+  /** Whether the row is currently being dragged */
+  isDragging?: boolean;
+  /** Ref setter from @dnd-kit useSortable */
+  ref?: (element: HTMLDivElement | null) => void;
+  /** Attributes from @dnd-kit useSortable for the root element */
+  attributes?: { role: string; 'aria-roledescription': string; 'aria-describedby': string; tabIndex: number };
+  /** Listeners from @dnd-kit useSortable for the drag handle */
+  listeners?: { onMouseDown: (event: React.MouseEvent) => void; onKeyDown: (event: React.KeyboardEvent) => void; onTouchStart: (event: React.TouchEvent) => void };
 }
 
 /**
@@ -55,9 +64,17 @@ const statusColors: Record<Assignment['status'], string> = {
 };
 
 /**
- * Individual assignment row with click/keyboard handling.
+ * Individual assignment row with click/keyboard handling and drag support.
  */
-export function AssignmentRow({ assignment, onClick, onMarkComplete }: AssignmentRowProps): JSX.Element {
+export function AssignmentRow({
+  assignment,
+  onClick,
+  onMarkComplete,
+  isDragging = false,
+  ref,
+  attributes,
+  listeners,
+}: AssignmentRowProps): JSX.Element {
   const isOverdue = assignment.dueAt ? new Date(assignment.dueAt) < new Date() : false;
   const dueDate = formatDueDate(assignment.dueAt);
   const isCompleted = assignment.status === 'completed';
@@ -93,9 +110,14 @@ export function AssignmentRow({ assignment, onClick, onMarkComplete }: Assignmen
     }
   };
 
+  // Merge ref with dnd-kit ref
+  const mergedRef = ref;
+
   return (
     <div
-      className={`assignment-row${isCompleted ? ' assignment-row--completed' : ''}`}
+      ref={mergedRef}
+      {...attributes}
+      className={`assignment-row${isCompleted ? ' assignment-row--completed' : ''}${isDragging ? ' assignment-row--dragging' : ''}`}
       role="listitem"
       tabIndex={onClick ? 0 : undefined}
       onClick={handleClick}
@@ -103,6 +125,15 @@ export function AssignmentRow({ assignment, onClick, onMarkComplete }: Assignmen
       style={{ '--course-color': assignment.courseColor } as React.CSSProperties}
       aria-label={`${assignment.title}, ${assignment.courseName}, due ${dueDate}, ${statusLabels[assignment.status]}`}
     >
+      <div className="assignment-row__drag-handle">
+        <DragHandle
+          id={assignment.id}
+          isDragging={isDragging}
+          disabled={isCompleted}
+          ariaLabel={`Drag to reorder ${assignment.title}`}
+          {...listeners}
+        />
+      </div>
       <div className="assignment-row__course">
         <CourseColorBadge
           color={assignment.courseColor}

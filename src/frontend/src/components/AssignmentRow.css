@@ -5,9 +5,9 @@
 /* Assignment row */
 .assignment-row {
   display: grid;
-  grid-template-columns: 140px 1fr 140px 100px 44px;
+  grid-template-columns: 40px 140px 1fr 140px 100px 44px;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 12px 16px;
   background: var(--surface-color, #ffffff);
   border: 1px solid var(--border-color, #e0e0e0);
@@ -25,6 +25,21 @@
   outline: 3px solid var(--focus-ring, rgba(0, 102, 204, 0.4));
   outline-offset: 2px;
   border-color: var(--focus-border, #0066cc);
+}
+
+/* Dragging state */
+.assignment-row--dragging {
+  opacity: 0.5;
+  border-color: var(--color-primary, #6366f1);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+  z-index: 100;
+}
+
+/* Drag handle column */
+.assignment-row__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Completed row styling */

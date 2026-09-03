@@ -1,0 +1,64 @@
+/**
+ * DragHandle Styles
+ */
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, #9ca3af);
+  cursor: grab;
+  border-radius: var(--radius-sm, 4px);
+  transition: color 0.15s ease, background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.drag-handle:hover:not(.drag-handle--disabled) {
+  color: var(--color-text, #1f2937);
+  background-color: var(--color-bg-hover, #f3f4f6);
+}
+
+.drag-handle:focus-visible {
+  outline: 2px solid var(--color-primary, #6366f1);
+  outline-offset: 2px;
+  color: var(--color-primary, #6366f1);
+}
+
+.drag-handle:active:not(.drag-handle--disabled) {
+  cursor: grabbing;
+  color: var(--color-primary, #6366f1);
+}
+
+.drag-handle--dragging {
+  color: var(--color-primary, #6366f1);
+  cursor: grabbing;
+}
+
+.drag-handle--disabled {
+  color: var(--color-text-muted, #9ca3af);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.drag-handle__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drag-handle__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,87 @@
+/**
+ * AssignmentListDragDrop — Drag-and-Drop Enabled Assignment List
+ *
+ * Renders assignments with drag-and-drop reordering using @dnd-kit.
+ * No internal hooks to maintain stable hook order in parent AssignmentList.
+ *
+ * @module @frontend/components/AssignmentList/AssignmentListDragDrop
+ */
+
+import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import type { Assignment } from '@backend/shared/types';
+import { SortableAssignmentRow } from '../AssignmentList';
+import { EmptyState } from '../EmptyState';
+import '../AssignmentList.css';
+
+interface AssignmentListDragDropProps {
+  /** Sorted assignments to render */
+  sortedAssignments: Assignment[];
+  /** Callback when assignment is clicked */
+  onAssignmentClick?: (assignment: Assignment) => void;
+  /** Callback when mark complete is triggered */
+  onMarkComplete?: (id: string) => Promise<void>;
+  /** Callback when drag ends with new order */
+  onDragEnd: (event: import('@dnd-kit/core').DragEndEvent) => void;
+  /** Sensors for drag-and-drop */
+  sensors: ReturnType<typeof import('@dnd-kit/core').useSensors>;
+  /** Callback to open settings from empty state */
+  onOpenSettings: () => void;
+  /** Render prop for DragOverlay */
+  renderDragOverlay: ({
+    isDragging,
+    transform,
+    activatorEvent,
+    transition,
+  }: {
+    isDragging: boolean;
+    transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
+    activatorEvent: { active: { id: string } | null } | null;
+    transition: string | undefined;
+  }) => React.ReactElement | null;
+}
+
+/**
+ * Renders assignments with drag-and-drop reordering.
+ * This component is only rendered when drag-and-drop is enabled (< 100 items).
+ * No hooks used internally to maintain stable hook order in parent.
+ */
+export function AssignmentListDragDrop({
+  sortedAssignments,
+  onAssignmentClick,
+  onMarkComplete,
+  onDragEnd,
+  sensors,
+  onOpenSettings,
+  renderDragOverlay,
+}: AssignmentListDragDropProps): JSX.Element {
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+    >
+      <div className="assignment-list" role="list" aria-label="Assignments">
+        {sortedAssignments.length === 0 ? (
+          <EmptyState onOpenSettings={onOpenSettings} />
+        ) : (
+          <SortableContext
+            items={sortedAssignments.map((a) => a.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {sortedAssignments.map((assignment) => (
+              <SortableAssignmentRow
+                key={assignment.id}
+                assignment={assignment}
+                onClick={onAssignmentClick}
+                onMarkComplete={onMarkComplete}
+                id={assignment.id}
+              />
+            ))}
+          </SortableContext>
+        )}
+        <DragOverlay>{renderDragOverlay as unknown as React.ReactNode}</DragOverlay>
+      </div>
+    </DndContext>
+  );
+}

@@ -22,6 +22,10 @@ interface AssignmentsState {
   error: string | null;
   /** Whether the list is empty (no assignments and not loading) */
   isEmpty: boolean;
+  /** Ordered assignment IDs for priority reordering (drag-and-drop) */
+  priorityOrder: string[];
+  /** Previous priority order for rollback on error */
+  _previousPriorityOrder: string[] | null;
 }
 
 interface AssignmentsActions {
@@ -35,6 +39,12 @@ interface AssignmentsActions {
   clearError: () => void;
   /** Handles db:changed event payload */
   handleDbChanged: (payload: IpcEvents['db:changed']) => void;
+  /** Sets the priority order (used for initial load from db:priority:list) */
+  setPriorityOrder: (ids: string[]) => void;
+  /** Optimistically updates priority order (immediate UI update) */
+  reorderOptimistic: (ids: string[]) => void;
+  /** Reverts to previous priority order (rollback on IPC error) */
+  revertPriorityOrder: () => void;
 }
 
 type AssignmentsStore = AssignmentsState & AssignmentsActions;
@@ -48,6 +58,8 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
     isLoading: true,
     error: null,
     isEmpty: true,
+    priorityOrder: [],
+    _previousPriorityOrder: null,
 
     // Actions
     fetchAssignments: async () => {
@@ -116,6 +128,23 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
         get().fetchAssignments();
       }
     },
+
+    setPriorityOrder: (ids: string[]) => {
+      set({ priorityOrder: ids });
+    },
+
+    reorderOptimistic: (ids: string[]) => {
+      // Store current order for potential rollback
+      const currentOrder = get().priorityOrder;
+      set({ priorityOrder: ids, _previousPriorityOrder: currentOrder });
+    },
+
+    revertPriorityOrder: () => {
+      const previous = get()._previousPriorityOrder;
+      if (previous !== null) {
+        set({ priorityOrder: previous, _previousPriorityOrder: null });
+      }
+    },
   })
 );
 
@@ -127,6 +156,10 @@ export const useAssignmentsLoading = () => useAssignmentsStore((state) => state.
 export const useAssignmentsError = () => useAssignmentsStore((state) => state.error);
 export const useAssignmentsEmpty = () => useAssignmentsStore((state) => state.isEmpty);
 export const useSetAssignmentStatus = () => useAssignmentsStore((state) => state.setAssignmentStatus);
+export const usePriorityOrder = () => useAssignmentsStore((state) => state.priorityOrder);
+export const useSetPriorityOrder = () => useAssignmentsStore((state) => state.setPriorityOrder);
+export const useReorderOptimistic = () => useAssignmentsStore((state) => state.reorderOptimistic);
+export const useRevertPriorityOrder = () => useAssignmentsStore((state) => state.revertPriorityOrder);
 
 /**
  * Initialize the store — fetches assignments.
