@@ -25,8 +25,8 @@ import {
   groupByCourse,
   applyGrouping,
   selectFilteredAssignments,
-  type GroupedAssignments,
 } from '../selectors';
+import type { GroupedAssignments } from '../grouping';
 
 // Test utilities
 function createMockAssignment(overrides: Partial<Assignment> = {}): Assignment {
@@ -357,31 +357,40 @@ describe('Grouping Functions', () => {
   ];
 
   describe('groupByWeek', () => {
-    it('groups into Overdue, This Week, Upcoming, Completed', () => {
+    it('groups into This Week, Overdue, Upcoming, No Due Date, Completed', () => {
       // Mock Date for consistent week calculation
       vi.useFakeTimers();
       vi.setSystemTime(now);
 
       const result = groupByWeek(assignments);
 
-      expect(result).toHaveLength(4);
+      expect(result).toHaveLength(5);
       const groupKeys = result.map((g) => g.groupKey);
-      expect(groupKeys).toEqual(['overdue', 'thisWeek', 'upcoming', 'completed']);
+      expect(groupKeys).toEqual(['this-week', 'overdue', 'upcoming', 'no-due-date', 'completed']);
 
-      // Check overdue
-      const overdue = result.find((g) => g.groupKey === 'overdue');
-      expect(overdue?.assignments.map((a) => a.id)).toEqual(['1']);
-
-      // Check this week (includes pending and in_progress)
-      const thisWeek = result.find((g) => g.groupKey === 'thisWeek');
+      // Check This Week (includes pending and in_progress due this week)
+      const thisWeek = result.find((g) => g.groupKey === 'this-week');
+      expect(thisWeek?.groupLabel).toBe('This Week');
       expect(thisWeek?.assignments.map((a) => a.id).sort()).toEqual(['2', '6']);
 
-      // Check upcoming (includes no-due-date)
-      const upcoming = result.find((g) => g.groupKey === 'upcoming');
-      expect(upcoming?.assignments.map((a) => a.id).sort()).toEqual(['3', '5']);
+      // Check Overdue
+      const overdue = result.find((g) => g.groupKey === 'overdue');
+      expect(overdue?.groupLabel).toBe('Overdue');
+      expect(overdue?.assignments.map((a) => a.id)).toEqual(['1']);
 
-      // Check completed
+      // Check Upcoming
+      const upcoming = result.find((g) => g.groupKey === 'upcoming');
+      expect(upcoming?.groupLabel).toBe('Upcoming');
+      expect(upcoming?.assignments.map((a) => a.id)).toEqual(['3']);
+
+      // Check No Due Date
+      const noDueDate = result.find((g) => g.groupKey === 'no-due-date');
+      expect(noDueDate?.groupLabel).toBe('No Due Date');
+      expect(noDueDate?.assignments.map((a) => a.id)).toEqual(['5']);
+
+      // Check Completed
       const completed = result.find((g) => g.groupKey === 'completed');
+      expect(completed?.groupLabel).toBe('Completed');
       expect(completed?.assignments.map((a) => a.id)).toEqual(['4']);
 
       vi.useRealTimers();
@@ -452,7 +461,7 @@ describe('applyGrouping', () => {
   it('returns flat array for none grouping', () => {
     const result = applyGrouping(assignments, 'none');
     expect(result).toEqual(assignments);
-    expect(Array.isArray(result) && !('groupKey' in (result as any)[0] ?? {})).toBe(true);
+    expect(Array.isArray(result) && (result.length === 0 || !('groupKey' in (result as any)[0]))).toBe(true);
   });
 
   it('returns grouped for week', () => {
@@ -497,7 +506,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
 
   it('returns flat array when no grouping', () => {
     const result = selectFilteredAssignments(assignments, baseFilters, ['3', '2', '1']);
-    expect(Array.isArray(result) && !('groupKey' in (result as any)[0] ?? {})).toBe(true);
+    expect(Array.isArray(result) && (result.length === 0 || !('groupKey' in (result as any)[0]))).toBe(true);
     expect(result).toHaveLength(3);
   });
 
@@ -548,7 +557,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
     const result = selectFilteredAssignments(assignments, filters);
 
     expect(Array.isArray(result) && 'groupKey' in (result as any)[0]).toBe(true);
-    const grouped = result as GroupedAssignments;
+    const grouped = result as GroupedAssignments[];
     expect(grouped.length).toBeGreaterThan(0);
 
     vi.useRealTimers();
@@ -559,7 +568,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
     const result = selectFilteredAssignments(assignments, filters);
 
     expect(Array.isArray(result) && 'groupKey' in (result as any)[0]).toBe(true);
-    const grouped = result as GroupedAssignments;
+    const grouped = result as GroupedAssignments[];
     expect(grouped.length).toBeGreaterThan(0);
   });
 
@@ -568,7 +577,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
     const result = selectFilteredAssignments(assignments, filters);
 
     expect(Array.isArray(result) && 'groupKey' in (result as any)[0]).toBe(true);
-    const grouped = result as GroupedAssignments;
+    const grouped = result as GroupedAssignments[];
     expect(grouped.length).toBeGreaterThan(0);
   });
 
@@ -585,7 +594,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
     const result = selectFilteredAssignments(assignments, filters);
 
     expect(Array.isArray(result) && 'groupKey' in (result as any)[0]).toBe(true);
-    const grouped = result as GroupedAssignments;
+    const grouped = result as GroupedAssignments[];
     // Only "Physics Lab" matches "lab"
     const flat = grouped.flatMap((g) => g.assignments);
     expect(flat.map((a) => a.id)).toEqual(['3']);

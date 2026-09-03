@@ -10,7 +10,7 @@
 import type { IpcEvents } from '@backend/shared/ipc';
 import type { Assignment, PriorityOrder, SortOption, GroupingType, FilterState } from '@backend/shared/types';
 import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/shallow';
 
 import { mapErrorToMessage } from '../utils/errorMessages';
 import {
@@ -341,7 +341,7 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
       set((state) => {
         const current = state.filters.courseFilter;
         const newCourseFilter = current.includes(course)
-          ? current.filter((c) => c !== course)
+          ? current.filter((c: string) => c !== course)
           : [...current, course];
         const newFilters = { ...state.filters, courseFilter: newCourseFilter };
         writeFiltersToStorage(newFilters);
@@ -457,14 +457,12 @@ export const useCourseNames = () =>
 /**
  * Derived selector: filtered, sorted, and optionally grouped assignments.
  * Applies: search → course filter → status filter → date range → sort → group.
- * Returns flat Assignment[] if groupingType === 'none', otherwise GroupedAssignments.
+ * Returns flat Assignment[] if groupingType === 'none', otherwise GroupedAssignments[].
  * Memoized via Zustand with shallow equality — only recomputes when assignments, filters, or priorityOrder change.
  */
 export const useFilteredAssignments = () =>
   useAssignmentsStore(
-    (state) =>
-      selectFilteredAssignments(state.assignments, state.filters, state.priorityOrder),
-    shallow
+    useShallow((state) => selectFilteredAssignments(state.assignments, state.filters, state.priorityOrder))
   );
 
 /**

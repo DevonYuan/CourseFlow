@@ -9,15 +9,24 @@
 
 import type { Assignment, FilterState, SortOption, GroupingType, IsoDateTime } from '@backend/shared/types';
 import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import {
+  type GroupedAssignments,
+  applyGrouping,
+  groupByWeek,
+  groupByStatus,
+  groupByCourse,
+} from './grouping';
 
 /**
  * Type for grouped assignments returned by grouping functions.
+ * Re-exported from grouping.ts for backward compatibility.
  */
-export type GroupedAssignments = {
-  groupKey: string;
-  groupLabel: string;
-  assignments: Assignment[];
-}[];
+export type { GroupedAssignments } from './grouping';
+
+/**
+ * Grouping functions re-exported from grouping.ts for backward compatibility.
+ */
+export { groupByWeek, groupByStatus, groupByCourse, applyGrouping } from './grouping';
 
 /**
  * Filter: Search — case-insensitive substring match on title, course_name, description.
@@ -194,143 +203,22 @@ export function applySort(
 }
 
 /**
- * Grouping: 'week' — groups by "This Week", "Overdue", "Upcoming", "Completed".
- * Week boundary: Monday 00:00 to Sunday 23:59 in local timezone.
- */
-export function groupByWeek(assignments: Assignment[]): GroupedAssignments {
-  const now = new Date();
-  const startOfThisWeek = startOfDay(now);
-  startOfThisWeek.setDate(startOfThisWeek.getDate() - startOfThisWeek.getDay() + 1); // Monday
-  const endOfThisWeek = new Date(startOfThisWeek);
-  endOfThisWeek.setDate(endOfThisWeek.getDate() + 6); // Sunday
-  endOfThisWeek.setHours(23, 59, 59, 999);
-
-  const groups: GroupedAssignments = [
-    { groupKey: 'overdue', groupLabel: 'Overdue', assignments: [] },
-    { groupKey: 'thisWeek', groupLabel: 'This Week', assignments: [] },
-    { groupKey: 'upcoming', groupLabel: 'Upcoming', assignments: [] },
-    { groupKey: 'completed', groupLabel: 'Completed', assignments: [] },
-  ];
-
-  for (const assignment of assignments) {
-    if (assignment.status === 'completed') {
-      groups[3].assignments.push(assignment);
-      continue;
-    }
-
-    // Archived assignments are excluded from week grouping
-    if (assignment.status === 'archived') {
-      continue;
-    }
-
-    if (!assignment.dueAt) {
-      groups[2].assignments.push(assignment); // No due date → Upcoming
-      continue;
-    }
-
-    const dueDate = parseISO(assignment.dueAt);
-
-    if (dueDate < startOfThisWeek) {
-      groups[0].assignments.push(assignment); // Overdue
-    } else if (isWithinInterval(dueDate, { start: startOfThisWeek, end: endOfThisWeek })) {
-      groups[1].assignments.push(assignment); // This Week
-    } else {
-      groups[2].assignments.push(assignment); // Upcoming
-    }
-  }
-
-  // Filter out empty groups
-  return groups.filter((g) => g.assignments.length > 0);
-}
-
-/**
- * Grouping: 'status' — groups by "Pending", "In Progress", "Completed", "Archived".
- */
-export function groupByStatus(assignments: Assignment[]): GroupedAssignments {
-  const statusGroups: Record<Assignment['status'], Assignment[]> = {
-    pending: [],
-    in_progress: [],
-    completed: [],
-    archived: [],
-  };
-
-  for (const assignment of assignments) {
-    statusGroups[assignment.status].push(assignment);
-  }
-
-  return [
-    { groupKey: 'pending', groupLabel: 'Pending', assignments: statusGroups.pending },
-    { groupKey: 'in_progress', groupLabel: 'In Progress', assignments: statusGroups.in_progress },
-    { groupKey: 'completed', groupLabel: 'Completed', assignments: statusGroups.completed },
-    { groupKey: 'archived', groupLabel: 'Archived', assignments: statusGroups.archived },
-  ].filter((g) => g.assignments.length > 0);
-}
-
-/**
- * Grouping: 'course' — groups by course name.
- */
-export function groupByCourse(assignments: Assignment[]): GroupedAssignments {
-  const courseMap = new Map<string, Assignment[]>();
-
-  for (const assignment of assignments) {
-    const courseName = assignment.courseName;
-    if (!courseMap.has(courseName)) {
-      courseMap.set(courseName, []);
-    }
-    courseMap.get(courseName)!.push(assignment);
-  }
-
-  // Sort courses alphabetically
-  return Array.from(courseMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([courseName, assignments]) => ({
-      groupKey: courseName,
-      groupLabel: courseName,
-      assignments,
-    }));
-}
-
-/**
- * Applies grouping based on groupingType.
- * Returns flat array if groupingType is 'none', otherwise GroupedAssignments.
- */
-export function applyGrouping(
-  assignments: Assignment[],
-  groupingType: GroupingType
-): Assignment[] | GroupedAssignments {
-  if (groupingType === 'none' || assignments.length === 0) {
-    return assignments;
-  }
-
-  switch (groupingType) {
-    case 'week':
-      return groupByWeek(assignments);
-    case 'status':
-      return groupByStatus(assignments);
-    case 'course':
-      return groupByCourse(assignments);
-    default:
-      return assignments;
-  }
-}
-
-/**
  * Full pipeline: filter → sort → group.
- * Returns flat Assignment[] if groupingType === 'none', otherwise GroupedAssignments.
+ * Returns flat Assignment[] if groupingType === 'none', otherwise GroupedAssignments[].
  * Memoized: returns cached result when inputs are referentially equal.
  */
 let selectFilteredAssignmentsCache: {
   assignments: Assignment[];
   filters: FilterState;
   priorityOrder: string[];
-  result: Assignment[] | GroupedAssignments;
+  result: Assignment[] | GroupedAssignments[];
 } | null = null;
 
 export function selectFilteredAssignments(
   assignments: Assignment[],
   filters: FilterState,
   priorityOrder: string[] = []
-): Assignment[] | GroupedAssignments {
+): Assignment[] | GroupedAssignments[] {
   // Check cache - compare by reference for arrays/objects
   if (
     selectFilteredAssignmentsCache &&
@@ -343,7 +231,7 @@ export function selectFilteredAssignments(
 
   const filtered = applyFilters(assignments, filters);
   const sorted = applySort(filtered, filters.sortOption, priorityOrder);
-  const grouped = applyGrouping(sorted, filters.groupingType);
+  const grouped = applyGrouping(sorted, filters.groupingType, filters.sortOption, priorityOrder);
 
   // Update cache
   selectFilteredAssignmentsCache = {

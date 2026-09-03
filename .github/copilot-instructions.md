@@ -69,9 +69,50 @@ Always run verification after cleanup:
 ps aux | grep -E "(electron|vite|vitest|tsc.*watch)" | grep -v grep
 ```
 
+## Test Execution Limits (Critical for Memory/CPU)
+
+**NEVER run tests with full parallelism.** Vitest and other test runners spawn multiple worker processes that can quickly consume all available RAM and CPU.
+
+### Required Test Run Commands
+
+```bash
+# ✅ GOOD: Limit to 1-2 workers max, run in sequence
+npx vitest run --pool=forks --poolOptions.forks.singleFork
+npx vitest run --maxConcurrency=2
+
+# ✅ GOOD: Run specific test file only (not entire suite)
+npx vitest run src/backend/shared/__tests__/specific-file.test.ts
+
+# ❌ BAD: Default parallelism (spawns many workers)
+npx vitest run
+npx vitest run --pool=threads
+
+# ❌ BAD: Watch mode during implementation (keeps processes alive)
+npx vitest
+```
+
+### Test Execution Rules
+
+1. **Default to single-fork mode** — Use `--pool=forks --poolOptions.forks.singleFork` for all test runs unless explicitly debugging parallel issues
+2. **Max 2 concurrent workers** — If parallelism is needed, cap at `--maxConcurrency=2`
+3. **Run targeted tests** — Run specific test files or test suites, not the entire test suite at once
+4. **No watch mode during implementation** — Only use watch mode for active TDD cycles; kill immediately after
+5. **Cleanup between test runs** — Always run cleanup commands (see below) after ANY test execution
+
+### Post-Test Cleanup (MANDATORY)
+
+```bash
+# After EVERY test run, verify and clean:
+pkill -f "vitest" || true
+pkill -f "node.*vitest" || true
+ps aux | grep -E "vitest" | grep -v grep
+# Should return empty
+```
+
 ## Notes
 
 - Use `|| true` to prevent command failures from stopping execution
 - Prefer `pkill -f` with specific patterns over broad kills
 - For async terminals started via `run_in_terminal`, use `kill_terminal` with the returned ID
 - Document any persistent processes that SHOULD remain running (e.g., database servers)
+- **Test processes are the #1 cause of memory exhaustion** — treat every test run as a potential leak
