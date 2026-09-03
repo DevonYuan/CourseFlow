@@ -18,6 +18,9 @@ import type {
   PriorityOrderInput,
   Settings,
   ICalEvent,
+  SchedulerConfig,
+  SchedulerStatus,
+  IsoDateTime,
 } from './types.js';
 
 /**
@@ -144,6 +147,28 @@ export interface IpcChannels {
     response: Settings;
   };
 
+  // ── Scheduler ──────────────────────────────────────────────────────────
+  'scheduler:start': {
+    request: void;
+    response: void;
+  };
+  'scheduler:stop': {
+    request: void;
+    response: void;
+  };
+  'scheduler:status': {
+    request: void;
+    response: SchedulerStatus;
+  };
+  'scheduler:config:get': {
+    request: void;
+    response: SchedulerConfig;
+  };
+  'scheduler:config:set': {
+    request: Partial<SchedulerConfig>;
+    response: SchedulerConfig;
+  };
+
   // ── App ────────────────────────────────────────────────────────────────
   'app:version': {
     request: void;
@@ -176,6 +201,12 @@ export interface IpcEvents {
     message?: string;
   };
   'settings:changed': Settings;
+  'scheduler:tick': {
+    nextRun: IsoDateTime;
+  };
+  'scheduler:error': {
+    message: string;
+  };
 }
 
 /**

@@ -7,7 +7,7 @@
  * @module @backend/main/scheduler
  */
 
-import type { Settings, IsoDateTime } from '../shared/types.js';
+import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus } from '../shared/types.js';
 import { repo } from './db/repository.js';
 import {
   fetchICalFeed,
@@ -23,6 +23,12 @@ import { sendEventToRenderers } from './events.js';
 let intervalId: NodeJS.Timeout | null = null;
 let isRunning = false;
 let currentSettings: Settings | null = null;
+let schedulerConfig: SchedulerConfig = {
+  enabled: false,
+  intervalMinutes: 15,
+  lastRun: null,
+  nextRun: null,
+};
 
 /**
  * Performs a single fetch-and-import cycle.
@@ -47,6 +53,13 @@ async function runFetchCycle(): Promise<void> {
   }
 
   isRunning = true;
+  const now = new Date().toISOString() as IsoDateTime;
+  schedulerConfig = {
+    ...schedulerConfig,
+    lastRun: now,
+    nextRun: new Date(Date.now() + icalFetchIntervalMinutes * 60 * 1000).toISOString() as IsoDateTime,
+  };
+
   console.log('[Scheduler] Starting auto-fetch cycle');
 
   try {
@@ -93,8 +106,15 @@ async function runFetchCycle(): Promise<void> {
     const result = repo.importAssignments(assignments);
 
     // Update lastSyncAt in settings on successful import
-    const now = new Date().toISOString() as IsoDateTime;
-    await repo.setSettings({ lastSyncAt: now });
+    const syncNow = new Date().toISOString() as IsoDateTime;
+    await repo.setSettings({ lastSyncAt: syncNow });
+
+    // Update scheduler config
+    schedulerConfig = {
+      ...schedulerConfig,
+      lastRun: syncNow,
+      nextRun: new Date(Date.now() + icalFetchIntervalMinutes * 60 * 1000).toISOString() as IsoDateTime,
+    };
 
     // Emit completion progress
     sendEventToRenderers('ical:progress', {
@@ -110,12 +130,21 @@ async function runFetchCycle(): Promise<void> {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Scheduler] Auto-fetch failed:', error);
 
+    // Update scheduler config with error
+    schedulerConfig = {
+      ...schedulerConfig,
+      lastRun: new Date().toISOString() as IsoDateTime,
+    };
+
     // Emit error progress
     sendEventToRenderers('ical:progress', {
       stage: 'error',
       progress: 100,
       message: `Auto-fetch failed: ${message}`,
     });
+
+    // Emit scheduler error event
+    sendEventToRenderers('scheduler:error', { message });
 
     // Log specific error types for debugging
     if (error instanceof NetworkError) {
@@ -148,22 +177,42 @@ export function startScheduler(settings: Settings): void {
 
   if (!autoFetchIcal || icalFetchIntervalMinutes <= 0) {
     console.log('[Scheduler] Auto-fetch disabled, not starting scheduler');
+    schedulerConfig = {
+      ...schedulerConfig,
+      enabled: false,
+      intervalMinutes: icalFetchIntervalMinutes,
+    };
     return;
   }
 
   const intervalMs = icalFetchIntervalMinutes * 60 * 1000;
   console.log(`[Scheduler] Starting auto-fetch scheduler (interval: ${icalFetchIntervalMinutes} min)`);
 
-  // Run immediately on start (optional - could be disabled if not desired)
-  // Comment out the next line if you don't want an immediate fetch on startup
+  schedulerConfig = {
+    enabled: true,
+    intervalMinutes: icalFetchIntervalMinutes,
+    lastRun: schedulerConfig.lastRun,
+    nextRun: new Date(Date.now() + intervalMs).toISOString() as IsoDateTime,
+  };
+
+  // Run immediately on start
   runFetchCycle();
 
   // Set up recurring interval
   intervalId = setInterval(runFetchCycle, intervalMs);
 
-  // Prevent interval from keeping process alive (not needed in Electron main, but good practice)
+  // Prevent interval from keeping process alive
   if (intervalId.unref) {
     intervalId.unref();
+  }
+}
+
+/**
+ * Starts the scheduler for testing purposes (uses current settings).
+ */
+export function startSchedulerForTesting(): void {
+  if (currentSettings) {
+    startScheduler(currentSettings);
   }
 }
 
@@ -177,6 +226,54 @@ export function stopScheduler(): void {
     intervalId = null;
     console.log('[Scheduler] Stopped auto-fetch scheduler');
   }
+  schedulerConfig = {
+    ...schedulerConfig,
+    enabled: false,
+    nextRun: null,
+  };
+}
+
+/**
+ * Gets the current scheduler configuration.
+ */
+export function getSchedulerConfig(): SchedulerConfig {
+  return { ...schedulerConfig };
+}
+
+/**
+ * Updates the scheduler configuration.
+ */
+export function setSchedulerConfig(partial: Partial<SchedulerConfig>): SchedulerConfig {
+  schedulerConfig = { ...schedulerConfig, ...partial };
+  
+  // If enabled changed and we have settings, restart scheduler
+  if (partial.enabled !== undefined && currentSettings) {
+    if (partial.enabled) {
+      startScheduler(currentSettings);
+    } else {
+      stopScheduler();
+    }
+  }
+  
+  // If interval changed and we have settings, restart scheduler
+  if (partial.intervalMinutes !== undefined && currentSettings) {
+    const updatedSettings = { ...currentSettings, icalFetchIntervalMinutes: partial.intervalMinutes };
+    startScheduler(updatedSettings);
+  }
+  
+  return schedulerConfig;
+}
+
+/**
+ * Gets the current scheduler status.
+ */
+export function getSchedulerStatus(): SchedulerStatus {
+  return {
+    running: intervalId !== null,
+    nextRun: schedulerConfig.nextRun,
+    lastRun: schedulerConfig.lastRun,
+    lastError: null, // TODO: Track last error
+  };
 }
 
 /**
@@ -203,19 +300,4 @@ export function updateScheduler(settings: Settings): void {
     // Just update cached settings for the next cycle
     currentSettings = settings;
   }
-}
-
-/**
- * Gets the current scheduler status for debugging.
- */
-export function getSchedulerStatus(): {
-  isRunning: boolean;
-  intervalId: boolean;
-  settings: Settings | null;
-} {
-  return {
-    isRunning,
-    intervalId: intervalId !== null,
-    settings: currentSettings,
-  };
 }

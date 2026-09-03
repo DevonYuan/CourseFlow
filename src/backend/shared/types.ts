@@ -130,6 +130,46 @@ export interface PriorityOrderInput {
 }
 
 /**
+ * FilterState — UI filter state for assignment list (stored in localStorage).
+ */
+export interface FilterState {
+  courseFilter: string[]; // Course IDs to include (empty = all)
+  statusFilter: 'all' | 'pending' | 'completed';
+  dueDateRange: { start: IsoDateTime; end: IsoDateTime } | null;
+  searchQuery: string;
+}
+
+/**
+ * SortOption — available sort modes for assignment list.
+ */
+export type SortOption = 'priority' | 'dueDateAsc' | 'dueDateDesc' | 'course' | 'createdDesc';
+
+/**
+ * GroupingType — available grouping modes for assignment list.
+ */
+export type GroupingType = 'none' | 'week' | 'status' | 'course';
+
+/**
+ * SchedulerConfig — configuration for background sync scheduler.
+ */
+export interface SchedulerConfig {
+  enabled: boolean;
+  intervalMinutes: number;
+  lastRun: IsoDateTime | null;
+  nextRun: IsoDateTime | null;
+}
+
+/**
+ * SchedulerStatus — runtime status of the background scheduler.
+ */
+export interface SchedulerStatus {
+  running: boolean;
+  nextRun: IsoDateTime | null;
+  lastRun: IsoDateTime | null;
+  lastError: string | null;
+}
+
+/**
  * User Settings — persisted in DB, synced via IPC.
  */
 export interface Settings {
@@ -144,6 +184,8 @@ export interface Settings {
   icalUrl: string; // User's Canvas iCal feed URL
   lastSyncAt: IsoDateTime | null; // ISO 8601, updated on successful import
   autoFetchIntervalMs: number; // Computed: icalFetchIntervalMinutes * 60 * 1000
+  // Phase 2: sync scheduler interval (minutes), default 15
+  syncIntervalMinutes: number;
 }
 
 /**

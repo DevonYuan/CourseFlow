@@ -23,6 +23,8 @@ import type {
   Settings,
   ImportResult,
   IsoDateTime,
+  SchedulerConfig,
+  SchedulerStatus,
 } from '../shared/types.js';
 
 import { repo } from './db/repository.js';
@@ -426,6 +428,57 @@ const handlers: IpcHandlers = {
   'app:version': async (): Promise<IpcResult<string>> => {
     const { app } = await import('electron');
     return ok(app.getVersion());
+  },
+
+  // ── Scheduler ──────────────────────────────────────────────────────────
+  'scheduler:start': async (): Promise<IpcResult<void>> => {
+    try {
+      const { startSchedulerForTesting } = await import('./scheduler.js');
+      startSchedulerForTesting();
+      return ok(undefined);
+    } catch (error) {
+      return err(`Failed to start scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  'scheduler:stop': async (): Promise<IpcResult<void>> => {
+    try {
+      const { stopScheduler } = await import('./scheduler.js');
+      stopScheduler();
+      return ok(undefined);
+    } catch (error) {
+      return err(`Failed to stop scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  'scheduler:status': async (): Promise<IpcResult<SchedulerStatus>> => {
+    try {
+      const { getSchedulerStatus } = await import('./scheduler.js');
+      const status = getSchedulerStatus();
+      return ok(status);
+    } catch (error) {
+      return err(`Failed to get scheduler status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  'scheduler:config:get': async (): Promise<IpcResult<SchedulerConfig>> => {
+    try {
+      const { getSchedulerConfig } = await import('./scheduler.js');
+      const config = getSchedulerConfig();
+      return ok(config);
+    } catch (error) {
+      return err(`Failed to get scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  'scheduler:config:set': async (partial: Partial<SchedulerConfig>): Promise<IpcResult<SchedulerConfig>> => {
+    try {
+      const { setSchedulerConfig } = await import('./scheduler.js');
+      const config = setSchedulerConfig(partial);
+      return ok(config);
+    } catch (error) {
+      return err(`Failed to set scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   },
 };
 

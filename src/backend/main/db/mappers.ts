@@ -18,6 +18,7 @@ import type {
   Settings,
   DbAssignment,
   DbSubTask,
+  DbPriorityOrder,
   DbSettings,
   IsoDateTime,
   EntityId,
@@ -136,6 +137,7 @@ export function mapDbSettingsToSettings(rows: DbSettings[]): Settings {
     icalUrl: '',
     lastSyncAt: null,
     autoFetchIntervalMs: 60 * 60 * 1000, // 60 minutes in ms
+    syncIntervalMinutes: 15,
   };
 
   const result = { ...defaults };
@@ -151,4 +153,28 @@ export function mapDbSettingsToSettings(rows: DbSettings[]): Settings {
   // Compute autoFetchIntervalMs from icalFetchIntervalMinutes
   result.autoFetchIntervalMs = result.icalFetchIntervalMinutes * 60 * 1000;
   return result;
+}
+
+/**
+ * Map database row to PriorityOrder domain object.
+ */
+export function mapDbPriorityOrderToPriorityOrder(row: DbPriorityOrder): PriorityOrder {
+  return {
+    id: row.assignment_id as PriorityOrder['id'],
+    assignmentId: row.assignment_id as PriorityOrder['assignmentId'],
+    order: row.position,
+    // updatedAt is not stored in the DB row, use current time as approximation
+    // In practice, this is only used for display; the actual timestamp comes from the assignment's updatedAt
+    updatedAt: new Date().toISOString() as PriorityOrder['updatedAt'],
+  };
+}
+
+/**
+ * Map PriorityOrderInput to database row format for upsert.
+ */
+export function mapPriorityOrderInputToDb(input: PriorityOrderInput): DbPriorityOrder {
+  return {
+    assignment_id: input.assignmentId,
+    position: input.order,
+  };
 }

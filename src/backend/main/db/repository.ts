@@ -638,6 +638,11 @@ export const repo = {
       }
     }
 
+    // Ensure syncIntervalMinutes has a default if not in DB
+    if (settings.syncIntervalMinutes === undefined) {
+      settings.syncIntervalMinutes = 15;
+    }
+
     return settings;
   },
 
@@ -697,6 +702,7 @@ export const repo = {
       icalUrl: '',
       lastSyncAt: null,
       autoFetchIntervalMs: 60 * 60 * 1000, // 60 minutes in ms
+      syncIntervalMinutes: 15,
     };
 
     exec('BEGIN TRANSACTION');

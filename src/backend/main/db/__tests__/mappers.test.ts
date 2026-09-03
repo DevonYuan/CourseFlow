@@ -348,6 +348,7 @@ describe('Database Mappers', () => {
         icalUrl: 'https://canvas.example.com/feed.ics',
         lastSyncAt: new Date().toISOString() as IsoDateTime,
         autoFetchIntervalMs: 30 * 60 * 1000,
+        syncIntervalMinutes: 15,
       };
 
       expect(settings.theme).toBe('dark');
@@ -360,6 +361,7 @@ describe('Database Mappers', () => {
       expect(settings.icalUrl).toBe('https://canvas.example.com/feed.ics');
       expect(settings.lastSyncAt).toBeDefined();
       expect(settings.autoFetchIntervalMs).toBe(30 * 60 * 1000);
+      expect(settings.syncIntervalMinutes).toBe(15);
     });
 
     it('should compute autoFetchIntervalMs from icalFetchIntervalMinutes', () => {
@@ -374,6 +376,7 @@ describe('Database Mappers', () => {
         icalUrl: '',
         lastSyncAt: null,
         autoFetchIntervalMs: 45 * 60 * 1000,
+        syncIntervalMinutes: 15,
       };
 
       expect(settings.autoFetchIntervalMs).toBe(settings.icalFetchIntervalMinutes * 60 * 1000);

@@ -273,6 +273,7 @@ describe('Settings Repository', () => {
         'lastSyncAt',
         'notifyDueSoon',
         'showCompletedAssignments',
+        'syncIntervalMinutes',
         'theme',
       ].sort());
     });
