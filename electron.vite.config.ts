@@ -1,6 +1,31 @@
 import { defineConfig } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
+import { copyFileSync, mkdirSync, existsSync, readdirSync, statSync } from 'node:fs';
+
+// Plugin to copy migration files
+function copyMigrationsPlugin() {
+  return {
+    name: 'copy-migrations',
+    writeBundle() {
+      const srcDir = resolve(__dirname, 'src/backend/main/db/migrations');
+      const destDir = resolve(__dirname, 'dist/backend/main/migrations');
+      
+      if (!existsSync(destDir)) {
+        mkdirSync(destDir, { recursive: true });
+      }
+      
+      const files = readdirSync(srcDir);
+      for (const file of files) {
+        const srcFile = resolve(srcDir, file);
+        const destFile = resolve(destDir, file);
+        if (statSync(srcFile).isFile()) {
+          copyFileSync(srcFile, destFile);
+        }
+      }
+    },
+  };
+}
 
 export default defineConfig({
   main: {
@@ -13,6 +38,7 @@ export default defineConfig({
         external: ['sql.js', 'better-sqlite3'],
       },
     },
+    plugins: [copyMigrationsPlugin()],
   },
   preload: {
     build: {

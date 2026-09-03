@@ -19,14 +19,14 @@ function ThemedApp(): JSX.Element {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <Layout>
-          <BrowserRouter>
+        <BrowserRouter>
+          <Layout>
             <Routes>
               <Route path="/" element={<AssignmentListPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>
-          </BrowserRouter>
-        </Layout>
+          </Layout>
+        </BrowserRouter>
       </ToastProvider>
     </ErrorBoundary>
   );
