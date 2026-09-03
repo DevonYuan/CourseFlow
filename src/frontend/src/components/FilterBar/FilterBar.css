@@ -54,6 +54,12 @@
   min-width: 320px;
 }
 
+/* Sort wrapper */
+.filter-bar__sort-wrapper {
+  flex-shrink: 0;
+  min-width: 200px;
+}
+
 /* Clear all button */
 .filter-bar__clear-all {
   flex-shrink: 0;
@@ -138,6 +144,11 @@
     order: 2;
   }
 
+  .filter-bar__sort-wrapper {
+    min-width: 0;
+    order: 3;
+  }
+
   .filter-bar__date-wrapper .date-range-picker {
     flex-direction: column;
     align-items: stretch;
@@ -203,8 +214,12 @@
     order: 4;
   }
 
-  .filter-bar__clear-all {
+  .filter-bar__sort-wrapper {
     order: 5;
+  }
+
+  .filter-bar__clear-all {
+    order: 6;
     width: 100%;
     text-align: center;
   }

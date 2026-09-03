@@ -8,6 +8,7 @@
 
 export { FilterBar } from './FilterBar';
 export { SearchInput } from './SearchInput';
+export { SortDropdown } from './SortDropdown';
 export { StatusTabs } from './StatusTabs';
 export { CourseChips } from './CourseChips';
 export { DateRangePicker } from './DateRangePicker';

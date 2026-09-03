@@ -15,6 +15,7 @@ import { CourseChips } from './CourseChips';
 import { DateRangePicker } from './DateRangePicker';
 import { FilterSummary } from './FilterSummary';
 import { SearchInput } from './SearchInput';
+import { SortDropdown } from './SortDropdown';
 import { StatusTabs } from './StatusTabs';
 
 import './FilterBar.css';
@@ -55,7 +56,7 @@ export function FilterBar(): JSX.Element {
         </div>
       </div>
 
-      {/* Row 2: Course chips and Date range */}
+      {/* Row 2: Course chips, Date range, and Sort */}
       <div className="filter-bar__row filter-bar__row--secondary">
         <div className="filter-bar__course-wrapper">
           <CourseChips />
@@ -65,6 +66,9 @@ export function FilterBar(): JSX.Element {
             value={filters.dueDateRange}
             onChange={setDueDateRange}
           />
+        </div>
+        <div className="filter-bar__sort-wrapper">
+          <SortDropdown />
         </div>
         {hasActiveFilters && (
           <button
