@@ -242,6 +242,7 @@ const handlers: IpcHandlers = {
       return Promise.resolve(
         err(
           `Failed to get priority order: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'INTERNAL_ERROR',
         ),
       );
     }
@@ -249,13 +250,31 @@ const handlers: IpcHandlers = {
 
   'db:priority:reorder': (ids: string[]): Promise<IpcResult<void>> => {
     try {
+      // Input validation: non-empty array of strings
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return Promise.resolve(err('Expected non-empty array of assignment IDs', 'VALIDATION_ERROR'));
+      }
+      if (!ids.every((id) => typeof id === 'string' && id.length > 0)) {
+        return Promise.resolve(err('All assignment IDs must be non-empty strings', 'VALIDATION_ERROR'));
+      }
+
       repo.reorderPriority(ids);
-      sendEventToRenderers('db:changed', { table: 'priority_order', action: 'reorder', id: '' });
+
+      // Emit db:changed for each affected assignment with 'update' action
+      for (const assignmentId of ids) {
+        sendEventToRenderers('db:changed', {
+          table: 'priority_order',
+          action: 'update',
+          id: assignmentId,
+        });
+      }
+
       return Promise.resolve(ok(undefined));
     } catch (error) {
       return Promise.resolve(
         err(
           `Failed to reorder priority: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'INTERNAL_ERROR',
         ),
       );
     }
@@ -263,10 +282,25 @@ const handlers: IpcHandlers = {
 
   'db:priority:upsert': (input: PriorityOrderInput): Promise<IpcResult<PriorityOrder>> => {
     try {
+      // Input validation: valid assignment_id and position >= 0
+      if (!input || typeof input !== 'object') {
+        return Promise.resolve(err('Invalid input: expected PriorityOrderInput object', 'VALIDATION_ERROR'));
+      }
+      if (!input.assignmentId || typeof input.assignmentId !== 'string' || input.assignmentId.length === 0) {
+        return Promise.resolve(err('assignmentId is required and must be a non-empty string', 'VALIDATION_ERROR'));
+      }
+      if (typeof input.order !== 'number' || !Number.isInteger(input.order) || input.order < 0) {
+        return Promise.resolve(err('order must be a non-negative integer', 'VALIDATION_ERROR'));
+      }
+
+      // Check if entry exists to determine insert vs update
+      const existing = repo.getPriorityOrderByAssignmentId(input.assignmentId);
+      const action = existing ? 'update' : 'insert';
+
       const order = repo.upsertPriorityOrder(input);
       sendEventToRenderers('db:changed', {
         table: 'priority_order',
-        action: 'upsert',
+        action,
         id: input.assignmentId,
       });
       return Promise.resolve(ok(order));
@@ -274,6 +308,7 @@ const handlers: IpcHandlers = {
       return Promise.resolve(
         err(
           `Failed to upsert priority order: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'INTERNAL_ERROR',
         ),
       );
     }
