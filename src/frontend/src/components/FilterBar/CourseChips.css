@@ -1,0 +1,301 @@
+/**
+ * CourseChips Styles
+ */
+
+.course-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* All courses chip wrapper */
+.course-chips__all-wrapper {
+  flex-shrink: 0;
+}
+
+/* Scrollable chips container (desktop) */
+.course-chips__scroll-wrapper {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color, #e0e0e0) transparent;
+  padding-bottom: 4px; /* Space for scrollbar */
+  margin-bottom: -4px;
+}
+
+.course-chips__scroll-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.course-chips__scroll-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.course-chips__scroll-wrapper::-webkit-scrollbar-thumb {
+  background-color: var(--border-color, #e0e0e0);
+  border-radius: 3px;
+}
+
+.course-chips__chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-width: max-content;
+  padding: 2px 0;
+}
+
+/* Base chip styles */
+.course-chips__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+  background-color: var(--surface-color, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast, 150ms),
+    border-color var(--transition-fast, 150ms),
+    color var(--transition-fast, 150ms);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.course-chips__chip:hover {
+  background-color: var(--hover-bg, #f5f5f5);
+  border-color: var(--border-hover, #ccc);
+}
+
+.course-chips__chip:focus-visible {
+  outline: 3px solid var(--focus-ring, rgba(59, 130, 246, 0.4));
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+.course-chips__chip--selected,
+.course-chips__chip--active {
+  background-color: var(--primary-color, #3b82f6);
+  border-color: var(--primary-color, #3b82f6);
+  color: #fff;
+}
+
+.course-chips__chip--selected:hover,
+.course-chips__chip--active:hover {
+  background-color: var(--primary-hover, #2563eb);
+  border-color: var(--primary-hover, #2563eb);
+  color: #fff;
+}
+
+.course-chips__chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.course-chips__chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: inherit;
+  background-color: currentColor;
+  border-radius: 999px;
+  opacity: 0.2;
+}
+
+.course-chips__chip--selected .course-chips__chip-count,
+.course-chips__chip--active .course-chips__chip-count {
+  background-color: #fff;
+  opacity: 0.3;
+}
+
+/* Dropdown wrapper (mobile) */
+.course-chips__dropdown-wrapper {
+  display: none;
+  position: relative;
+}
+
+/* Mobile styles - show dropdown, hide chips */
+@media (max-width: 999px) {
+  .course-chips__scroll-wrapper {
+    display: none;
+  }
+
+  .course-chips__dropdown-wrapper {
+    display: block;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .course-chips__all-wrapper {
+    display: none;
+  }
+}
+
+/* Dropdown trigger */
+.course-chips__dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+  background-color: var(--surface-color, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms);
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.course-chips__dropdown-trigger:hover {
+  border-color: var(--border-hover, #ccc);
+}
+
+.course-chips__dropdown-trigger:focus-visible {
+  outline: none;
+  border-color: var(--primary-color, #3b82f6);
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(59, 130, 246, 0.2));
+}
+
+.course-chips__dropdown-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-chips__dropdown-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted, #999);
+  transition: transform var(--transition-fast, 150ms);
+}
+
+.course-chips__dropdown-chevron--open {
+  transform: rotate(180deg);
+}
+
+.course-chips__dropdown-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: var(--primary-color, #3b82f6);
+  border-radius: 999px;
+}
+
+/* Dropdown menu */
+.course-chips__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: var(--surface-color, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.1));
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color, #e0e0e0) transparent;
+}
+
+.course-chips__dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.course-chips__dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.course-chips__dropdown::-webkit-scrollbar-thumb {
+  background-color: var(--border-color, #e0e0e0);
+  border-radius: 3px;
+}
+
+.course-chips__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--transition-fast, 150ms);
+  box-sizing: border-box;
+}
+
+.course-chips__dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.course-chips__dropdown-item:hover {
+  background-color: var(--hover-bg, #f5f5f5);
+}
+
+.course-chips__dropdown-item:focus-visible {
+  outline: none;
+  background-color: var(--hover-bg, #f5f5f5);
+  box-shadow: inset 0 0 0 3px var(--focus-ring, rgba(59, 130, 246, 0.2));
+}
+
+.course-chips__dropdown-item--selected {
+  background-color: var(--primary-light, #eff6ff);
+  color: var(--primary-color, #3b82f6);
+}
+
+.course-chips__dropdown-item--selected:hover {
+  background-color: var(--primary-lighter, #dbeafe);
+}
+
+.course-chips__dropdown-item-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-chips__dropdown-item-count {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted, #999);
+}
+
+.course-chips__dropdown-item--selected .course-chips__dropdown-item-count {
+  color: var(--primary-color, #3b82f6);
+}
+
+.course-chips__dropdown-item-check {
+  flex-shrink: 0;
+  color: var(--primary-color, #3b82f6);
+}
+
+.course-chips__dropdown-divider {
+  height: 1px;
+  background-color: var(--border-color, #e0e0e0);
+  margin: 4px 0;
+}

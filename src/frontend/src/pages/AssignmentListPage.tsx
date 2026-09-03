@@ -8,6 +8,7 @@
  */
 
 import { AssignmentList } from '../components/AssignmentList';
+import { FilterBar } from '../components/FilterBar';
 
 interface AssignmentListPageProps {
   /** Optional callback when an assignment is clicked (for future detail view) */
@@ -23,6 +24,7 @@ export function AssignmentListPage({
 }: AssignmentListPageProps): JSX.Element {
   return (
     <section className="assignment-list-page" aria-label="Assignments">
+      <FilterBar />
       <AssignmentList
         onOpenSettings={() => {
           // Navigation to settings is handled by the TopBar settings button
