@@ -6,6 +6,7 @@ import { initializeDatabase, closeDatabase } from './db/connection.js';
 import { migrate } from './db/migrate.js';
 import { repo } from './db/repository.js';
 import { registerIpcHandlers } from './ipc-handlers.js';
+import { startScheduler, stopScheduler, updateScheduler } from './scheduler.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -55,6 +56,9 @@ void app.whenReady().then(async () => {
     mainWindow.webContents.send('settings:changed', settings);
   }
 
+  // Start auto-fetch scheduler
+  startScheduler(settings);
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       void createWindow();
@@ -69,5 +73,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  stopScheduler();
   closeDatabase();
 });

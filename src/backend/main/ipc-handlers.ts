@@ -27,6 +27,7 @@ import type {
 
 import { repo } from './db/repository.js';
 import { sendEventToRenderers } from './events.js';
+import { updateScheduler } from './scheduler.js';
 import {
   fetchICalFeed,
   parseICalFeed,
@@ -401,6 +402,7 @@ const handlers: IpcHandlers = {
     try {
       const settings = await repo.setSettings(partial);
       sendEventToRenderers('settings:changed', settings);
+      updateScheduler(settings);
       return ok(settings);
     } catch (error) {
       return err(`Failed to set settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -411,6 +413,7 @@ const handlers: IpcHandlers = {
     try {
       const settings = await repo.resetSettings();
       sendEventToRenderers('settings:changed', settings);
+      updateScheduler(settings);
       return ok(settings);
     } catch (error) {
       return err(
