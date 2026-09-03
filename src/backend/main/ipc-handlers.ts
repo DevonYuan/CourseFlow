@@ -236,13 +236,7 @@ const handlers: IpcHandlers = {
 
   'db:priority:list': (): Promise<IpcResult<PriorityOrder[]>> => {
     try {
-      const ids = repo.getPriorityOrder();
-      const orders: PriorityOrder[] = ids.map((id, index) => ({
-        id: id as PriorityOrder['id'],
-        assignmentId: id as PriorityOrder['assignmentId'],
-        order: index,
-        updatedAt: new Date().toISOString() as PriorityOrder['updatedAt'],
-      }));
+      const orders = repo.getAllPriorityOrders();
       return Promise.resolve(ok(orders));
     } catch (error) {
       return Promise.resolve(
@@ -255,7 +249,7 @@ const handlers: IpcHandlers = {
 
   'db:priority:reorder': (ids: string[]): Promise<IpcResult<void>> => {
     try {
-      repo.setPriorityOrder(ids);
+      repo.reorderPriority(ids);
       sendEventToRenderers('db:changed', { table: 'priority_order', action: 'reorder', id: '' });
       return Promise.resolve(ok(undefined));
     } catch (error) {
@@ -269,14 +263,10 @@ const handlers: IpcHandlers = {
 
   'db:priority:upsert': (input: PriorityOrderInput): Promise<IpcResult<PriorityOrder>> => {
     try {
-      // Check if priority order entry exists to determine insert vs update
-      const existingOrder = repo.getPriorityOrder();
-      const exists = existingOrder.includes(input.assignmentId);
-      const action = exists ? 'update' : 'insert';
       const order = repo.upsertPriorityOrder(input);
       sendEventToRenderers('db:changed', {
         table: 'priority_order',
-        action,
+        action: 'upsert',
         id: input.assignmentId,
       });
       return Promise.resolve(ok(order));

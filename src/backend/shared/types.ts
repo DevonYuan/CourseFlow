@@ -278,6 +278,8 @@ export interface DbNote {
 export interface DbPriorityOrder {
   assignment_id: string;
   position: number;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DbSettings {

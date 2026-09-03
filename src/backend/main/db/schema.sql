@@ -28,8 +28,12 @@ CREATE TABLE assignments (
 -- User-defined priority (drag-drop order)
 CREATE TABLE priority_order (
   assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
-  position INTEGER NOT NULL UNIQUE        -- 0 = top priority
+  position INTEGER NOT NULL,              -- 0 = top priority
+  created_at INTEGER NOT NULL,            -- Unix ms
+  updated_at INTEGER NOT NULL             -- Unix ms
 );
+
+CREATE INDEX idx_priority_order_position ON priority_order(position);
 
 -- Sub-tasks / checklist per assignment
 CREATE TABLE sub_tasks (

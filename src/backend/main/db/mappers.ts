@@ -163,18 +163,26 @@ export function mapDbPriorityOrderToPriorityOrder(row: DbPriorityOrder): Priorit
     id: row.assignment_id as PriorityOrder['id'],
     assignmentId: row.assignment_id as PriorityOrder['assignmentId'],
     order: row.position,
-    // updatedAt is not stored in the DB row, use current time as approximation
-    // In practice, this is only used for display; the actual timestamp comes from the assignment's updatedAt
-    updatedAt: new Date().toISOString() as PriorityOrder['updatedAt'],
+    updatedAt: toIsoDateTime(row.updated_at) as PriorityOrder['updatedAt'],
   };
 }
 
 /**
- * Map PriorityOrderInput to database row format for upsert.
+ * Map database row to PriorityOrder domain object (alias for repository layer).
  */
-export function mapPriorityOrderInputToDb(input: PriorityOrderInput): DbPriorityOrder {
+export function mapPriorityOrderRow(row: DbPriorityOrder): PriorityOrder {
+  return mapDbPriorityOrderToPriorityOrder(row);
+}
+
+/**
+ * Validate and map PriorityOrderInput to database row format for upsert.
+ * Generates timestamps for new records.
+ */
+export function mapPriorityOrderInputToDb(input: PriorityOrderInput, now: number = Date.now()): DbPriorityOrder {
   return {
     assignment_id: input.assignmentId,
     position: input.order,
+    created_at: now,
+    updated_at: now,
   };
 }

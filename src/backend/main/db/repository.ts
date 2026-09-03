@@ -22,6 +22,7 @@ import type {
   Settings,
   DbAssignment,
   DbSubTask,
+  DbPriorityOrder,
   DbSettings,
   IsoDateTime,
   ImportResult,
@@ -37,6 +38,8 @@ import {
   mapDbSubTaskToSubTask,
   mapSubTaskInputToDb,
   mapDbSettingsToSettings,
+  mapPriorityOrderRow,
+  mapPriorityOrderInputToDb,
   toIsoDateTime,
   toUnixMs,
 } from './mappers.js';
@@ -412,30 +415,66 @@ export const repo = {
   // --- Priority Order ---
 
   /**
-   * Get all assignment IDs in priority order (0 = highest priority).
+   * Get all priority order entries ordered by position (0 = highest priority).
    */
-  getPriorityOrder(): string[] {
-    const rows = all<{ assignment_id: string }>(
-      'SELECT assignment_id FROM priority_order ORDER BY position ASC',
+  getAllPriorityOrders(): PriorityOrder[] {
+    const rows = all<DbPriorityOrder>(
+      'SELECT * FROM priority_order ORDER BY position ASC',
     );
-    return rows.map((r) => r.assignment_id);
+    return rows.map(mapPriorityOrderRow);
   },
 
   /**
-   * Set the complete priority order from an array of assignment IDs.
-   * Replaces all existing priority order entries.
+   * Get a single priority order entry by assignment ID.
    */
-  setPriorityOrder(ids: string[]): void {
-    exec('BEGIN TRANSACTION');
+  getPriorityOrderByAssignmentId(assignmentId: string): PriorityOrder | null {
+    const row = get<DbPriorityOrder>(
+      'SELECT * FROM priority_order WHERE assignment_id = ?',
+      [assignmentId],
+    );
+    return row ? mapPriorityOrderRow(row) : null;
+  },
+
+  /**
+   * Insert or update a priority order entry.
+   * Uses created_at/updated_at timestamps for audit trail.
+   */
+  upsertPriorityOrder(input: PriorityOrderInput): PriorityOrder {
+    const now = Date.now();
+    const dbRow = mapPriorityOrderInputToDb(input, now);
+
+    run(
+      `
+      INSERT INTO priority_order (assignment_id, position, created_at, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(assignment_id) DO UPDATE SET
+        position = excluded.position,
+        updated_at = excluded.updated_at
+    `,
+      [dbRow.assignment_id, dbRow.position, dbRow.created_at, dbRow.updated_at],
+    );
+
+    const row = get<DbPriorityOrder>('SELECT * FROM priority_order WHERE assignment_id = ?', [
+      input.assignmentId,
+    ]);
+    if (!row) throw new Error('Failed to retrieve upserted priority order');
+    return mapPriorityOrderRow(row);
+  },
+
+  /**
+   * Bulk reorder priority entries in a single transaction.
+   * All-or-nothing: if any update fails, the entire operation rolls back.
+   * Positions are assigned as contiguous integers starting from 0.
+   */
+  reorderPriority(orderedAssignmentIds: string[]): void {
+    const now = Date.now();
+    exec('BEGIN IMMEDIATE TRANSACTION');
     try {
-      // Clear existing
-      run('DELETE FROM priority_order');
-      // Insert new order
-      for (let i = 0; i < ids.length; i++) {
-        run('INSERT OR REPLACE INTO priority_order (assignment_id, position) VALUES (?, ?)', [
-          ids[i]!,
-          i,
-        ]);
+      for (let i = 0; i < orderedAssignmentIds.length; i++) {
+        run(
+          'UPDATE priority_order SET position = ?, updated_at = ? WHERE assignment_id = ?',
+          [i, now, orderedAssignmentIds[i]!],
+        );
       }
       exec('COMMIT');
     } catch (e) {
@@ -445,20 +484,11 @@ export const repo = {
   },
 
   /**
-   * Upsert a single priority order entry.
+   * Delete a priority order entry by assignment ID.
+   * Called when an assignment is deleted (cascade via FK also handles this).
    */
-  upsertPriorityOrder(input: PriorityOrderInput): PriorityOrder {
-    const now = Date.now();
-    run('INSERT OR REPLACE INTO priority_order (assignment_id, position) VALUES (?, ?)', [
-      input.assignmentId,
-      input.order,
-    ]);
-    return {
-      id: input.assignmentId,
-      assignmentId: input.assignmentId,
-      order: input.order,
-      updatedAt: toIsoDateTime(now) as PriorityOrder['updatedAt'],
-    };
+  deletePriorityOrder(assignmentId: string): void {
+    run('DELETE FROM priority_order WHERE assignment_id = ?', [assignmentId]);
   },
 
   // --- Sub-tasks ---
