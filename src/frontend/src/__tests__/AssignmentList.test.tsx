@@ -24,6 +24,9 @@ const mockApi = {
     assignments: {
       list: vi.fn(),
     },
+    priority: {
+      list: vi.fn(),
+    },
   },
   onDbChanged: vi.fn(),
 };
@@ -81,12 +84,16 @@ describe('AssignmentList', () => {
     resetStore();
     // Reset mock implementations to avoid leakage between tests
     mockApi.db.assignments.list.mockReset();
+    mockApi.db.priority.list.mockReset();
     dbChangedCallback = null;
 
     mockApi.onDbChanged.mockImplementation((cb) => {
       dbChangedCallback = cb;
       return vi.fn();
     });
+
+    // Default mock for priority.list - returns empty priority order
+    mockApi.db.priority.list.mockResolvedValue({ ok: true, data: [] });
 
     mockOnOpenSettings.mockClear();
     mockOnAssignmentClick.mockClear();

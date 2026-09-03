@@ -274,7 +274,8 @@ export const repo = {
    * - Existing ical_uid with newer updatedAt → UPDATE (counted as updated)
    * - Existing ical_uid with older/equal updatedAt → SKIP (counted as skipped)
    *
-   * On UPDATE, preserves user-edited fields: description, status (if completed or archived), priority.
+   * On UPDATE, preserves user-edited fields: status (if completed or archived), priority, course_color, notes, subtasks.
+   * Updates from Canvas: due_at, title, workflow_state, description.
    * Emits db:changed events for each insert/update.
    * Transactional — all or nothing.
    */
@@ -293,8 +294,8 @@ export const repo = {
     `);
     const updateStmt = db.prepare(`
       UPDATE assignments SET
-        title = ?, due_at = ?, workflow_state = ?, html_url = ?, course_color = ?, points_possible = ?,
-        submission_types = ?, unlock_at = ?, lock_at = ?, rrule = ?, source = ?, source_url = ?, status = ?, updated_at = ?
+        title = ?, due_at = ?, workflow_state = ?, html_url = ?, points_possible = ?,
+        submission_types = ?, unlock_at = ?, lock_at = ?, rrule = ?, source = ?, source_url = ?, status = ?, updated_at = ?, description = ?
       WHERE id = ?
     `);
 
@@ -347,6 +348,13 @@ export const repo = {
           insertStmt.step();
           insertStmt.reset();
 
+          // Add priority_order entry for new assignment at end (max position + 1)
+          run(
+            `INSERT INTO priority_order (assignment_id, position, created_at, updated_at)
+             VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM priority_order), ?, ?)`,
+            [id, now, now],
+          );
+
           result.imported++;
           sendEventToRenderers('db:changed', { table: 'assignments', action: 'insert', id });
         } else {
@@ -355,17 +363,15 @@ export const repo = {
           if (incomingUpdatedAt > storedUpdatedAt) {
             // UPDATE: incoming is newer — but preserve protected fields
             const existingId = existing['id'] as string;
-            const existingDescription = (existing['description'] as string) ?? '';
             const existingStatus = (existing['status'] as string) ?? 'pending';
-            // Priority is stored in priority_order table, not in assignments
 
-            // Update safe-to-overwrite fields (including status, which we may restore after)
+            // Update safe-to-overwrite fields from Canvas (including description)
+            // Preserve: status (if completed), course_color, priority_order, notes, subtasks
             updateStmt.bind([
               input.title ?? existing['title'] ?? '', // title
               input.dueAt ? new Date(input.dueAt).getTime() : toNullable(existing['due_at']), // due_at
               input.workflowState ?? existing['workflow_state'] ?? 'published', // workflow_state
               input.htmlUrl ?? existing['html_url'] ?? '', // html_url
-              input.courseColor ?? existing['course_color'] ?? '#6366f1', // course_color
               input.pointsPossible ?? toNullable(existing['points_possible']), // points_possible
               input.submissionTypes ? JSON.stringify(input.submissionTypes) : toNullable(existing['submission_types']), // submission_types
               input.unlockAt ? new Date(input.unlockAt).getTime() : toNullable(existing['unlock_at']), // unlock_at
@@ -375,21 +381,20 @@ export const repo = {
               input.sourceUrl ?? toNullable(existing['source_url']), // source_url
               input.status ?? existingStatus, // status (may be restored below if protected)
               now, // updated_at
+              input.description ?? existing['description'] ?? '', // description (from Canvas)
               existingId, // WHERE id = ?
             ]);
             updateStmt.step();
             updateStmt.reset();
 
             // Preserve protected fields by restoring them if they were overwritten
-            // Description: restore user-edited description
-            if (existingDescription && input.description !== undefined && input.description !== existingDescription) {
-              run('UPDATE assignments SET description = ? WHERE id = ?', [existingDescription, existingId]);
-            }
             // Status: preserve if user marked as completed (or archived in future)
             if (existingStatus === 'completed' && input.status !== undefined && input.status !== 'completed') {
               run('UPDATE assignments SET status = ? WHERE id = ?', ['completed', existingId]);
             }
+            // course_color: preserve user's course color (do not overwrite from Canvas)
             // Priority: stored in priority_order table, not affected by assignment UPDATE
+            // Notes and Subtasks: separate tables, not affected
 
             result.updated++;
             sendEventToRenderers('db:changed', { table: 'assignments', action: 'update', id: existingId });

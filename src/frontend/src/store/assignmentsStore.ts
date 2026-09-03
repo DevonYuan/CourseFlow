@@ -8,7 +8,7 @@
  */
 
 import type { IpcEvents } from '@backend/shared/ipc';
-import type { Assignment } from '@backend/shared/types';
+import type { Assignment, PriorityOrder } from '@backend/shared/types';
 import { create } from 'zustand';
 
 import { mapErrorToMessage } from '../utils/errorMessages';
@@ -31,6 +31,8 @@ interface AssignmentsState {
 interface AssignmentsActions {
   /** Triggers a fresh fetch of assignments from the database */
   fetchAssignments: () => Promise<void>;
+  /** Hydrates store with assignments and priority order (used on app startup) */
+  hydrate: (assignments: Assignment[], priorityOrder: PriorityOrder[]) => void;
   /** Sets assignments directly (used for initial load or external updates) */
   setAssignments: (assignments: Assignment[]) => void;
   /** Updates the status of a single assignment (optimistic update) */
@@ -110,6 +112,19 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
       });
     },
 
+    hydrate: (assignments: Assignment[], priorityOrder: PriorityOrder[]) => {
+      // Sort priorityOrder by position to get the correct order
+      const sortedPriorityOrder = [...priorityOrder].sort((a, b) => a.order - b.order);
+      const priorityIds = sortedPriorityOrder.map((po) => po.assignmentId);
+      set({
+        assignments,
+        priorityOrder: priorityIds,
+        isLoading: false,
+        error: null,
+        isEmpty: assignments.length === 0,
+      });
+    },
+
     clearError: () => {
       set({ error: null });
     },
@@ -160,14 +175,37 @@ export const usePriorityOrder = () => useAssignmentsStore((state) => state.prior
 export const useSetPriorityOrder = () => useAssignmentsStore((state) => state.setPriorityOrder);
 export const useReorderOptimistic = () => useAssignmentsStore((state) => state.reorderOptimistic);
 export const useRevertPriorityOrder = () => useAssignmentsStore((state) => state.revertPriorityOrder);
+export const useHydrate = () => useAssignmentsStore((state) => state.hydrate);
 
 /**
- * Initialize the store — fetches assignments.
+ * Initialize the store — fetches assignments and priority order.
  * The useAssignments hook handles db:changed event subscription with debouncing.
  * Returns cleanup function (currently no-op, kept for API compatibility).
  */
 export function initializeAssignmentsStore(): () => void {
   const store = useAssignmentsStore.getState();
-  store.fetchAssignments();
+
+  // Fetch both assignments and priority order in parallel, then hydrate
+  Promise.all([
+    window.api.db.assignments.list(),
+    window.api.db.priority.list(),
+  ]).then(([assignmentsResult, priorityResult]) => {
+    if (assignmentsResult.ok && priorityResult.ok) {
+      store.hydrate(assignmentsResult.data, priorityResult.data);
+    } else if (assignmentsResult.ok) {
+      // Fallback: if priority fetch fails, just set assignments
+      store.setAssignments(assignmentsResult.data);
+    } else {
+      // Error fetching assignments
+      const error = new Error(assignmentsResult.error);
+      error.name = assignmentsResult.code || 'UNKNOWN_ERROR';
+      const errorMessage = mapErrorToMessage(error);
+      useAssignmentsStore.setState({ assignments: [], priorityOrder: [], isLoading: false, error: errorMessage, isEmpty: true });
+    }
+  }).catch((err) => {
+    const errorMessage = mapErrorToMessage(err);
+    useAssignmentsStore.setState({ assignments: [], priorityOrder: [], isLoading: false, error: errorMessage, isEmpty: true });
+  });
+
   return () => {};
 }

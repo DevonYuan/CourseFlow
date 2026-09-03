@@ -17,11 +17,15 @@ import { ToastProvider } from '../context/ToastContext';
 
 // Mock window.api
 type AssignmentsListResult = { ok: true; data: Assignment[] } | { ok: false; error: string; code?: string };
+type PriorityListResult = { ok: true; data: import('@backend/shared/types').PriorityOrder[] } | { ok: false; error: string; code?: string };
 
 const mockApi = {
   db: {
     assignments: {
       list: vi.fn<() => Promise<AssignmentsListResult>>(),
+    },
+    priority: {
+      list: vi.fn<() => Promise<PriorityListResult>>(),
     },
   },
   onDbChanged: vi.fn(),
@@ -108,6 +112,9 @@ describe('useAssignments', () => {
       dbChangedCallback = cb;
       return vi.fn();
     });
+
+    // Default mock for priority.list - returns empty priority order
+    mockApi.db.priority.list.mockResolvedValue({ ok: true, data: [] });
   });
 
   afterEach(() => {
