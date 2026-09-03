@@ -14,12 +14,16 @@
 // @vitest-environment jsdom
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsModal } from '../components/SettingsModal';
 import { ToastProvider } from '../context/ToastContext';
 import type { Settings } from '@backend/shared/types';
 import type { IpcEvents } from '@backend/shared/ipc';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Extend expect with jest-dom matchers
+expect.extend(matchers);
 
 // Mock window.api
 const mockApi = {
@@ -147,6 +151,7 @@ describe('SettingsModal', () => {
     vi.restoreAllMocks();
     progressCallback = null;
     settingsUnsubscribe = null;
+    cleanup();
   });
 
   describe('Modal Visibility', () => {

@@ -10,6 +10,10 @@ import React from 'react';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Extend expect with jest-dom matchers
+expect.extend(matchers);
 
 // Component that throws an error during render
 class ThrowError extends React.Component<{ shouldThrow: boolean }> {

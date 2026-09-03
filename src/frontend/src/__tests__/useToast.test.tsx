@@ -10,6 +10,10 @@ import React, { act } from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ToastProvider, useToast, type ToastContextValue } from '../context/ToastContext';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Extend expect with jest-dom matchers for this test file
+expect.extend(matchers);
 
 // Test component that uses useToast
 const ToastTestComponent = () => {

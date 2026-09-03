@@ -6,13 +6,17 @@
 
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent, act, cleanup } from '@testing-library/react';
 import { AssignmentList } from '../components/AssignmentList';
 import type { Assignment, IsoDateTime } from '@backend/shared/types';
 import type { IpcEvents } from '@backend/shared/ipc';
 import { useAssignmentsStore } from '../store/assignmentsStore';
 import { ToastProvider } from '../context/ToastContext';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Extend expect with jest-dom matchers
+expect.extend(matchers);
 
 // Mock window.api
 const mockApi = {
@@ -86,6 +90,10 @@ describe('AssignmentList', () => {
 
     mockOnOpenSettings.mockClear();
     mockOnAssignmentClick.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('shows skeleton while loading', () => {

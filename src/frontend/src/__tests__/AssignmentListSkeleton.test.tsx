@@ -6,11 +6,19 @@
 
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import { AssignmentListSkeleton } from '../components/AssignmentListSkeleton';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Extend expect with jest-dom matchers
+expect.extend(matchers);
 
 describe('AssignmentListSkeleton', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders default 4 skeleton rows', () => {
     render(<AssignmentListSkeleton />);
     const rows = screen.getAllByRole('status');
