@@ -8,10 +8,42 @@
  */
 
 import type { IpcEvents } from '@backend/shared/ipc';
-import type { Assignment, PriorityOrder } from '@backend/shared/types';
+import type { Assignment, PriorityOrder, SortOption, GroupingType } from '@backend/shared/types';
 import { create } from 'zustand';
 
 import { mapErrorToMessage } from '../utils/errorMessages';
+
+/**
+ * Filter state for assignment list — persisted to localStorage.
+ * Includes course filter, status filter, date range, search, sort, and grouping.
+ */
+export interface FilterState {
+  /** Course names to include (empty = all) */
+  courseFilter: string[];
+  /** Status filter: all, pending, or completed */
+  statusFilter: 'all' | 'pending' | 'completed';
+  /** Optional date range filter for due dates */
+  dueDateRange: { start: Date; end: Date } | null;
+  /** Search query string */
+  searchQuery: string;
+  /** Sort option for assignment list */
+  sortOption: SortOption;
+  /** Grouping type for assignment list */
+  groupingType: GroupingType;
+}
+
+/** Default filter state values */
+const defaultFilterState: FilterState = {
+  courseFilter: [],
+  statusFilter: 'all',
+  dueDateRange: null,
+  searchQuery: '',
+  sortOption: 'priority',
+  groupingType: 'none',
+};
+
+/** localStorage key for filter persistence */
+const FILTER_STORAGE_KEY = 'courseflow:filters';
 
 interface AssignmentsState {
   /** Current list of assignments */
@@ -26,6 +58,10 @@ interface AssignmentsState {
   priorityOrder: string[];
   /** Previous priority order for rollback on error */
   _previousPriorityOrder: string[] | null;
+  /** Filter state for assignment list */
+  filters: FilterState;
+  /** Internal: timer ID for debounced search query persistence */
+  _searchQueryDebounceTimer: ReturnType<typeof setTimeout> | number | null;
 }
 
 interface AssignmentsActions {
@@ -54,9 +90,74 @@ interface AssignmentsActions {
    * @returns Object with newIndex (position after move) and total (total movable items), or null if move not possible
    */
   moveAssignment: (assignmentId: string, direction: 'up' | 'down' | 'top' | 'bottom') => { newIndex: number; total: number } | null;
+
+  // Filter actions
+  /** Sets the course filter (multi-select) */
+  setCourseFilter: (courses: string[]) => void;
+  /** Toggles a course in the filter */
+  toggleCourseFilter: (course: string) => void;
+  /** Sets the status filter */
+  setStatusFilter: (status: FilterState['statusFilter']) => void;
+  /** Sets the due date range filter */
+  setDueDateRange: (range: FilterState['dueDateRange']) => void;
+  /** Sets the search query (debounced persistence) */
+  setSearchQuery: (query: string) => void;
+  /** Sets the sort option */
+  setSortOption: (option: SortOption) => void;
+  /** Sets the grouping type */
+  setGroupingType: (type: GroupingType) => void;
+  /** Resets all filters to defaults */
+  resetFilters: () => void;
+  /** Hydrates filter state from localStorage (called on initialization) */
+  hydrateFilters: () => void;
 }
 
 type AssignmentsStore = AssignmentsState & AssignmentsActions;
+
+/**
+ * Safely reads filter state from localStorage.
+ * Handles private browsing, quota exceeded, and corrupt JSON.
+ */
+function readFiltersFromStorage(): FilterState | null {
+  try {
+    const stored = localStorage.getItem(FILTER_STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as Partial<FilterState> & { dueDateRange?: { start: string; end: string } | null };
+    // Convert date strings back to Date objects
+    if (parsed.dueDateRange && parsed.dueDateRange.start && parsed.dueDateRange.end) {
+      return {
+        ...defaultFilterState,
+        ...parsed,
+        dueDateRange: {
+          start: new Date(parsed.dueDateRange.start),
+          end: new Date(parsed.dueDateRange.end),
+        },
+      } as FilterState;
+    }
+    return { ...defaultFilterState, ...parsed } as FilterState;
+  } catch {
+    // Ignore errors (private browsing, quota, corrupt JSON)
+    return null;
+  }
+}
+
+/**
+ * Safely writes filter state to localStorage.
+ * Handles private browsing and quota exceeded.
+ */
+function writeFiltersToStorage(filters: FilterState): void {
+  try {
+    const toStore = {
+      ...filters,
+      dueDateRange: filters.dueDateRange
+        ? { start: filters.dueDateRange.start.toISOString(), end: filters.dueDateRange.end.toISOString() }
+        : null,
+    };
+    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(toStore));
+  } catch {
+    // Ignore errors (private browsing, quota exceeded)
+  }
+}
 
 /**
  * Zustand store for assignment list state.
@@ -69,6 +170,8 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
     isEmpty: true,
     priorityOrder: [],
     _previousPriorityOrder: null,
+    filters: defaultFilterState,
+    _searchQueryDebounceTimer: null,
 
     // Actions
     fetchAssignments: async () => {
@@ -219,6 +322,87 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
 
       return { newIndex, total: movableIds.length };
     },
+
+    // Filter actions
+    setCourseFilter: (courses: string[]) => {
+      set((state) => {
+        const newFilters = { ...state.filters, courseFilter: courses };
+        writeFiltersToStorage(newFilters);
+        return { filters: newFilters };
+      });
+    },
+
+    toggleCourseFilter: (course: string) => {
+      set((state) => {
+        const current = state.filters.courseFilter;
+        const newCourseFilter = current.includes(course)
+          ? current.filter((c) => c !== course)
+          : [...current, course];
+        const newFilters = { ...state.filters, courseFilter: newCourseFilter };
+        writeFiltersToStorage(newFilters);
+        return { filters: newFilters };
+      });
+    },
+
+    setStatusFilter: (status: FilterState['statusFilter']) => {
+      set((state) => {
+        const newFilters = { ...state.filters, statusFilter: status };
+        writeFiltersToStorage(newFilters);
+        return { filters: newFilters };
+      });
+    },
+
+    setDueDateRange: (range: FilterState['dueDateRange']) => {
+      set((state) => {
+        const newFilters = { ...state.filters, dueDateRange: range };
+        writeFiltersToStorage(newFilters);
+        return { filters: newFilters };
+      });
+    },
+
+    setSearchQuery: (query: string) => {
+      set((state) => {
+        const newFilters = { ...state.filters, searchQuery: query };
+        // Debounce search query persistence (300ms)
+        if (state._searchQueryDebounceTimer) {
+          clearTimeout(state._searchQueryDebounceTimer);
+        }
+        const timer = window.setTimeout(() => {
+          writeFiltersToStorage(newFilters);
+        }, 300);
+        return { filters: newFilters, _searchQueryDebounceTimer: timer };
+      });
+    },
+
+    setSortOption: (option: SortOption) => {
+      set((state) => {
+        const newFilters = { ...state.filters, sortOption: option };
+        writeFiltersToStorage(newFilters);
+        return { filters: newFilters };
+      });
+    },
+
+    setGroupingType: (type: GroupingType) => {
+      set((state) => {
+        const newFilters = { ...state.filters, groupingType: type };
+        writeFiltersToStorage(newFilters);
+        return { filters: newFilters };
+      });
+    },
+
+    resetFilters: () => {
+      set((_state) => {
+        writeFiltersToStorage(defaultFilterState);
+        return { filters: defaultFilterState };
+      });
+    },
+
+    hydrateFilters: () => {
+      const stored = readFiltersFromStorage();
+      if (stored) {
+        set({ filters: stored });
+      }
+    },
   })
 );
 
@@ -237,6 +421,34 @@ export const useRevertPriorityOrder = () => useAssignmentsStore((state) => state
 export const useMoveAssignment = () => useAssignmentsStore((state) => state.moveAssignment);
 export const useHydrate = () => useAssignmentsStore((state) => state.hydrate);
 
+// Filter selector hooks
+export const useFilters = () => useAssignmentsStore((state) => state.filters);
+export const useCourseFilter = () => useAssignmentsStore((state) => state.filters.courseFilter);
+export const useStatusFilter = () => useAssignmentsStore((state) => state.filters.statusFilter);
+export const useDueDateRange = () => useAssignmentsStore((state) => state.filters.dueDateRange);
+export const useSearchQuery = () => useAssignmentsStore((state) => state.filters.searchQuery);
+export const useSortOption = () => useAssignmentsStore((state) => state.filters.sortOption);
+export const useGroupingType = () => useAssignmentsStore((state) => state.filters.groupingType);
+export const useSetCourseFilter = () => useAssignmentsStore((state) => state.setCourseFilter);
+export const useToggleCourseFilter = () => useAssignmentsStore((state) => state.toggleCourseFilter);
+export const useSetStatusFilter = () => useAssignmentsStore((state) => state.setStatusFilter);
+export const useSetDueDateRange = () => useAssignmentsStore((state) => state.setDueDateRange);
+export const useSetSearchQuery = () => useAssignmentsStore((state) => state.setSearchQuery);
+export const useSetSortOption = () => useAssignmentsStore((state) => state.setSortOption);
+export const useSetGroupingType = () => useAssignmentsStore((state) => state.setGroupingType);
+export const useResetFilters = () => useAssignmentsStore((state) => state.resetFilters);
+export const useHydrateFilters = () => useAssignmentsStore((state) => state.hydrateFilters);
+
+/**
+ * Derived selector: unique course names from assignments for filter options.
+ * Returns sorted array of unique course names.
+ */
+export const useCourseNames = () =>
+  useAssignmentsStore((state) => {
+    const names = new Set(state.assignments.map((a) => a.courseName));
+    return [...names].sort();
+  });
+
 /**
  * Initialize the store — fetches assignments and priority order.
  * The useAssignments hook handles db:changed event subscription with debouncing.
@@ -244,6 +456,9 @@ export const useHydrate = () => useAssignmentsStore((state) => state.hydrate);
  */
 export function initializeAssignmentsStore(): () => void {
   const store = useAssignmentsStore.getState();
+
+  // Hydrate filter state from localStorage
+  store.hydrateFilters();
 
   // Fetch both assignments and priority order in parallel, then hydrate
   Promise.all([
