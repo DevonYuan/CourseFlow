@@ -124,6 +124,7 @@ export function AssignmentRow({
       onKeyDown={handleKeyDown}
       style={{ '--course-color': assignment.courseColor } as React.CSSProperties}
       aria-label={`${assignment.title}, ${assignment.courseName}, due ${dueDate}, ${statusLabels[assignment.status]}`}
+      data-assignment-id={assignment.id}
     >
       <div className="assignment-row__drag-handle">
         <DragHandle

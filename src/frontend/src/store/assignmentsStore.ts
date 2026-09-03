@@ -47,6 +47,13 @@ interface AssignmentsActions {
   reorderOptimistic: (ids: string[]) => void;
   /** Reverts to previous priority order (rollback on IPC error) */
   revertPriorityOrder: () => void;
+  /**
+   * Moves an assignment in the priority order.
+   * @param assignmentId - The ID of the assignment to move
+   * @param direction - Direction to move: 'up' | 'down' | 'top' | 'bottom'
+   * @returns Object with newIndex (position after move) and total (total movable items), or null if move not possible
+   */
+  moveAssignment: (assignmentId: string, direction: 'up' | 'down' | 'top' | 'bottom') => { newIndex: number; total: number } | null;
 }
 
 type AssignmentsStore = AssignmentsState & AssignmentsActions;
@@ -160,6 +167,58 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
         set({ priorityOrder: previous, _previousPriorityOrder: null });
       }
     },
+
+    moveAssignment: (assignmentId: string, direction: 'up' | 'down' | 'top' | 'bottom') => {
+      const { assignments, priorityOrder } = get();
+
+      // Get the list of movable assignment IDs (exclude completed)
+      // Use priorityOrder if available, otherwise use assignments order
+      const baseOrder = priorityOrder.length > 0 ? priorityOrder : assignments.map((a) => a.id);
+      const movableIds = baseOrder.filter((id) => {
+        const assignment = assignments.find((a) => a.id === id);
+        return assignment && assignment.status !== 'completed';
+      });
+
+      const currentIndex = movableIds.indexOf(assignmentId);
+      if (currentIndex === -1) {
+        return null; // Assignment not found or is completed
+      }
+
+      let newIndex: number;
+      switch (direction) {
+        case 'up':
+          newIndex = Math.max(0, currentIndex - 1);
+          break;
+        case 'down':
+          newIndex = Math.min(movableIds.length - 1, currentIndex + 1);
+          break;
+        case 'top':
+          newIndex = 0;
+          break;
+        case 'bottom':
+          newIndex = movableIds.length - 1;
+          break;
+      }
+
+      if (newIndex === currentIndex) {
+        return null; // No change
+      }
+
+      // Create new order by moving the item
+      const newMovableIds = [...movableIds];
+      const [movedId] = newMovableIds.splice(currentIndex, 1);
+      newMovableIds.splice(newIndex, 0, movedId);
+
+      // Merge back with non-movable items (completed assignments)
+      // Completed assignments stay in their relative positions at the end
+      const completedIds = baseOrder.filter((id) => !movableIds.includes(id));
+      const newOrder = [...newMovableIds, ...completedIds];
+
+      // Optimistic update
+      get().reorderOptimistic(newOrder);
+
+      return { newIndex, total: movableIds.length };
+    },
   })
 );
 
@@ -175,6 +234,7 @@ export const usePriorityOrder = () => useAssignmentsStore((state) => state.prior
 export const useSetPriorityOrder = () => useAssignmentsStore((state) => state.setPriorityOrder);
 export const useReorderOptimistic = () => useAssignmentsStore((state) => state.reorderOptimistic);
 export const useRevertPriorityOrder = () => useAssignmentsStore((state) => state.revertPriorityOrder);
+export const useMoveAssignment = () => useAssignmentsStore((state) => state.moveAssignment);
 export const useHydrate = () => useAssignmentsStore((state) => state.hydrate);
 
 /**

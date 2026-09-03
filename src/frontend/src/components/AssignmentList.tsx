@@ -25,6 +25,7 @@ import { EmptyState } from './EmptyState';
 import { AssignmentRow } from './AssignmentRow';
 import { AssignmentListDragDrop } from './AssignmentList/AssignmentListDragDrop';
 import { DragOverlay as CustomDragOverlay } from './AssignmentList/DragOverlay';
+import { PriorityLiveRegion } from './AssignmentList/PriorityLiveRegion';
 import {
   useAssignmentsStore,
   useAssignments,
@@ -41,6 +42,7 @@ import type { Assignment } from '@backend/shared/types';
 import { useAssignments as useAssignmentsHook } from '../hooks/useAssignments';
 import { useToast } from '../context/ToastContext';
 import { debounce } from '../utils/debounce';
+import { usePriorityKeyboard } from '../hooks/usePriorityKeyboard';
 import './AssignmentList.css';
 
 // Virtualization threshold - use virtualized list when > 100 items
@@ -78,7 +80,7 @@ function AssignmentRowRenderer(
     return <div style={style} {...rest} />;
   }
   return (
-    <div style={style} {...rest}>
+    <div style={style} {...rest} data-assignment-id={assignment.id}>
       <AssignmentRow assignment={assignment} onClick={onClick} onMarkComplete={onMarkComplete} />
     </div>
   );
@@ -151,6 +153,15 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
 
   // Toast for error notifications
   const { error: toastError } = useToast();
+
+  // Priority keyboard shortcuts (Alt+Up/Down, Alt+Shift+Up/Down)
+  usePriorityKeyboard({
+    enabled: !isLoading && !error,
+    onAnnounce: (message) => {
+      // The announcement is handled by the PriorityLiveRegion component
+      // which reads from a global ref. We could also use a context here.
+    },
+  });
 
   // Memoize refetch and clearError from store actions
   const refetch = useMemo(
@@ -365,6 +376,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
             )}
           </div>
         )}
+        <PriorityLiveRegion />
       </div>
     );
   }
@@ -378,21 +390,25 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           onAssignmentClick={onAssignmentClick}
           onMarkComplete={markComplete}
         />
+        <PriorityLiveRegion />
       </div>
     );
   }
 
   // Show assignments list with drag-and-drop
   return (
-    <AssignmentListDragDrop
-      sortedAssignments={sortedAssignments}
-      onAssignmentClick={onAssignmentClick}
-      onMarkComplete={markComplete}
-      onDragEnd={handleDragEnd}
-      sensors={sensors}
-      onOpenSettings={onOpenSettings}
-      renderDragOverlay={renderDragOverlay}
-    />
+    <>
+      <AssignmentListDragDrop
+        sortedAssignments={sortedAssignments}
+        onAssignmentClick={onAssignmentClick}
+        onMarkComplete={markComplete}
+        onDragEnd={handleDragEnd}
+        sensors={sensors}
+        onOpenSettings={onOpenSettings}
+        renderDragOverlay={renderDragOverlay}
+      />
+      <PriorityLiveRegion />
+    </>
   );
 }
 
