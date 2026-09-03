@@ -1,7 +1,7 @@
 /**
  * FilterBar — Main Filter Toolbar Component
  *
- * Combines SearchInput, StatusTabs, CourseChips, DateRangePicker, and FilterSummary
+ * Combines SearchInput, StatusTabs, CourseChips, DateRangePicker, GroupingSelector, and FilterSummary
  * into a responsive filter toolbar for the assignment list.
  *
  * @module @frontend/components/FilterBar/FilterBar
@@ -14,6 +14,7 @@ import { useFilters, useResetFilters, useSetDueDateRange } from '../../store/ass
 import { CourseChips } from './CourseChips';
 import { DateRangePicker } from './DateRangePicker';
 import { FilterSummary } from './FilterSummary';
+import { GroupingSelector } from './GroupingSelector';
 import { SearchInput } from './SearchInput';
 import { SortDropdown } from './SortDropdown';
 import { StatusTabs } from './StatusTabs';
@@ -56,7 +57,7 @@ export function FilterBar(): JSX.Element {
         </div>
       </div>
 
-      {/* Row 2: Course chips, Date range, and Sort */}
+      {/* Row 2: Course chips, Date range, Sort, and Grouping */}
       <div className="filter-bar__row filter-bar__row--secondary">
         <div className="filter-bar__course-wrapper">
           <CourseChips />
@@ -69,6 +70,9 @@ export function FilterBar(): JSX.Element {
         </div>
         <div className="filter-bar__sort-wrapper">
           <SortDropdown />
+        </div>
+        <div className="filter-bar__grouping-wrapper">
+          <GroupingSelector />
         </div>
         {hasActiveFilters && (
           <button

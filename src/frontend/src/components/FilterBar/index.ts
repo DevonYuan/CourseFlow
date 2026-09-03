@@ -13,3 +13,4 @@ export { StatusTabs } from './StatusTabs';
 export { CourseChips } from './CourseChips';
 export { DateRangePicker } from './DateRangePicker';
 export { FilterSummary } from './FilterSummary';
+export { GroupingSelector } from './GroupingSelector';

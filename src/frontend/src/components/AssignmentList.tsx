@@ -24,6 +24,7 @@ import { AssignmentListSkeleton } from './AssignmentListSkeleton';
 import { EmptyState } from './EmptyState';
 import { AssignmentRow } from './AssignmentRow';
 import { AssignmentListDragDrop } from './AssignmentList/AssignmentListDragDrop';
+import { GroupedAssignmentList } from './AssignmentList/GroupedAssignmentList';
 import { DragOverlay as CustomDragOverlay } from './AssignmentList/DragOverlay';
 import { PriorityLiveRegion } from './AssignmentList/PriorityLiveRegion';
 import {
@@ -37,6 +38,8 @@ import {
   useReorderOptimistic,
   useRevertPriorityOrder,
   useFilteredAssignments,
+  useGroupingType,
+  useSortOption,
   initializeAssignmentsStore,
 } from '../store/assignmentsStore';
 import type { GroupedAssignments } from '../store/selectors';
@@ -149,6 +152,8 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
   const setPriorityOrder = useSetPriorityOrder();
   const reorderOptimistic = useReorderOptimistic();
   const revertPriorityOrder = useRevertPriorityOrder();
+  const groupingType = useGroupingType();
+  const sortOption = useSortOption();
 
   // Filtered, sorted, and grouped assignments for display
   const filteredAssignments = useFilteredAssignments();
@@ -317,8 +322,12 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
 
   // Flatten filteredAssignments if grouped, for virtualization threshold check
   const flatFilteredAssignments = useMemo(() => {
-    if (Array.isArray(filteredAssignments) && filteredAssignments.length > 0 && 'groupKey' in filteredAssignments[0]) {
-      return (filteredAssignments as GroupedAssignments).flatMap((g) => g.assignments);
+    if (
+      Array.isArray(filteredAssignments) &&
+      filteredAssignments.length > 0 &&
+      'groupKey' in (filteredAssignments[0] as object)
+    ) {
+      return (filteredAssignments as GroupedAssignments[]).flatMap((g) => g.assignments);
     }
     return filteredAssignments as Assignment[];
   }, [filteredAssignments]);
@@ -327,37 +336,6 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
   useEffect(() => {
     sortedAssignmentsRef.current = sortedAssignments;
   }, [sortedAssignments]);
-
-  // Helper to render grouped assignments
-  const renderGroupedAssignments = useCallback(
-    (
-      grouped: GroupedAssignments,
-      onClick?: (assignment: Assignment) => void,
-      onMarkComplete?: (id: string) => Promise<void>
-    ) => {
-      return grouped.map((group) => (
-        <div key={group.groupKey} className="assignment-group">
-          <div className="assignment-group__header">
-            <span className="assignment-group__label">{group.groupLabel}</span>
-            <span className="assignment-group__count" aria-label={`${group.assignments.length} assignments`}>
-              {group.assignments.length}
-            </span>
-          </div>
-          <div className="assignment-group__items" role="list" aria-label={group.groupLabel}>
-            {group.assignments.map((assignment) => (
-              <AssignmentRow
-                key={assignment.id}
-                assignment={assignment}
-                onClick={onClick}
-                onMarkComplete={onMarkComplete}
-              />
-            ))}
-          </div>
-        </div>
-      ));
-    },
-    []
-  );
 
   // Helper to render flat assignments (with or without virtualization)
   const renderFlatAssignments = useCallback(
@@ -434,11 +412,18 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
             {Array.isArray(filteredAssignments) &&
             filteredAssignments.length > 0 &&
             'groupKey' in filteredAssignments[0]
-              ? renderGroupedAssignments(
-                  filteredAssignments as GroupedAssignments,
-                  onAssignmentClick,
-                  markComplete
-                )
+              ? (
+                <GroupedAssignmentList
+                  groupedAssignments={filteredAssignments as GroupedAssignments[]}
+                  onAssignmentClick={onAssignmentClick}
+                  onMarkComplete={markComplete}
+                  groupingType={groupingType}
+                  sortOption={sortOption}
+                  priorityOrder={priorityOrder}
+                  onDragEnd={handleDragEnd}
+                  onOpenSettings={onOpenSettings}
+                />
+              )
               : renderFlatAssignments(
                   flatFilteredAssignments,
                   onAssignmentClick,
@@ -481,15 +466,20 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
     );
   }
 
-  // Render grouped assignments (no drag-and-drop in grouped mode)
+  // Render grouped assignments using GroupedAssignmentList component
   if (isGrouped) {
     return (
       <div className="assignment-list" role="list" aria-label="Assignments">
-        {renderGroupedAssignments(
-          filteredAssignments as GroupedAssignments,
-          onAssignmentClick,
-          markComplete
-        )}
+        <GroupedAssignmentList
+          groupedAssignments={filteredAssignments as GroupedAssignments[]}
+          onAssignmentClick={onAssignmentClick}
+          onMarkComplete={markComplete}
+          groupingType={groupingType}
+          sortOption={sortOption}
+          priorityOrder={priorityOrder}
+          onDragEnd={handleDragEnd}
+          onOpenSettings={onOpenSettings}
+        />
         <PriorityLiveRegion />
       </div>
     );

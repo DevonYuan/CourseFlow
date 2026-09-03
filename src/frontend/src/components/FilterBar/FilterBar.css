@@ -60,6 +60,12 @@
   min-width: 200px;
 }
 
+/* Grouping wrapper */
+.filter-bar__grouping-wrapper {
+  flex-shrink: 0;
+  min-width: 200px;
+}
+
 /* Clear all button */
 .filter-bar__clear-all {
   flex-shrink: 0;
@@ -147,6 +153,11 @@
   .filter-bar__sort-wrapper {
     min-width: 0;
     order: 3;
+  }
+
+  .filter-bar__grouping-wrapper {
+    min-width: 0;
+    order: 4;
   }
 
   .filter-bar__date-wrapper .date-range-picker {

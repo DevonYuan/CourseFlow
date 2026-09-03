@@ -1,0 +1,76 @@
+/**
+ * GroupedAssignmentList Styles
+ */
+
+.grouped-assignment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.grouped-assignment-list__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+/* Group items container - indented relative to header */
+.grouped-assignment-list__group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 24px;
+  margin-top: 4px;
+  border-left: 2px solid var(--group-indent-line, #e0e0e0);
+  animation: group-expand 200ms ease-out;
+}
+
+/* Collapse animation */
+@keyframes group-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .grouped-assignment-list__group-items {
+    animation: none;
+  }
+}
+
+/* Dark mode support for indent line */
+@media (prefers-color-scheme: dark) {
+  .grouped-assignment-list__group-items {
+    border-left-color: var(--group-indent-line-dark, #444);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .grouped-assignment-list__group-items {
+    border-left-width: 3px;
+  }
+}
+
+/* Responsive: full width on mobile, reduce indent */
+@media (max-width: 640px) {
+  .grouped-assignment-list {
+    padding: 0 12px;
+  }
+
+  .grouped-assignment-list__group-items {
+    padding-left: 16px;
+  }
+}
