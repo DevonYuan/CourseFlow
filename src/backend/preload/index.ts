@@ -81,6 +81,8 @@ const api = {
       on('scheduler:tick', callback),
     onError: (callback: (payload: IpcEvents['scheduler:error']) => void) =>
       on('scheduler:error', callback),
+    onCoalesced: (callback: (payload: IpcEvents['scheduler:coalesced']) => void) =>
+      on('scheduler:coalesced', callback),
   },
   // Event subscriptions — return cleanup function
   onDbChanged: (callback: (payload: IpcEvents['db:changed']) => void) => on('db:changed', callback),

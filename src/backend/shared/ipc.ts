@@ -212,6 +212,9 @@ export interface IpcEvents {
     message: string;
     code: 'network' | 'auth' | 'parse' | 'unknown';
   };
+  'scheduler:coalesced': {
+    message: string;
+  };
 }
 
 /**
