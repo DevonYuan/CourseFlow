@@ -14,7 +14,7 @@ expect.extend(matchers);
 
 // React 18 act() compatibility for testing
 // Ensures all state updates are wrapped in act() in test environment
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).act = act;
 
 // Mock matchMedia for theme detection

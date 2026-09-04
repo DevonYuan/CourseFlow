@@ -13,7 +13,7 @@ function ThemedApp(): JSX.Element {
 
   useEffect(() => {
     if (settings) {
-      document.documentElement.dataset.theme = settings.theme;
+      document.documentElement.dataset['theme'] = settings.theme;
     }
   }, [settings?.theme]);
 

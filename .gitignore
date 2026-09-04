@@ -28,6 +28,7 @@ pnpm-debug.log*
 
 # Testing
 coverage/
+playwright-report/
 
 # TypeScript build info
 config/*.tsbuildinfo

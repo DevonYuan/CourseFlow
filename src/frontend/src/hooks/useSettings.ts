@@ -13,9 +13,9 @@ import type { Settings } from '@backend/shared/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // Type-safe access to window.api
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 const api = window.api;
-/* eslint-enable @typescript-eslint/no-unsafe-assignment */
+ 
 
 /**
  * Custom hook for managing settings state.
@@ -30,14 +30,14 @@ export function useSettings() {
     setIsLoading(true);
     setError(null);
     try {
-      /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+       
       const result: IpcResult<Settings> = await api.settings.get();
       if (result.ok) {
         setSettings(result.data);
       } else {
         setError(result.error);
       }
-      /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load settings');
     } finally {
@@ -52,23 +52,23 @@ export function useSettings() {
 
   // Listen for external settings changes
   useEffect(() => {
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+     
     const unsubscribe = api.onSettingsChanged((newSettings: Settings) => {
       setSettings(newSettings);
     });
-    /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+     
     return unsubscribe;
   }, []);
 
   const updateSettings = useCallback(async (partial: Partial<Settings>) => {
     setError(null);
     try {
-      /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+       
       const result: IpcResult<Settings> = await api.settings.set(partial);
       if (!result.ok) {
         setError(result.error);
       }
-      /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+       
       // The onSettingsChanged event will update the state
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update settings');

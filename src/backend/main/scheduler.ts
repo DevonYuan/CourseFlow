@@ -10,7 +10,7 @@
  */
 
 import type { BrowserWindow } from 'electron';
-import { app, powerMonitor, ipcMain } from 'electron';
+import { app, powerMonitor } from 'electron';
 
 import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus, ImportResult } from '../shared/types.js';
 
@@ -66,7 +66,7 @@ export class Scheduler {
   constructor(mainWindow: BrowserWindow | null = null) {
     this.mainWindow = mainWindow;
     this.setupPowerMonitor();
-    this.setupIpcHandlers();
+    // IPC handlers are registered in ipc-handlers.ts to avoid duplication
   }
 
   /**
@@ -96,30 +96,6 @@ export class Scheduler {
       if (this.config.enabled && this.currentSettings) {
         this.rescheduleAfterWake(suspendedDuration);
       }
-    });
-  }
-
-  /**
-   * Sets up IPC handlers for scheduler control from renderer.
-   * These handlers allow the renderer to start/stop/check status of the scheduler.
-   */
-  private setupIpcHandlers(): void {
-    ipcMain.handle('scheduler:start', async (): Promise<void> => {
-      if (this.currentSettings) {
-        this.start(this.currentSettings.syncIntervalMinutes);
-      }
-    });
-
-    ipcMain.handle('scheduler:stop', async (): Promise<void> => {
-      this.stop();
-    });
-
-    ipcMain.handle('scheduler:status', async (): Promise<SchedulerStatus> => {
-      return this.getStatus();
-    });
-
-    ipcMain.handle('scheduler:trigger', async (): Promise<void> => {
-      await this.triggerManual();
     });
   }
 

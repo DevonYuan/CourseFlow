@@ -47,10 +47,10 @@ import { debounce } from '../utils/debounce';
 import { AssignmentListDragDrop } from './AssignmentList/AssignmentListDragDrop';
 import { DragOverlay as CustomDragOverlay } from './AssignmentList/DragOverlay';
 import { GroupedAssignmentList } from './AssignmentList/GroupedAssignmentList';
-import { AssignmentListSkeleton } from './AssignmentListSkeleton';
-import { EmptyState } from './EmptyState';
-import { AssignmentRow } from './AssignmentRow';
 import { PriorityLiveRegion } from './AssignmentList/PriorityLiveRegion';
+import { AssignmentListSkeleton } from './AssignmentListSkeleton';
+import { AssignmentRow } from './AssignmentRow';
+import { EmptyState } from './EmptyState';
 
 import './AssignmentList.css';
 

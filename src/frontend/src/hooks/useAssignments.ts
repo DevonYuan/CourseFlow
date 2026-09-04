@@ -9,7 +9,7 @@
  */
 
 import type { IpcEvents } from '@backend/shared/ipc';
-import type { Assignment } from '@backend/shared/types';
+import type { Assignment, EntityId, IsoDateTime } from '@backend/shared/types';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useToast } from '../context/ToastContext';
@@ -94,9 +94,9 @@ export function useAssignments(): UseAssignmentsReturn {
       try {
         // 2. IPC call
         const result = await window.api.db.assignments.upsert({
-          id,
+          id: id as EntityId,
           status: 'completed',
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString() as IsoDateTime,
         });
 
         if (!result.ok) {

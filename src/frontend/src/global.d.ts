@@ -34,21 +34,21 @@ declare global {
         };
       };
       ical: {
-        fetch: (url: string) => Promise<IpcResult<{ events: unknown[] }>>;
-        import: (input: { events: unknown[] }) => Promise<IpcResult<{ imported: number; updated: number; skipped: number }>>;
+        fetch: (url: string) => Promise<IpcResult<ICalEvent[]>>;
+        import: (input: { events: ICalEvent[]; sourceUrl: string }) => Promise<IpcResult<{ imported: number; updated: number; skipped: number }>>;
       };
       settings: {
         get: () => Promise<IpcResult<Settings>>;
         set: (partial: Partial<Settings>) => Promise<IpcResult<Settings>>;
-        reset: () => Promise<IpcResult<void>>;
+        reset: () => Promise<IpcResult<Settings>>;
       };
       app: {
         version: () => Promise<IpcResult<string>>;
       };
       scheduler: {
-        start: (intervalMinutes: number) => Promise<IpcResult<void>>;
-        stop: () => Promise<IpcResult<void>>;
-        status: () => Promise<IpcResult<unknown>>;
+        start: (input: { intervalMinutes: number }) => Promise<IpcResult<SchedulerStatus>>;
+        stop: () => Promise<IpcResult<SchedulerStatus>>;
+        status: () => Promise<IpcResult<SchedulerStatus>>;
         trigger: () => Promise<IpcResult<void>>;
         onTick: (callback: (payload: IpcEvents['scheduler:tick']) => void) => () => void;
         onError: (callback: (payload: IpcEvents['scheduler:error']) => void) => () => void;
