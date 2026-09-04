@@ -6,8 +6,8 @@
  * @module @backend/main/__tests__/ipc.ical
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { ipcMain } from 'electron';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
 // Mock electron
 vi.mock('electron', () => ({
@@ -67,11 +67,11 @@ vi.mock('../events.js', () => ({
 }));
 
 // Import mocked modules
-import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError, TimeoutError, ICalParseError } from '../ical/index.js';
+import type { ICalEvent, ImportResult, Settings } from '../../shared/types.js';
 import { repo } from '../db/repository.js';
 import { sendEventToRenderers } from '../events.js';
+import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError, TimeoutError, ICalParseError } from '../ical/index.js';
 import { registerIpcHandlers } from '../ipc-handlers.js';
-import type { ICalEvent, ImportResult, Settings } from '../../shared/types.js';
 
 // Helper to create test ICalEvent
 function createICalEvent(overrides: Partial<ICalEvent> = {}): ICalEvent {

@@ -7,9 +7,9 @@
  * @module @frontend/hooks/useIcalSync
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import type { ICalEvent } from '@backend/shared/types';
 import type { IpcEvents } from '@backend/shared/ipc';
+import type { ICalEvent } from '@backend/shared/types';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 interface UseIcalSyncState {
   isLoading: boolean;
@@ -42,13 +42,35 @@ export function useIcalSync(): UseIcalSyncReturn {
   const abortControllerRef = useRef<AbortController | null>(null);
   const progressUnsubscribeRef = useRef<(() => void) | null>(null);
 
+  // Map IPC progress stages to hook stages
+  function mapIpcStageToHookStage(ipcStage: IpcEvents['ical:progress']['stage']): UseIcalSyncState['stage'] {
+    switch (ipcStage) {
+      case 'fetching': {
+        return 'fetch';
+      }
+      case 'parsing': {
+        return 'parse';
+      }
+      case 'importing': {
+        return 'store';
+      }
+      case 'complete':
+      case 'error': {
+        return 'idle';
+      }
+      default: {
+        return 'idle';
+      }
+    }
+  }
+
   // Subscribe to ical:progress events from main process
   useEffect(() => {
     const unsubscribe = window.api.onIcalProgress((payload: IpcEvents['ical:progress']) => {
       setState((prev) => ({
         ...prev,
         progress: payload.progress,
-        stage: payload.stage,
+        stage: mapIpcStageToHookStage(payload.stage),
         message: payload.message ?? null,
       }));
     });

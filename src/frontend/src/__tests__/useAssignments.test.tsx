@@ -8,12 +8,13 @@
 
 import type { IpcEvents } from '@backend/shared/ipc';
 import type { Assignment, IsoDateTime } from '@backend/shared/types';
-import React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { ToastProvider } from '../context/ToastContext';
 import { useAssignments } from '../hooks/useAssignments';
 import { useAssignmentsStore } from '../store/assignmentsStore';
-import { ToastProvider } from '../context/ToastContext';
 
 // Mock window.api
 type AssignmentsListResult = { ok: true; data: Assignment[] } | { ok: false; error: string; code?: string };

@@ -8,14 +8,12 @@ import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default typescriptEslint.config(
-  {
-    ignores: ['dist/', 'node_modules/', '*.config.*', '.husky/', 'build/', 'coverage/'],
-  },
+  { ignores: ['dist/', 'node_modules/', '*.config.*', 'config/**', 'scripts/**', '.husky/', 'build/', 'coverage/'] },
   js.configs.recommended,
   ...typescriptEslint.configs.recommended,
-  ...typescriptEslint.configs.recommendedTypeChecked,
+  // Type-checked config for project source files
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
     languageOptions: {
       parserOptions: {
         project: ['./config/tsconfig.json', './config/tsconfig.*.json'],
@@ -32,25 +30,12 @@ export default typescriptEslint.config(
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
     },
-    settings: {
-      react: {
-        version: '18.3',
-      },
-      'import/resolver': {
-        node: {
-          extensions: ['.ts', '.tsx', '.js', '.jsx'],
-        },
-      },
-    },
     rules: {
-      // TypeScript rules
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-misused-promises': 'warn',
-
-      // Import rules
       'import/order': [
         'error',
         {
@@ -67,26 +52,72 @@ export default typescriptEslint.config(
       'import/no-unresolved': 'off',
       'import/no-cycle': 'error',
       'import/no-default-export': 'error',
-
-      // React rules
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-
-      // General rules
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
       'no-var': 'error',
     },
   },
+  // Non-type-checked config for config files and scripts
+  {
+    files: ['config/**/*.ts', 'scripts/**/*.ts', '*.config.ts'],
+    languageOptions: {
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
+    },
+    plugins: {
+      import: importPlugin,
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      'import/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          pathGroups: [
+            { pattern: '@/**', group: 'internal' },
+            { pattern: '@shared/**', group: 'internal' },
+          ],
+          pathGroupsExcludedImportTypes: [],
+          alphabetize: { order: 'asc' },
+          'newlines-between': 'always',
+        },
+      ],
+      'import/no-unresolved': 'off',
+      'import/no-cycle': 'error',
+      'import/no-default-export': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+    },
+  },
+  // Backend Main process restrictions
   {
     files: ['src/backend/main/**/*.ts'],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 },
     },
     rules: {
-      // Main must not import from preload or renderer
       'no-restricted-imports': [
         'error',
         {
@@ -102,7 +133,6 @@ export default typescriptEslint.config(
           ],
         },
       ],
-      // Disable unsafe-* rules that have false positives with catch blocks and branded types
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
@@ -110,13 +140,13 @@ export default typescriptEslint.config(
       '@typescript-eslint/no-redundant-type-constituents': 'off',
     },
   },
+  // Backend Preload process restrictions
   {
     files: ['src/backend/preload/**/*.ts'],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 },
     },
     rules: {
-      // Preload must not import from main or renderer (only shared)
       'no-restricted-imports': [
         'error',
         {
@@ -134,13 +164,13 @@ export default typescriptEslint.config(
       ],
     },
   },
+  // Frontend Renderer process restrictions
   {
     files: ['src/frontend/**/*.ts', 'src/frontend/**/*.tsx'],
     languageOptions: {
       globals: { ...globals.browser, ...globals.es2022 },
     },
     rules: {
-      // Renderer must not import Electron or Node.js built-ins
       'no-restricted-imports': [
         'error',
         {
@@ -163,13 +193,13 @@ export default typescriptEslint.config(
       ],
     },
   },
+  // Backend Shared code restrictions
   {
     files: ['src/backend/shared/**/*.ts'],
     languageOptions: {
       globals: { ...globals.es2022 },
     },
     rules: {
-      // Shared code must not import Electron or Node.js built-ins (pure TypeScript)
       'no-restricted-imports': [
         'error',
         {

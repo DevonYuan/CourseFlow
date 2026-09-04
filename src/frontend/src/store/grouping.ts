@@ -50,7 +50,7 @@ function getEndOfWeekTimestamp(): number {
  * Gets the current time as a UTC timestamp.
  */
 function getNowTimestamp(): number {
-  return new Date().getTime();
+  return Date.now();
 }
 
 /**
@@ -96,18 +96,24 @@ function applySortWithinGroup(
   const sorted = [...assignments];
 
   switch (sortOption) {
-    case 'priority':
+    case 'priority': {
       return sorted.sort(createPrioritySortComparator(priorityOrder));
-    case 'dueDateAsc':
+    }
+    case 'dueDateAsc': {
       return sorted.sort(sortByDueDateAsc);
-    case 'dueDateDesc':
+    }
+    case 'dueDateDesc': {
       return sorted.sort(sortByDueDateDesc);
-    case 'course':
+    }
+    case 'course': {
       return sorted.sort(sortByCourse);
-    case 'createdDesc':
+    }
+    case 'createdDesc': {
       return sorted.sort(sortByCreatedDesc);
-    default:
+    }
+    default: {
       return sorted;
+    }
   }
 }
 
@@ -299,7 +305,7 @@ export function groupByCourse(
   }
 
   // Sort courses alphabetically and apply sort within each group
-  return Array.from(courseMap.entries())
+  return [...courseMap.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([courseName, assignments]): GroupedAssignments => ({
       groupKey: courseName,
@@ -325,13 +331,17 @@ export function applyGrouping(
   }
 
   switch (groupingType) {
-    case 'week':
+    case 'week': {
       return groupByWeek(assignments, sortOption, priorityOrder);
-    case 'status':
+    }
+    case 'status': {
       return groupByStatus(assignments, sortOption, priorityOrder);
-    case 'course':
+    }
+    case 'course': {
       return groupByCourse(assignments, sortOption, priorityOrder);
-    default:
+    }
+    default: {
       return assignments;
+    }
   }
 }

@@ -8,11 +8,12 @@
  */
 
 import type { IpcEvents } from '@backend/shared/ipc';
-import type { Assignment, PriorityOrder, SortOption, GroupingType, FilterState } from '@backend/shared/types';
+import type { Assignment, PriorityOrder, SortOption, GroupingType, IsoDateTime, FilterState as SharedFilterState } from '@backend/shared/types';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
 import { mapErrorToMessage } from '../utils/errorMessages';
+
 import {
   selectFilteredAssignments,
   type GroupedAssignments,
@@ -27,8 +28,8 @@ export interface FilterState {
   courseFilter: string[];
   /** Status filter: all, pending, or completed */
   statusFilter: 'all' | 'pending' | 'completed';
-  /** Optional date range filter for due dates */
-  dueDateRange: { start: Date; end: Date } | null;
+  /** Optional date range filter for due dates (ISO 8601 strings) */
+  dueDateRange: { start: IsoDateTime; end: IsoDateTime } | null;
   /** Search query string */
   searchQuery: string;
   /** Sort option for assignment list */
@@ -127,19 +128,9 @@ function readFiltersFromStorage(): FilterState | null {
   try {
     const stored = localStorage.getItem(FILTER_STORAGE_KEY);
     if (!stored) return null;
-    const parsed = JSON.parse(stored) as Partial<FilterState> & { dueDateRange?: { start: string; end: string } | null };
-    // Convert date strings back to Date objects
-    if (parsed.dueDateRange && parsed.dueDateRange.start && parsed.dueDateRange.end) {
-      return {
-        ...defaultFilterState,
-        ...parsed,
-        dueDateRange: {
-          start: new Date(parsed.dueDateRange.start),
-          end: new Date(parsed.dueDateRange.end),
-        },
-      } as FilterState;
-    }
-    return { ...defaultFilterState, ...parsed } as FilterState;
+    const parsed = JSON.parse(stored) as Partial<FilterState>;
+    // dueDateRange is already stored as ISO strings (IsoDateTime)
+    return { ...defaultFilterState, ...parsed };
   } catch {
     // Ignore errors (private browsing, quota, corrupt JSON)
     return null;
@@ -152,13 +143,8 @@ function readFiltersFromStorage(): FilterState | null {
  */
 function writeFiltersToStorage(filters: FilterState): void {
   try {
-    const toStore = {
-      ...filters,
-      dueDateRange: filters.dueDateRange
-        ? { start: filters.dueDateRange.start.toISOString(), end: filters.dueDateRange.end.toISOString() }
-        : null,
-    };
-    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(toStore));
+    // dueDateRange is already ISO strings (IsoDateTime), no conversion needed
+    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
   } catch {
     // Ignore errors (private browsing, quota exceeded)
   }
@@ -294,18 +280,22 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
 
       let newIndex: number;
       switch (direction) {
-        case 'up':
+        case 'up': {
           newIndex = Math.max(0, currentIndex - 1);
           break;
-        case 'down':
+        }
+        case 'down': {
           newIndex = Math.min(movableIds.length - 1, currentIndex + 1);
           break;
-        case 'top':
+        }
+        case 'top': {
           newIndex = 0;
           break;
-        case 'bottom':
+        }
+        case 'bottom': {
           newIndex = movableIds.length - 1;
           break;
+        }
       }
 
       if (newIndex === currentIndex) {
@@ -314,7 +304,8 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
 
       // Create new order by moving the item
       const newMovableIds = [...movableIds];
-      const [movedId] = newMovableIds.splice(currentIndex, 1);
+      const movedId = newMovableIds.splice(currentIndex, 1)[0];
+      if (movedId === undefined) return null;
       newMovableIds.splice(newIndex, 0, movedId);
 
       // Merge back with non-movable items (completed assignments)

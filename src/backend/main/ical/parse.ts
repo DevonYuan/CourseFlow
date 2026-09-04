@@ -7,8 +7,8 @@
  * @module @backend/main/ical/parse
  */
 
-import ICAL from 'ical.js';
 import type { ICalEvent, IsoDateTime } from '@backend/shared/types';
+import ICAL from 'ical.js';
 
 /**
  * Custom error class for iCal parsing errors.
@@ -75,7 +75,7 @@ function icalTimeToUtcIso(time: ICAL.Time): string {
 function preprocessIcalText(text: string): string {
   // Replace folded lines (newline followed by space/tab) with newline + TWO spaces
   // This ensures ical.js preserves one space when unfolding (it removes the first)
-  return text.replace(/\n([ \t])/g, '\n  ');
+  return text.replaceAll(/\n([ \t])/g, '\n  ');
 }
 
 /**
@@ -86,8 +86,8 @@ function stripTrailingGarbage(text: string): string {
   if (endVcalendarIndex === -1) return text;
   // Include the END:VCALENDAR line and everything before it
   const endOfLine = text.indexOf('\n', endVcalendarIndex);
-  if (endOfLine === -1) return text.substring(0, endVcalendarIndex + 'END:VCALENDAR'.length);
-  return text.substring(0, endOfLine + 1);
+  if (endOfLine === -1) return text.slice(0, Math.max(0, endVcalendarIndex + 'END:VCALENDAR'.length));
+  return text.slice(0, Math.max(0, endOfLine + 1));
 }
 
 /**
@@ -110,7 +110,7 @@ function getPropertyValue(component: ICAL.Component, propertyName: string): stri
 
   // Handle arrays (multi-value properties)
   if (Array.isArray(value)) {
-    return value.map(v => String(v)).join(',');
+    return value.map(String).join(',');
   }
 
   return String(value);
@@ -149,7 +149,7 @@ function extractDescription(component: ICAL.Component): string | null {
   const value = component.getFirstPropertyValue('description');
   if (value === null || value === undefined) return null;
   // Normalize only CRLF to LF, preserve multiple consecutive newlines (blank lines)
-  return String(value).replace(/\r\n/g, '\n');
+  return String(value).replaceAll('\r\n', '\n');
 }
 
 /**

@@ -162,7 +162,7 @@ function generateEntityId(): EntityId {
     return crypto.randomUUID() as EntityId;
   }
   // Fallback for environments without crypto.randomUUID
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replaceAll(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
@@ -219,8 +219,8 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
       htmlUrl: event.url ?? '', // Use event URL if available
       icalUid: event.uid,
       priority,
-      status: 'pending' as AssignmentStatus,
-      source: 'ical' as AssignmentSource,
+      status: 'pending',
+      source: 'ical',
       sourceUrl: assignmentSourceUrl,
       rrule: event.rrule ?? undefined,
       createdAt: currentIsoTime,

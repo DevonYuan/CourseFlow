@@ -210,7 +210,7 @@ export interface IpcEvents {
   };
   'scheduler:error': {
     message: string;
-    code: 'network' | 'auth' | 'parse' | 'unknown';
+    code: 'network' | 'auth' | 'parse' | 'server' | 'unknown';
   };
   'scheduler:coalesced': {
     message: string;

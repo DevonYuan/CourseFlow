@@ -7,15 +7,15 @@
  * @module @backend/main/db/__tests__/mappers
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import initSqlJs from 'sql.js';
 import type { Database } from 'sql.js';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
+import type { Assignment, AssignmentInput, DbAssignment, Settings, EntityId, IsoDateTime } from '../../../shared/types.js';
 import {
   mapDbAssignmentToAssignment,
   mapAssignmentInputToDb,
 } from '../mappers.js';
-import type { Assignment, AssignmentInput, DbAssignment, Settings, EntityId, IsoDateTime } from '../../../shared/types.js';
 
 // Test database instance
 let testDb: Database | null = null;
@@ -25,9 +25,9 @@ let SQL: Awaited<ReturnType<typeof initSqlJs>> | null = null;
 
 async function initTestDb(): Promise<Database> {
   if (SQL === null) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const fs = await import('node:fs');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const path = await import('node:path');
     const wasmPath = path.resolve(__dirname, '..', '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
     const wasmBuffer = fs.readFileSync(wasmPath);
@@ -94,9 +94,9 @@ describe('Database Mappers', () => {
         description: '<p>HTML description</p>',
         course_name: 'CS 101',
         course_color: '#e8a838',
-        due_at: now + 86400000, // tomorrow
+        due_at: now + 86_400_000, // tomorrow
         unlock_at: now,
-        lock_at: now + 172800000,
+        lock_at: now + 172_800_000,
         points_possible: 100,
         submission_types: JSON.stringify(['online_text_entry', 'online_upload']),
         workflow_state: 'published',
@@ -106,7 +106,7 @@ describe('Database Mappers', () => {
         source: 'ical',
         source_url: 'https://canvas.example.com/feeds/calendars/user_xxx.ics',
         rrule: 'FREQ=WEEKLY;COUNT=10',
-        created_at: now - 86400000,
+        created_at: now - 86_400_000,
         updated_at: now,
       };
 
@@ -118,9 +118,9 @@ describe('Database Mappers', () => {
       expect(assignment.courseId).toBe('CS 101');
       expect(assignment.courseName).toBe('CS 101');
       expect(assignment.courseColor).toBe('#e8a838');
-      expect(assignment.dueAt).toBe(new Date(now + 86400000).toISOString());
+      expect(assignment.dueAt).toBe(new Date(now + 86_400_000).toISOString());
       expect(assignment.unlockAt).toBe(new Date(now).toISOString());
-      expect(assignment.lockAt).toBe(new Date(now + 172800000).toISOString());
+      expect(assignment.lockAt).toBe(new Date(now + 172_800_000).toISOString());
       expect(assignment.pointsPossible).toBe(100);
       expect(assignment.submissionTypes).toEqual(['online_text_entry', 'online_upload']);
       expect(assignment.workflowState).toBe('published');
@@ -131,7 +131,7 @@ describe('Database Mappers', () => {
       expect(assignment.source).toBe('ical');
       expect(assignment.sourceUrl).toBe('https://canvas.example.com/feeds/calendars/user_xxx.ics');
       expect(assignment.rrule).toBe('FREQ=WEEKLY;COUNT=10');
-      expect(assignment.createdAt).toBe(new Date(now - 86400000).toISOString());
+      expect(assignment.createdAt).toBe(new Date(now - 86_400_000).toISOString());
       expect(assignment.updatedAt).toBe(new Date(now).toISOString());
     });
 
@@ -189,9 +189,9 @@ describe('Database Mappers', () => {
         courseId: 'course-123' as EntityId,
         courseName: 'CS 101',
         courseColor: '#ff0000',
-        dueAt: new Date(now + 86400000).toISOString() as IsoDateTime,
+        dueAt: new Date(now + 86_400_000).toISOString() as IsoDateTime,
         unlockAt: new Date(now).toISOString() as IsoDateTime,
-        lockAt: new Date(now + 172800000).toISOString() as IsoDateTime,
+        lockAt: new Date(now + 172_800_000).toISOString() as IsoDateTime,
         pointsPossible: 50,
         submissionTypes: ['online_text_entry'],
         workflowState: 'published',
@@ -202,7 +202,7 @@ describe('Database Mappers', () => {
         source: 'ical',
         sourceUrl: 'https://example.com/feed.ics',
         rrule: 'FREQ=DAILY',
-        createdAt: new Date(now - 86400000).toISOString() as IsoDateTime,
+        createdAt: new Date(now - 86_400_000).toISOString() as IsoDateTime,
         updatedAt: new Date(now).toISOString() as IsoDateTime,
       };
 
@@ -213,9 +213,9 @@ describe('Database Mappers', () => {
       expect(dbRow.description).toBe('Input description');
       expect(dbRow.course_name).toBe('CS 101'); // courseName takes precedence
       expect(dbRow.course_color).toBe('#ff0000');
-      expect(dbRow.due_at).toBe(now + 86400000);
+      expect(dbRow.due_at).toBe(now + 86_400_000);
       expect(dbRow.unlock_at).toBe(now);
-      expect(dbRow.lock_at).toBe(now + 172800000);
+      expect(dbRow.lock_at).toBe(now + 172_800_000);
       expect(dbRow.points_possible).toBe(50);
       expect(dbRow.submission_types).toBe(JSON.stringify(['online_text_entry']));
       expect(dbRow.workflow_state).toBe('published');
@@ -226,7 +226,7 @@ describe('Database Mappers', () => {
       expect(dbRow.source).toBe('ical');
       expect(dbRow.source_url).toBe('https://example.com/feed.ics');
       expect(dbRow.rrule).toBe('FREQ=DAILY');
-      expect(dbRow.created_at).toBe(now - 86400000);
+      expect(dbRow.created_at).toBe(now - 86_400_000);
       expect(dbRow.updated_at).toBe(now);
     });
 
@@ -261,9 +261,9 @@ describe('Database Mappers', () => {
         courseId: 'course-001' as EntityId,
         courseName: 'CS 101',
         courseColor: '#00ff00',
-        dueAt: new Date(now + 86400000).toISOString() as IsoDateTime,
+        dueAt: new Date(now + 86_400_000).toISOString() as IsoDateTime,
         unlockAt: new Date(now).toISOString() as IsoDateTime,
-        lockAt: new Date(now + 172800000).toISOString() as IsoDateTime,
+        lockAt: new Date(now + 172_800_000).toISOString() as IsoDateTime,
         pointsPossible: 100,
         submissionTypes: ['online_text_entry', 'online_upload', 'online_quiz'],
         workflowState: 'published',
@@ -274,7 +274,7 @@ describe('Database Mappers', () => {
         source: 'ical',
         sourceUrl: 'https://canvas.example.com/feed.ics',
         rrule: 'FREQ=WEEKLY;BYDAY=MO,WE,FR',
-        createdAt: new Date(now - 86400000).toISOString() as IsoDateTime,
+        createdAt: new Date(now - 86_400_000).toISOString() as IsoDateTime,
         updatedAt: new Date(now).toISOString() as IsoDateTime,
       };
 

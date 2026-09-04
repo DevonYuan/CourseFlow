@@ -8,8 +8,7 @@
  * @module @frontend/components/AssignmentList
  */
 
-import React from 'react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { Assignment } from '@backend/shared/types';
 import {
   PointerSensor,
   KeyboardSensor,
@@ -20,14 +19,13 @@ import {
 } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import React from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { List } from 'react-window';
-import { AssignmentListSkeleton } from './AssignmentListSkeleton';
-import { EmptyState } from './EmptyState';
-import { AssignmentRow } from './AssignmentRow';
-import { AssignmentListDragDrop } from './AssignmentList/AssignmentListDragDrop';
-import { GroupedAssignmentList } from './AssignmentList/GroupedAssignmentList';
-import { DragOverlay as CustomDragOverlay } from './AssignmentList/DragOverlay';
-import { PriorityLiveRegion } from './AssignmentList/PriorityLiveRegion';
+
+import { useToast } from '../context/ToastContext';
+import { useAssignments as useAssignmentsHook } from '../hooks/useAssignments';
+import { usePriorityKeyboard } from '../hooks/usePriorityKeyboard';
 import {
   useAssignmentsStore,
   useAssignments,
@@ -44,11 +42,16 @@ import {
   initializeAssignmentsStore,
 } from '../store/assignmentsStore';
 import type { GroupedAssignments } from '../store/selectors';
-import type { Assignment } from '@backend/shared/types';
-import { useAssignments as useAssignmentsHook } from '../hooks/useAssignments';
-import { useToast } from '../context/ToastContext';
 import { debounce } from '../utils/debounce';
-import { usePriorityKeyboard } from '../hooks/usePriorityKeyboard';
+
+import { AssignmentListDragDrop } from './AssignmentList/AssignmentListDragDrop';
+import { DragOverlay as CustomDragOverlay } from './AssignmentList/DragOverlay';
+import { GroupedAssignmentList } from './AssignmentList/GroupedAssignmentList';
+import { AssignmentListSkeleton } from './AssignmentListSkeleton';
+import { EmptyState } from './EmptyState';
+import { AssignmentRow } from './AssignmentRow';
+import { PriorityLiveRegion } from './AssignmentList/PriorityLiveRegion';
+
 import './AssignmentList.css';
 
 // Virtualization threshold - use virtualized list when > 100 items
@@ -223,7 +226,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
       const currentOrder = priorityOrder;
 
       // If priority order is empty, initialize from assignments
-      let orderedIds = currentOrder.length > 0 ? [...currentOrder] : assignments.map((a) => a.id);
+      const orderedIds = currentOrder.length > 0 ? [...currentOrder] : assignments.map((a) => a.id);
 
       // Convert UniqueIdentifier to string
       const activeId: string = String(active.id);
@@ -238,7 +241,8 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
       }
 
       // Move item in array
-      const [removed] = orderedIds.splice(oldIndex, 1);
+      const removed = orderedIds.splice(oldIndex, 1)[0];
+      if (removed === undefined) return;
       orderedIds.splice(newIndex, 0, removed);
 
       // 1. Optimistic update - immediate UI update
@@ -287,7 +291,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
       if (!isDragging) return null;
 
       // Find the assignment being dragged
-      const activeId = activatorEvent?.active?.id as string | undefined;
+      const activeId = activatorEvent?.active?.id;
       if (!activeId) return null;
 
       const currentActiveId: string = activeId;
@@ -412,7 +416,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           <div className="assignment-list__rows" role="list" aria-label="Assignments">
             {Array.isArray(filteredAssignments) &&
             filteredAssignments.length > 0 &&
-            'groupKey' in filteredAssignments[0]
+            'groupKey' in (filteredAssignments[0] ?? {})
               ? (
                 <GroupedAssignmentList
                   groupedAssignments={filteredAssignments as GroupedAssignments[]}
@@ -441,7 +445,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
   const isGrouped =
     Array.isArray(filteredAssignments) &&
     filteredAssignments.length > 0 &&
-    'groupKey' in filteredAssignments[0];
+    'groupKey' in (filteredAssignments[0] ?? {});
 
   // For virtualized lists (> 100 items), disable drag-and-drop and grouping
   if (flatFilteredAssignments.length > VIRTUALIZATION_THRESHOLD) {

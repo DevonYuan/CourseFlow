@@ -4,10 +4,12 @@
  * @module @backend/main/ical/__tests__/parse.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import {
   parseICalFeed,
   parseICalFeedWithMeta,

@@ -27,10 +27,10 @@ import type {
   IsoDateTime,
   ImportResult,
 } from '../../shared/types.js';
-
 import { sendEventToRenderers } from '../events.js';
 import type { EncryptedSetting } from '../security/encryption.js';
 import { encryptIcalUrl, decryptIcalUrl, isEncryptedSetting, EncryptionError, DecryptionError } from '../security/encryption.js';
+
 import { getDatabase, saveDatabase } from './connection.js';
 import {
   mapDbAssignmentToAssignment,
@@ -318,46 +318,7 @@ export const repo = {
 
         const incomingUpdatedAt = input.updatedAt ? new Date(input.updatedAt).getTime() : now;
 
-        if (!existing) {
-          // INSERT: new ical_uid
-          const id = input.id ?? randomUUID();
-          const dbRow = mapAssignmentInputToDb(input, now);
-
-          insertStmt.bind([
-            id,
-            dbRow.canvas_id ?? null,
-            dbRow.title ?? '',
-            dbRow.description ?? '',
-            dbRow.course_name ?? '',
-            dbRow.course_color ?? '#6366f1',
-            dbRow.due_at ?? now,
-            dbRow.unlock_at ?? null,
-            dbRow.lock_at ?? null,
-            dbRow.points_possible ?? null,
-            dbRow.submission_types ?? '[]',
-            dbRow.workflow_state ?? 'published',
-            dbRow.html_url ?? '',
-            dbRow.ical_uid ?? '',
-            dbRow.status ?? 'pending',
-            dbRow.source ?? 'ical',
-            dbRow.source_url ?? null,
-            dbRow.rrule ?? null,
-            dbRow.created_at ?? now,
-            dbRow.updated_at ?? now,
-          ]);
-          insertStmt.step();
-          insertStmt.reset();
-
-          // Add priority_order entry for new assignment at end (max position + 1)
-          run(
-            `INSERT INTO priority_order (assignment_id, position, created_at, updated_at)
-             VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM priority_order), ?, ?)`,
-            [id, now, now],
-          );
-
-          result.imported++;
-          sendEventToRenderers('db:changed', { table: 'assignments', action: 'insert', id });
-        } else {
+        if (existing) {
           // Check if incoming is newer
           const storedUpdatedAt = existing['updated_at'] as number;
           if (incomingUpdatedAt > storedUpdatedAt) {
@@ -402,6 +363,45 @@ export const repo = {
             // SKIP: incoming is not newer
             result.skipped++;
           }
+        } else {
+          // INSERT: new ical_uid
+          const id = input.id ?? randomUUID();
+          const dbRow = mapAssignmentInputToDb(input, now);
+
+          insertStmt.bind([
+            id,
+            dbRow.canvas_id ?? null,
+            dbRow.title ?? '',
+            dbRow.description ?? '',
+            dbRow.course_name ?? '',
+            dbRow.course_color ?? '#6366f1',
+            dbRow.due_at ?? now,
+            dbRow.unlock_at ?? null,
+            dbRow.lock_at ?? null,
+            dbRow.points_possible ?? null,
+            dbRow.submission_types ?? '[]',
+            dbRow.workflow_state ?? 'published',
+            dbRow.html_url ?? '',
+            dbRow.ical_uid ?? '',
+            dbRow.status ?? 'pending',
+            dbRow.source ?? 'ical',
+            dbRow.source_url ?? null,
+            dbRow.rrule ?? null,
+            dbRow.created_at ?? now,
+            dbRow.updated_at ?? now,
+          ]);
+          insertStmt.step();
+          insertStmt.reset();
+
+          // Add priority_order entry for new assignment at end (max position + 1)
+          run(
+            `INSERT INTO priority_order (assignment_id, position, created_at, updated_at)
+             VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM priority_order), ?, ?)`,
+            [id, now, now],
+          );
+
+          result.imported++;
+          sendEventToRenderers('db:changed', { table: 'assignments', action: 'insert', id });
         }
       }
       exec('COMMIT');

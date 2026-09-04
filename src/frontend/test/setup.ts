@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
-import { expect } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import React from 'react';
 import { act } from 'react';
+import { expect } from 'vitest';
 import { vi } from 'vitest';
 
 // Make React available globally for JSX transform

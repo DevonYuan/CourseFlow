@@ -1,8 +1,9 @@
+import type { Settings } from '@backend/shared/types';
 import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import type { Settings } from '@backend/shared/types';
-import { useIcalSync } from '../hooks/useIcalSync';
+
 import { useToast } from '../context/ToastContext';
+import { useIcalSync } from '../hooks/useIcalSync';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
@@ -268,7 +269,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <select
                 id="theme"
                 value={formData.theme || 'system'}
-                onChange={e => handleInputChange('theme', e.target.value as 'light' | 'dark' | 'system')}
+                onChange={e => handleInputChange('theme', e.target.value)}
                 disabled={isSaving}
               >
                 <option value="system">System</option>
@@ -281,18 +282,18 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <label htmlFor="autoFetchIntervalMs">Auto-fetch Interval</label>
               <select
                 id="autoFetchIntervalMs"
-                value={formData.autoFetchIntervalMs || 3600000}
-                onChange={e => handleInputChange('autoFetchIntervalMs', parseInt(e.target.value, 10))}
+                value={formData.autoFetchIntervalMs || 3_600_000}
+                onChange={e => handleInputChange('autoFetchIntervalMs', Number.parseInt(e.target.value, 10))}
                 disabled={isSaving}
                 data-testid="sync-interval-input"
               >
                 <option value={0}>Off</option>
-                <option value={900000}>15 minutes</option>
-                <option value={1800000}>30 minutes</option>
-                <option value={3600000}>1 hour</option>
-                <option value={21600000}>6 hours</option>
-                <option value={43200000}>12 hours</option>
-                <option value={86400000}>24 hours</option>
+                <option value={900_000}>15 minutes</option>
+                <option value={1_800_000}>30 minutes</option>
+                <option value={3_600_000}>1 hour</option>
+                <option value={21_600_000}>6 hours</option>
+                <option value={43_200_000}>12 hours</option>
+                <option value={86_400_000}>24 hours</option>
               </select>
             </div>
 
@@ -328,7 +329,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 min="1"
                 max="168"
                 value={formData.dueSoonThresholdHours || 24}
-                onChange={e => handleInputChange('dueSoonThresholdHours', parseInt(e.target.value, 10))}
+                onChange={e => handleInputChange('dueSoonThresholdHours', Number.parseInt(e.target.value, 10))}
                 disabled={isSaving}
               />
             </div>

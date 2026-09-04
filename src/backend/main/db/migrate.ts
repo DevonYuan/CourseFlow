@@ -32,7 +32,7 @@ function loadMigrations(): Map<number, string> {
     if (!match || !match[1]) {
       throw new Error(`Invalid migration filename: ${file}. Expected format: NNN_name.sql`);
     }
-    const version = parseInt(match[1], 10);
+    const version = Number.parseInt(match[1], 10);
     const sql = readFileSync(join(migrationsDir, file), 'utf-8');
     migrations.set(version, sql);
   }
@@ -42,7 +42,7 @@ function loadMigrations(): Map<number, string> {
   }
 
   // Verify sequential versions starting from 1
-  const versions = Array.from(migrations.keys()).sort((a, b) => a - b);
+  const versions = [...migrations.keys()].sort((a, b) => a - b);
   for (let i = 0; i < versions.length; i++) {
     if (versions[i] !== i + 1) {
       throw new Error(`Migration versions must be sequential starting from 1. Found: ${versions.join(', ')}`);
@@ -80,7 +80,7 @@ export function migrate(db: Database): void {
   appliedStmt.free();
 
   // Apply pending migrations in order
-  const versions = Array.from(MIGRATIONS.keys()).sort((a, b) => a - b);
+  const versions = [...MIGRATIONS.keys()].sort((a, b) => a - b);
 
   for (const version of versions) {
     if (appliedVersions.has(version)) {

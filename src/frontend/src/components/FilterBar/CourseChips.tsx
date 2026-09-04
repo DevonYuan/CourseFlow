@@ -171,7 +171,7 @@ export function CourseChips(): JSX.Element {
               className={`course-chips__chip ${course.isSelected ? 'course-chips__chip--selected' : ''}`}
               onClick={() => handleChipClick(course.name)}
               onKeyDown={(e) => handleKeyDown(e, course.name)}
-              data-testid={`course-chip-${course.name.replace(/\s+/g, '-')}`}
+              data-testid={`course-chip-${course.name.replaceAll(/\s+/g, '-')}`}
             >
               <CourseColorBadge
                 color={course.color}

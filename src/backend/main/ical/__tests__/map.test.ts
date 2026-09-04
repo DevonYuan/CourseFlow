@@ -4,13 +4,14 @@
  * @module @backend/main/ical/__tests__/map.test
  */
 
+import type { ICalEvent, IsoDateTime } from '@backend/shared/types';
 import { describe, it, expect, vi } from 'vitest';
+
 import {
   mapICalToAssignments,
   extractCourseName,
   generateCourseColor,
 } from '../map.js';
-import type { ICalEvent, IsoDateTime } from '@backend/shared/types';
 
 // Helper to create a minimal valid ICalEvent
 function createEvent(overrides: Partial<ICalEvent> = {}): ICalEvent {

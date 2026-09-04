@@ -6,18 +6,20 @@
 
 // @vitest-environment jsdom
 
-import React from 'react';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ErrorBoundary } from '../components/ErrorBoundary';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { ErrorBoundary } from '../components/ErrorBoundary';
+
 
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
 
 // Component that throws an error during render
 class ThrowError extends React.Component<{ shouldThrow: boolean }> {
-  render() {
+  override render() {
     if (this.props.shouldThrow) {
       throw new Error('Test render error');
     }
@@ -67,7 +69,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('calls custom fallback render prop when provided', () => {
-    const customFallback = vi.fn(({ error, reset }) => (
+    const customFallback = vi.fn((error: Error, reset: () => void) => (
       <div data-testid="custom-fallback">
         <p>Custom: {error.message}</p>
         <button onClick={reset}>Custom Reset</button>
@@ -80,17 +82,15 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
     expect(customFallback).toHaveBeenCalledWith(
-      expect.objectContaining({
-        error: expect.objectContaining({ message: 'Test render error' }),
-        reset: expect.any(Function),
-      })
+      expect.objectContaining({ message: 'Test render error' }),
+      expect.any(Function)
     );
     expect(screen.getByText('Custom: Test render error')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /custom reset/i })).toBeInTheDocument();
   });
 
   it('reset function clears error state when called from custom fallback', () => {
-    const customFallback = ({ reset }: { reset: () => void }) => (
+    const customFallback = (error: Error, reset: () => void) => (
       <button onClick={reset} data-testid="reset-btn">
         Reset
       </button>

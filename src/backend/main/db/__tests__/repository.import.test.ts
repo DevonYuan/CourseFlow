@@ -12,14 +12,10 @@
  * @module @backend/main/db/__tests__/repository.import
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import type { Database } from 'sql.js';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 
-import {
-  mapDbAssignmentToAssignment,
-  mapAssignmentInputToDb,
-} from '../mappers.js';
 import type {
   Assignment,
   AssignmentInput,
@@ -29,6 +25,10 @@ import type {
   IsoDateTime,
   AssignmentStatus,
 } from '../../../shared/types.js';
+import {
+  mapDbAssignmentToAssignment,
+  mapAssignmentInputToDb,
+} from '../mappers.js';
 
 // Test database instance
 let testDb: Database | null = null;
@@ -113,7 +113,7 @@ function createAssignment(input: Partial<AssignmentInput> & { icalUid: string })
     courseId: input.courseId ?? `course-${assignmentCounter}` as EntityId,
     courseName: input.courseName ?? 'CS 101',
     courseColor: input.courseColor ?? '#6366f1',
-    dueAt: input.dueAt ?? new Date(now + 86400000).toISOString() as IsoDateTime,
+    dueAt: input.dueAt ?? new Date(now + 86_400_000).toISOString() as IsoDateTime,
     unlockAt: input.unlockAt ?? null,
     lockAt: input.lockAt ?? null,
     pointsPossible: input.pointsPossible ?? 100,
@@ -126,7 +126,7 @@ function createAssignment(input: Partial<AssignmentInput> & { icalUid: string })
     source: input.source ?? 'ical',
     sourceUrl: input.sourceUrl ?? 'https://example.com/feed.ics',
     rrule: input.rrule ?? undefined,
-    createdAt: input.createdAt ?? new Date(now - 86400000).toISOString() as IsoDateTime,
+    createdAt: input.createdAt ?? new Date(now - 86_400_000).toISOString() as IsoDateTime,
     updatedAt: input.updatedAt ?? new Date(now).toISOString() as IsoDateTime,
   };
 }
@@ -172,38 +172,7 @@ async function importAssignments(inputs: AssignmentInput[]): Promise<ImportResul
 
       const incomingUpdatedAt = input.updatedAt ? new Date(input.updatedAt).getTime() : now;
 
-      if (!existing) {
-        // INSERT
-        const id = input.id ?? `new-${Math.random().toString(36).slice(2)}` as EntityId;
-        const dbRow = mapAssignmentInputToDb(input, now);
-
-        insertStmt.bind([
-          id,
-          dbRow.canvas_id ?? null,
-          dbRow.title ?? '',
-          dbRow.description ?? '',
-          dbRow.course_name ?? '',
-          dbRow.course_color ?? '#6366f1',
-          dbRow.due_at ?? now,
-          dbRow.unlock_at ?? null,
-          dbRow.lock_at ?? null,
-          dbRow.points_possible ?? null,
-          dbRow.submission_types ?? '[]',
-          dbRow.workflow_state ?? 'published',
-          dbRow.html_url ?? '',
-          dbRow.ical_uid ?? '',
-          dbRow.status ?? 'pending',
-          dbRow.source ?? 'ical',
-          dbRow.source_url ?? null,
-          dbRow.rrule ?? null,
-          dbRow.created_at ?? now,
-          dbRow.updated_at ?? now,
-        ]);
-        insertStmt.step();
-        insertStmt.reset();
-
-        result.imported++;
-      } else {
+      if (existing) {
         const storedUpdatedAt = existing['updated_at'] as number;
         if (incomingUpdatedAt > storedUpdatedAt) {
           // UPDATE
@@ -247,6 +216,37 @@ async function importAssignments(inputs: AssignmentInput[]): Promise<ImportResul
         } else {
           result.skipped++;
         }
+      } else {
+        // INSERT
+        const id = input.id ?? `new-${Math.random().toString(36).slice(2)}` as EntityId;
+        const dbRow = mapAssignmentInputToDb(input, now);
+
+        insertStmt.bind([
+          id,
+          dbRow.canvas_id ?? null,
+          dbRow.title ?? '',
+          dbRow.description ?? '',
+          dbRow.course_name ?? '',
+          dbRow.course_color ?? '#6366f1',
+          dbRow.due_at ?? now,
+          dbRow.unlock_at ?? null,
+          dbRow.lock_at ?? null,
+          dbRow.points_possible ?? null,
+          dbRow.submission_types ?? '[]',
+          dbRow.workflow_state ?? 'published',
+          dbRow.html_url ?? '',
+          dbRow.ical_uid ?? '',
+          dbRow.status ?? 'pending',
+          dbRow.source ?? 'ical',
+          dbRow.source_url ?? null,
+          dbRow.rrule ?? null,
+          dbRow.created_at ?? now,
+          dbRow.updated_at ?? now,
+        ]);
+        insertStmt.step();
+        insertStmt.reset();
+
+        result.imported++;
       }
     }
     exec('COMMIT');
@@ -339,7 +339,7 @@ describe('importAssignments', () => {
       const existing = createAssignment({
         icalUid: 'update-test@example.com',
         title: 'Original Title',
-        dueAt: new Date(baseTime + 86400000).toISOString() as IsoDateTime,
+        dueAt: new Date(baseTime + 86_400_000).toISOString() as IsoDateTime,
         updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
       });
       await importAssignments([existing]);
@@ -348,8 +348,8 @@ describe('importAssignments', () => {
       const updated = createAssignment({
         icalUid: 'update-test@example.com',
         title: 'Original Title', // unchanged
-        dueAt: new Date(baseTime + 172800000).toISOString() as IsoDateTime, // changed
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime, // 1 hour newer
+        dueAt: new Date(baseTime + 172_800_000).toISOString() as IsoDateTime, // changed
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime, // 1 hour newer
       });
 
       const result = await importAssignments([updated]);
@@ -360,7 +360,7 @@ describe('importAssignments', () => {
 
       // Verify dueAt was updated
       const rows = testDb!.exec('SELECT due_at FROM assignments WHERE ical_uid = "update-test@example.com"');
-      expect(rows[0]?.values?.[0]?.[0]).toBe(new Date(baseTime + 172800000).getTime());
+      expect(rows[0]?.values?.[0]?.[0]).toBe(new Date(baseTime + 172_800_000).getTime());
     });
 
     it('should update multiple fields when newer', async () => {
@@ -379,7 +379,7 @@ describe('importAssignments', () => {
         title: 'New Title',
         courseColor: '#00ff00',
         pointsPossible: 100,
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime,
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
       });
 
       const result = await importAssignments([updated]);
@@ -426,7 +426,7 @@ describe('importAssignments', () => {
       const existing = createAssignment({
         icalUid: 'skip-older@example.com',
         title: 'Original',
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime, // newer
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime, // newer
       });
       await importAssignments([existing]);
 
@@ -460,7 +460,7 @@ describe('importAssignments', () => {
       const updated = createAssignment({
         icalUid: 'protect-desc@example.com',
         description: 'Canvas description from iCal',
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime,
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
       });
 
       const result = await importAssignments([updated]);
@@ -484,7 +484,7 @@ describe('importAssignments', () => {
       const updated = createAssignment({
         icalUid: 'protect-status@example.com',
         status: 'pending',
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime,
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
       });
 
       const result = await importAssignments([updated]);
@@ -508,7 +508,7 @@ describe('importAssignments', () => {
       const updated = createAssignment({
         icalUid: 'allow-status-change@example.com',
         status: 'completed',
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime,
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
       });
 
       const result = await importAssignments([updated]);
@@ -532,7 +532,7 @@ describe('importAssignments', () => {
       const updated = createAssignment({
         icalUid: 'status-pending-to-progress@example.com',
         status: 'in_progress',
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime,
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
       });
 
       const result = await importAssignments([updated]);
@@ -561,7 +561,7 @@ describe('importAssignments', () => {
       const updated = createAssignment({
         icalUid: 'protect-priority@example.com',
         title: 'Assignment',
-        updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime,
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
       });
 
       const result = await importAssignments([updated]);
@@ -590,9 +590,9 @@ describe('importAssignments', () => {
         createAssignment({ icalUid: 'new-1@example.com', title: 'New 1', updatedAt: new Date(baseTime + 1000).toISOString() as IsoDateTime }),
         createAssignment({ icalUid: 'new-2@example.com', title: 'New 2', updatedAt: new Date(baseTime + 2000).toISOString() as IsoDateTime }),
         createAssignment({ icalUid: 'new-3@example.com', title: 'New 3', updatedAt: new Date(baseTime + 3000).toISOString() as IsoDateTime }),
-        createAssignment({ icalUid: 'existing-1@example.com', title: 'Updated 1', updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime }), // newer
-        createAssignment({ icalUid: 'existing-2@example.com', title: 'Updated 2', updatedAt: new Date(baseTime + 3600000).toISOString() as IsoDateTime }), // newer
-        createAssignment({ icalUid: 'existing-3@example.com', title: 'Skipped 3', updatedAt: new Date(baseTime - 3600000).toISOString() as IsoDateTime }), // older
+        createAssignment({ icalUid: 'existing-1@example.com', title: 'Updated 1', updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime }), // newer
+        createAssignment({ icalUid: 'existing-2@example.com', title: 'Updated 2', updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime }), // newer
+        createAssignment({ icalUid: 'existing-3@example.com', title: 'Skipped 3', updatedAt: new Date(baseTime - 3_600_000).toISOString() as IsoDateTime }), // older
       ];
 
       const result = await importAssignments(inputs);

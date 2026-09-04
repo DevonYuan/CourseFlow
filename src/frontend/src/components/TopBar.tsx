@@ -7,7 +7,9 @@
  */
 
 import { useNavigate } from 'react-router-dom';
+
 import { useSettings } from '../hooks/useSettings';
+
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import './TopBar.css';
 

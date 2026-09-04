@@ -64,7 +64,7 @@ export function usePriorityKeyboard({ onAnnounce, enabled = true }: UsePriorityK
       const focusedRow = document.activeElement?.closest('.assignment-row') as HTMLElement | null;
       if (!focusedRow) return;
 
-      const assignmentId = focusedRow.dataset.assignmentId;
+      const assignmentId = focusedRow.dataset['assignmentId'];
       if (!assignmentId) return;
 
       // Determine direction

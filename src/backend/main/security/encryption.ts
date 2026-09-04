@@ -71,7 +71,7 @@ function fromBase64Url(base64url: string): ArrayBuffer {
     bytes[i] = binary.charCodeAt(i);
   }
   // Cast to ensure ArrayBuffer (not SharedArrayBuffer)
-  return bytes.buffer as ArrayBuffer;
+  return bytes.buffer;
 }
 
 /**
@@ -116,10 +116,10 @@ export async function encryptIcalUrl(url: string): Promise<EncryptedSetting> {
     const passphrase = getPassphrase();
 
     // Generate random 16-byte salt
-    const salt = crypto.getRandomValues(new Uint8Array(16)) as Uint8Array<ArrayBuffer>;
+    const salt = crypto.getRandomValues(new Uint8Array(16));
 
     // Generate random 12-byte IV (recommended for AES-GCM)
-    const iv = crypto.getRandomValues(new Uint8Array(12)) as Uint8Array<ArrayBuffer>;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
 
     // Derive key from passphrase and salt
     const key = await deriveKey(passphrase, salt);
@@ -139,7 +139,7 @@ export async function encryptIcalUrl(url: string): Promise<EncryptedSetting> {
       iv: toBase64Url(iv.buffer),
       salt: toBase64Url(salt.buffer),
     };
-  } catch (error) {
+  } catch {
     throw new EncryptionError('Failed to encrypt iCal URL');
   }
 }
@@ -160,9 +160,9 @@ export async function decryptIcalUrl(encrypted: EncryptedSetting): Promise<strin
     const passphrase = getPassphrase();
 
     // Decode base64url values
-    const salt = new Uint8Array(fromBase64Url(encrypted.salt)) as Uint8Array<ArrayBuffer>;
-    const iv = new Uint8Array(fromBase64Url(encrypted.iv)) as Uint8Array<ArrayBuffer>;
-    const ciphertext = new Uint8Array(fromBase64Url(encrypted.ciphertext)) as Uint8Array<ArrayBuffer>;
+    const salt = new Uint8Array(fromBase64Url(encrypted.salt));
+    const iv = new Uint8Array(fromBase64Url(encrypted.iv));
+    const ciphertext = new Uint8Array(fromBase64Url(encrypted.ciphertext));
 
     // Derive key from passphrase and salt
     const key = await deriveKey(passphrase, salt);

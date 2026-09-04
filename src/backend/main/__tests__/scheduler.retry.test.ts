@@ -6,8 +6,8 @@
  * @module @backend/main/__tests__/scheduler.retry
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { BrowserWindow, powerMonitor, ipcMain } from 'electron';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
 // Mock electron modules
 vi.mock('electron', () => {
@@ -85,11 +85,12 @@ vi.mock('../events.js', () => ({
 }));
 
 // Import mocked modules
-import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError } from '../ical/index.js';
 import { repo } from '../db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from '../events.js';
+import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError } from '../ical/index.js';
 import { Scheduler, __resetScheduler } from '../scheduler.js';
-import type { Settings, ImportResult, IsoDateTime } from '../shared/types.js';
+
+import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
 
 const mockFetchICalFeed = fetchICalFeed as Mock;
 const mockParseICalFeed = parseICalFeed as Mock;
@@ -107,7 +108,12 @@ function createMockSettings(overrides: Partial<Settings> = {}): Settings {
     autoFetchIcal: true,
     theme: 'system',
     lastSyncAt: null,
-    icalUrlEncrypted: null,
+    icalFetchIntervalMinutes: 15,
+    defaultPriority: 'medium',
+    showCompletedAssignments: true,
+    notifyDueSoon: true,
+    dueSoonThresholdHours: 24,
+    autoFetchIntervalMs: 15 * 60 * 1000,
     ...overrides,
   };
 }
@@ -129,7 +135,7 @@ function createMockAssignment(overrides: Partial<any> = {}) {
     courseId: 'course-1',
     courseName: 'CS101',
     courseColor: '#e8a838',
-    dueAt: new Date(Date.now() + 86400000).toISOString() as IsoDateTime,
+    dueAt: new Date(Date.now() + 86_400_000).toISOString() as IsoDateTime,
     unlockAt: null,
     lockAt: null,
     pointsPossible: 100,

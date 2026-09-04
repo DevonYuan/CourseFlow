@@ -6,8 +6,9 @@
 
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Assignment, IsoDateTime, SortOption } from '@backend/shared/types';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import {
   groupByWeek,
   groupByStatus,
@@ -362,7 +363,7 @@ describe('Grouping Functions', () => {
       const priorityOrder = ['2', '1'];
       const result = applyGrouping(testAssignments, 'status', 'priority', priorityOrder);
       
-      const grouped = result as GroupedAssignments;
+      const grouped = result as GroupedAssignments[];
       const pending = grouped.find((g) => g.groupKey === 'pending');
       expect(pending?.assignments.map((a) => a.id)).toEqual(['1']);
     });

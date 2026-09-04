@@ -9,9 +9,11 @@
  * @module @backend/main/scheduler
  */
 
-import { app, powerMonitor, ipcMain, BrowserWindow } from 'electron';
+import type { BrowserWindow } from 'electron';
+import { app, powerMonitor, ipcMain } from 'electron';
 
 import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus, ImportResult } from '../shared/types.js';
+
 import { repo } from './db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from './events.js';
 import {
@@ -511,7 +513,7 @@ export class Scheduler {
 
     if (classification.retryable && this.retryCount < this.maxRetries) {
       // Schedule retry with exponential backoff
-      const delayMs = this.retryDelaysMs[this.retryCount];
+      const delayMs = (this.retryDelaysMs[this.retryCount] ?? this.retryDelaysMs.at(-1)) as number;
       this.retryCount++;
       console.log(`[Scheduler] Scheduling retry ${this.retryCount}/${this.maxRetries} in ${delayMs / 1000}s`);
 
@@ -746,7 +748,7 @@ export class Scheduler {
    * @param message - Error message
    * @param code - Error code category
    */
-  private emitError(message: string, code: 'network' | 'auth' | 'parse' | 'unknown'): void {
+  private emitError(message: string, code: 'network' | 'auth' | 'parse' | 'server' | 'unknown'): void {
     emitSchedulerError(message, code);
   }
 

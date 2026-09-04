@@ -6,9 +6,20 @@
 
 // @vitest-environment jsdom
 
+import type { SortOption, GroupingType, IsoDateTime } from '@backend/shared/types';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { useAssignmentsStore } from '../store/assignmentsStore';
-import type { FilterState, SortOption, GroupingType } from '@backend/shared/types';
+
+// Local FilterState type for tests (matches frontend store's FilterState with sortOption and groupingType)
+interface FilterState {
+  courseFilter: string[];
+  statusFilter: 'all' | 'pending' | 'completed';
+  dueDateRange: { start: IsoDateTime; end: IsoDateTime } | null;
+  searchQuery: string;
+  sortOption: SortOption;
+  groupingType: GroupingType;
+}
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -179,7 +190,7 @@ describe('FilterState', () => {
   describe('setDueDateRange', () => {
     it('sets due date range', () => {
       const { setDueDateRange } = useAssignmentsStore.getState();
-      const range = { start: new Date('2026-01-01'), end: new Date('2026-12-31') };
+      const range = { start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime };
       setDueDateRange(range);
 
       const state = useAssignmentsStore.getState();
@@ -188,7 +199,7 @@ describe('FilterState', () => {
 
     it('clears due date range when null', () => {
       const { setDueDateRange } = useAssignmentsStore.getState();
-      setDueDateRange({ start: new Date('2026-01-01'), end: new Date('2026-12-31') });
+      setDueDateRange({ start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime });
       setDueDateRange(null);
 
       const state = useAssignmentsStore.getState();
@@ -197,7 +208,7 @@ describe('FilterState', () => {
 
     it('persists to localStorage with ISO date strings', () => {
       const { setDueDateRange } = useAssignmentsStore.getState();
-      const range = { start: new Date('2026-01-01T00:00:00.000Z'), end: new Date('2026-12-31T23:59:59.999Z') };
+      const range = { start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime };
       setDueDateRange(range);
 
       const stored = localStorageMock.getItem('courseflow:filters');
@@ -226,7 +237,7 @@ describe('FilterState', () => {
       // Since localStorage was cleared in resetStore, it may be null or have old values
       let stored = localStorageMock.getItem('courseflow:filters');
       if (stored) {
-        let parsed = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
         expect(parsed.searchQuery).toBe(''); // Still default
       }
 
@@ -349,7 +360,7 @@ describe('FilterState', () => {
 
       setCourseFilter(['CS101']);
       setStatusFilter('pending');
-      setDueDateRange({ start: new Date('2026-01-01'), end: new Date('2026-12-31') });
+      setDueDateRange({ start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime });
       setSearchQuery('homework');
       setSortOption('dueDateAsc');
       setGroupingType('week');
@@ -385,20 +396,14 @@ describe('FilterState', () => {
       const storedState: FilterState = {
         courseFilter: ['CS101', 'MATH200'],
         statusFilter: 'pending',
-        dueDateRange: { start: new Date('2026-01-01'), end: new Date('2026-12-31') },
+        dueDateRange: { start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime },
         searchQuery: 'homework',
         sortOption: 'dueDateAsc',
         groupingType: 'week',
       };
 
-      // Store with ISO date strings
-      localStorageMock.setItem('courseflow:filters', JSON.stringify({
-        ...storedState,
-        dueDateRange: {
-          start: storedState.dueDateRange!.start.toISOString(),
-          end: storedState.dueDateRange!.end.toISOString(),
-        },
-      }));
+      // Store with ISO date strings (already in correct format)
+      localStorageMock.setItem('courseflow:filters', JSON.stringify(storedState));
 
       const { hydrateFilters } = useAssignmentsStore.getState();
       hydrateFilters();
@@ -407,8 +412,8 @@ describe('FilterState', () => {
       expect(state.filters.courseFilter).toEqual(['CS101', 'MATH200']);
       expect(state.filters.statusFilter).toBe('pending');
       expect(state.filters.dueDateRange).not.toBeNull();
-      expect(state.filters.dueDateRange!.start).toEqual(new Date('2026-01-01'));
-      expect(state.filters.dueDateRange!.end).toEqual(new Date('2026-12-31'));
+      expect(state.filters.dueDateRange!.start).toBe('2026-01-01T00:00:00.000Z');
+      expect(state.filters.dueDateRange!.end).toBe('2026-12-31T23:59:59.999Z');
       expect(state.filters.searchQuery).toBe('homework');
       expect(state.filters.sortOption).toBe('dueDateAsc');
       expect(state.filters.groupingType).toBe('week');
@@ -464,14 +469,14 @@ describe('FilterState', () => {
       // Need to call the selector to get the derived value
       const courseNames = useAssignmentsStore.getState();
       // The selector is a function, so we need to evaluate it
-      const names = Array.from(new Set(assignments.map((a) => a.courseName))).sort();
+      const names = [...new Set(assignments.map((a) => a.courseName))].sort();
       expect(names).toEqual(['CS101', 'MATH200', 'PHYS101']);
     });
 
     it('returns empty array when no assignments', () => {
       useAssignmentsStore.setState({ assignments: [] });
 
-      const names = Array.from(new Set([])).sort();
+      const names = [...new Set([])].sort();
       expect(names).toEqual([]);
     });
   });

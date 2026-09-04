@@ -6,15 +6,17 @@
 
 // @vitest-environment jsdom
 
+import type { IpcEvents } from '@backend/shared/ipc';
+import type { Assignment, IsoDateTime } from '@backend/shared/types';
+import * as matchers from '@testing-library/jest-dom/matchers';
+import { render, screen, waitFor, fireEvent, act, cleanup } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, act, cleanup } from '@testing-library/react';
+
 import { AssignmentList } from '../components/AssignmentList';
-import type { Assignment, IsoDateTime } from '@backend/shared/types';
-import type { IpcEvents } from '@backend/shared/ipc';
-import { useAssignmentsStore } from '../store/assignmentsStore';
 import { ToastProvider } from '../context/ToastContext';
-import * as matchers from '@testing-library/jest-dom/matchers';
+import { useAssignmentsStore } from '../store/assignmentsStore';
+
 
 // Extend expect with jest-dom matchers
 expect.extend(matchers);

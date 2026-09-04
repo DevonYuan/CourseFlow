@@ -26,7 +26,7 @@ export interface ToastOptions {
   onDismiss?: () => void;
 }
 
-interface ToastContextValue {
+export interface ToastContextValue {
   success: (message: string, options?: ToastOptions) => string;
   error: (message: string, options?: ToastOptions) => string;
   info: (message: string, options?: ToastOptions) => string;

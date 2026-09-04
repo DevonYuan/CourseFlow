@@ -7,9 +7,9 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import type { Database } from 'sql.js';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 
 // Mock Electron modules
 vi.mock('electron', () => ({
@@ -21,10 +21,10 @@ vi.mock('electron', () => ({
   },
 }));
 
-import { repo } from '../repository.js';
-import { getDatabase, setTestDatabase, saveDatabase } from '../connection.js';
 import type { Settings, DbSettings } from '../../../shared/types.js';
+import { getDatabase, setTestDatabase, saveDatabase } from '../connection.js';
 import { mapDbSettingsToSettings } from '../mappers.js';
+import { repo } from '../repository.js';
 
 // Test database instance
 let testDb: Database | null = null;

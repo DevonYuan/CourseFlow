@@ -7,11 +7,14 @@
  * @module @frontend/hooks/useSyncStatus
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Settings } from '@backend/shared/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { useToast } from '../context/ToastContext';
+
 import { useIcalSync } from './useIcalSync';
 import { useSettings } from './useSettings';
-import { useToast } from '../context/ToastContext';
+
 
 interface UseSyncStatusReturn {
   /** ISO 8601 timestamp of last successful sync, or null if never synced */
@@ -47,9 +50,9 @@ export function formatNextSync(isoString: string | null): string {
   const diffMs = date.getTime() - now.getTime();
 
   if (diffMs <= 0) return 'due now';
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  const diffMins = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
 
   if (diffMins < 60) return `in ${diffMins}m`;
   if (diffHours < 24) return `in ${diffHours}h`;

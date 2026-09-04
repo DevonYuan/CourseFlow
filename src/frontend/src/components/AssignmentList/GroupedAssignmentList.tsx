@@ -47,6 +47,8 @@ interface GroupedAssignmentListProps {
   priorityOrder: string[];
   /** Callback for drag end event */
   onDragEnd?: (event: DragEndEvent) => void;
+  /** Callback to open settings modal */
+  onOpenSettings?: () => void;
 }
 
 /**
@@ -252,7 +254,19 @@ function GroupItem({
                 />
               ))}
             </SortableContext>
-            <DragOverlay>{renderDragOverlay}</DragOverlay>
+            <DragOverlay>
+              {(({
+                isDragging,
+                transform,
+                activatorEvent,
+                transition,
+              }: {
+                isDragging: boolean;
+                transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
+                activatorEvent: { active: { id: string } | null } | null;
+                transition: string | undefined;
+              }) => renderDragOverlay({ isDragging, transform, activatorEvent, transition })) as unknown as React.ReactNode}
+            </DragOverlay>
           </DndContext>
         ) : (
           sortedAssignments.map((assignment) => (

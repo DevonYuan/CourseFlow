@@ -7,8 +7,10 @@
  * @module @frontend/store/selectors
  */
 
-import type { Assignment, FilterState, SortOption, GroupingType, IsoDateTime } from '@backend/shared/types';
+import type { Assignment, SortOption, GroupingType, IsoDateTime } from '@backend/shared/types';
 import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+
+import type { FilterState } from './assignmentsStore';
 import {
   type GroupedAssignments,
   applyGrouping,
@@ -187,18 +189,24 @@ export function applySort(
   const sorted = [...assignments];
 
   switch (sortOption) {
-    case 'priority':
+    case 'priority': {
       return sorted.sort(createPrioritySortComparator(priorityOrder));
-    case 'dueDateAsc':
+    }
+    case 'dueDateAsc': {
       return sorted.sort(sortByDueDateAsc);
-    case 'dueDateDesc':
+    }
+    case 'dueDateDesc': {
       return sorted.sort(sortByDueDateDesc);
-    case 'course':
+    }
+    case 'course': {
       return sorted.sort(sortByCourse);
-    case 'createdDesc':
+    }
+    case 'createdDesc': {
       return sorted.sort(sortByCreatedDesc);
-    default:
+    }
+    default: {
       return sorted;
+    }
   }
 }
 

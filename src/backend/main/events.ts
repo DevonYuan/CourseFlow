@@ -10,6 +10,7 @@
 import { BrowserWindow } from 'electron';
 
 import type { IpcEvents } from '../shared/ipc.js';
+import type { IsoDateTime } from '../shared/types.js';
 
 /**
  * Send a one-way event to all renderer windows.
@@ -35,7 +36,7 @@ export function sendEventToRenderers<E extends keyof IpcEvents>(
  *
  * @param nextRun - ISO timestamp of the next scheduled run
  */
-export function emitSchedulerTick(nextRun: string): void {
+export function emitSchedulerTick(nextRun: IsoDateTime): void {
   sendEventToRenderers('scheduler:tick', { nextRun });
 }
 
@@ -46,6 +47,9 @@ export function emitSchedulerTick(nextRun: string): void {
  * @param message - Error message
  * @param code - Error code category
  */
-export function emitSchedulerError(message: string, code: 'network' | 'auth' | 'parse' | 'unknown'): void {
+export function emitSchedulerError(
+  message: string,
+  code: 'network' | 'auth' | 'parse' | 'server' | 'unknown'
+): void {
   sendEventToRenderers('scheduler:error', { message, code });
 }

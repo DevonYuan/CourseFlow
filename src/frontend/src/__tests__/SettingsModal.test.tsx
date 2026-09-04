@@ -13,15 +13,17 @@
 
 // @vitest-environment jsdom
 
-import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { IpcEvents } from '@backend/shared/ipc';
+import type { Settings } from '@backend/shared/types';
+import * as matchers from '@testing-library/jest-dom/matchers';
 import { render, screen, fireEvent, waitFor, act, within, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { SettingsModal } from '../components/SettingsModal';
 import { ToastProvider } from '../context/ToastContext';
-import type { Settings } from '@backend/shared/types';
-import type { IpcEvents } from '@backend/shared/ipc';
-import * as matchers from '@testing-library/jest-dom/matchers';
+
 
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
@@ -58,7 +60,8 @@ const defaultSettings: Settings = {
   dueSoonThresholdHours: 24,
   icalUrl: 'https://canvas.example.edu/feeds/calendars/...',
   lastSyncAt: null,
-  autoFetchIntervalMs: 3600000,
+  autoFetchIntervalMs: 3_600_000,
+  syncIntervalMinutes: 15,
 };
 
 // Track progress callback for fetch tests
@@ -103,8 +106,8 @@ function setupFetchMocks() {
     // Simulate fetch progress
     if (progressCb) {
       act(() => {
-        progressCb!({ stage: 'fetch', progress: 33, message: 'Fetching...' });
-        progressCb!({ stage: 'parse', progress: 66, message: 'Parsing...' });
+        progressCb!({ stage: 'fetching', progress: 33, message: 'Fetching...' });
+        progressCb!({ stage: 'parsing', progress: 66, message: 'Parsing...' });
       });
     }
     return { ok: true, data: [] as any };
@@ -113,7 +116,7 @@ function setupFetchMocks() {
   mockApi.ical.import.mockImplementation(async () => {
     if (progressCb) {
       act(() => {
-        progressCb!({ stage: 'store', progress: 100, message: 'Importing...' });
+        progressCb!({ stage: 'importing', progress: 100, message: 'Importing...' });
       });
     }
     return { ok: true, data: { imported: 5, updated: 2, skipped: 1 } };
@@ -388,7 +391,7 @@ describe('SettingsModal', () => {
       await waitForFormReady();
       const select = screen.getByLabelText('Auto-fetch Interval');
       const options = select.querySelectorAll('option');
-      const offOption = Array.from(options).find((o) => o.value === '0');
+      const offOption = [...options].find((o) => o.value === '0');
       expect(offOption).toHaveTextContent('Off');
     });
   });

@@ -6,8 +6,10 @@
 
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Assignment, IsoDateTime, SortOption, GroupingType } from '@backend/shared/types';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import type { GroupedAssignments } from '../grouping';
 import {
   filterBySearch,
   filterByCourse,
@@ -26,7 +28,6 @@ import {
   applyGrouping,
   selectFilteredAssignments,
 } from '../selectors';
-import type { GroupedAssignments } from '../grouping';
 
 // Test utilities
 function createMockAssignment(overrides: Partial<Assignment> = {}): Assignment {
@@ -73,19 +74,19 @@ describe('filterBySearch', () => {
   it('filters by title (case-insensitive)', () => {
     const result = filterBySearch(assignments, 'math');
     expect(result).toHaveLength(1);
-    expect(result[0].title).toBe('Math Homework');
+    expect(result[0]!.title).toBe('Math Homework');
   });
 
   it('filters by course name', () => {
     const result = filterBySearch(assignments, 'english');
     expect(result).toHaveLength(1);
-    expect(result[0].courseName).toBe('English 101');
+    expect(result[0]!.courseName).toBe('English 101');
   });
 
   it('filters by description', () => {
     const result = filterBySearch(assignments, 'shakespeare');
     expect(result).toHaveLength(1);
-    expect(result[0].description).toBe('Shakespeare analysis');
+    expect(result[0]!.description).toBe('Shakespeare analysis');
   });
 
   it('returns empty array when no match', () => {
@@ -141,7 +142,7 @@ describe('filterByStatus', () => {
   it('filters completed only', () => {
     const result = filterByStatus(assignments, 'completed');
     expect(result).toHaveLength(1);
-    expect(result[0].status).toBe('completed');
+    expect(result[0]!.status).toBe('completed');
   });
 });
 
@@ -160,14 +161,14 @@ describe('filterByDateRange', () => {
   });
 
   it('filters by inclusive date range', () => {
-    const range = { start: new Date('2025-01-15T00:00:00.000Z'), end: new Date('2025-01-20T23:59:59.999Z') };
+    const range = { start: '2025-01-15T00:00:00.000Z' as IsoDateTime, end: '2025-01-20T23:59:59.999Z' as IsoDateTime };
     const result = filterByDateRange(assignments, range);
     expect(result).toHaveLength(2);
     expect(result.map((a) => a.id)).toEqual(['2', '3']);
   });
 
   it('excludes assignments with null dueAt', () => {
-    const range = { start: new Date('2025-01-01T00:00:00.000Z'), end: new Date('2025-12-31T23:59:59.999Z') };
+    const range = { start: '2025-01-01T00:00:00.000Z' as IsoDateTime, end: '2025-12-31T23:59:59.999Z' as IsoDateTime };
     const result = filterByDateRange(assignments, range);
     expect(result.every((a) => a.dueAt !== null)).toBe(true);
   });
@@ -183,7 +184,7 @@ describe('applyFilters', () => {
   const baseFilters = {
     courseFilter: [] as string[],
     statusFilter: 'all' as const,
-    dueDateRange: null as { start: Date; end: Date } | null,
+    dueDateRange: null as { start: IsoDateTime; end: IsoDateTime } | null,
     searchQuery: '',
     sortOption: 'priority' as SortOption,
     groupingType: 'none' as GroupingType,
@@ -198,7 +199,7 @@ describe('applyFilters', () => {
     };
     const result = applyFilters(assignments, filters);
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('1');
+    expect(result[0]!.id).toBe('1');
   });
 
   it('returns empty when filters exclude all', () => {
@@ -276,7 +277,7 @@ describe('Sort Comparators', () => {
       const priorityOrder = ['1'];
       const comparator = createPrioritySortComparator(priorityOrder);
       const result = [...assignments].sort(comparator);
-      expect(result[0].id).toBe('1');
+      expect(result[0]!.id).toBe('1');
       expect(result.slice(1).map((a) => a.id).sort()).toEqual(['2', '3']);
     });
 
@@ -498,7 +499,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
   const baseFilters = {
     courseFilter: [] as string[],
     statusFilter: 'all' as const,
-    dueDateRange: null as { start: Date; end: Date } | null,
+    dueDateRange: null as { start: IsoDateTime; end: IsoDateTime } | null,
     searchQuery: '',
     sortOption: 'priority' as SortOption,
     groupingType: 'none' as GroupingType,
@@ -531,7 +532,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
   it('applies date range filter', () => {
     const filters = {
       ...baseFilters,
-      dueDateRange: { start: new Date('2025-01-10T00:00:00.000Z'), end: new Date('2025-01-18T23:59:59.999Z') },
+      dueDateRange: { start: '2025-01-10T00:00:00.000Z' as IsoDateTime, end: '2025-01-18T23:59:59.999Z' as IsoDateTime },
     };
     const result = selectFilteredAssignments(assignments, filters);
     expect((result as Assignment[]).map((a) => a.id)).toEqual(['1']);

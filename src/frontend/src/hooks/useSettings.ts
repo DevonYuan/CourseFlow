@@ -83,7 +83,7 @@ export function useSettings() {
     () => ({
       settings,
       isLoading,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+       
       error,
       updateSettings,
       refetch,

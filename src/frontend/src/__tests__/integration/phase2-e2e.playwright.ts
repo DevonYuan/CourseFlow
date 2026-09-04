@@ -87,12 +87,13 @@ async function setupMockIpc(page: Page) {
 }
 
 async function waitForAssignmentsLoaded(page: Page) {
-  await page.waitForSelector('[data-assignment-id]', { timeout: 10000 });
+  await page.waitForSelector('[data-assignment-id]', { timeout: 10_000 });
 }
 
 async function getAssignmentIds(page: Page): Promise<string[]> {
   const elements = await page.locator('[data-assignment-id]').all();
-  return Promise.all(elements.map(el => el.getAttribute('data-assignment-id')));
+  const ids = await Promise.all(elements.map(el => el.dataset.assignmentId));
+  return ids.filter((id): id is string => id !== null);
 }
 
 async function dragAndDrop(page: Page, fromId: string, toId: string) {
@@ -254,7 +255,7 @@ test.describe('Phase 2 Integration Tests', () => {
 
       // Verify new assignment at bottom
       const afterSyncOrder = await getAssignmentIds(page);
-      expect(afterSyncOrder[afterSyncOrder.length - 1]).toBe('4');
+      expect(afterSyncOrder.at(-1)).toBe('4');
     });
   });
 
@@ -418,7 +419,7 @@ test.describe('Phase 2 Integration Tests', () => {
       });
 
       // Wait for initial fetch + one interval
-      await page.waitForTimeout(70000); // 1 min + buffer
+      await page.waitForTimeout(70_000); // 1 min + buffer
 
       // Verify fetch was called (at least initial + 1 interval)
       expect(fetchCount).toBeGreaterThanOrEqual(1);
@@ -574,7 +575,7 @@ test.describe('Phase 2 Integration Tests', () => {
       });
 
       await setSyncInterval(page, 1);
-      await page.waitForTimeout(30000); // Wait for retry attempts
+      await page.waitForTimeout(30_000); // Wait for retry attempts
 
       // Scheduler should be paused
       const toast = page.locator('[role="alert"]');
@@ -606,7 +607,7 @@ test.describe('Performance: 500 assignments render <100ms', () => {
       id: String(i + 1),
       title: `Assignment ${i + 1}`,
       courseName: `Course ${(i % 10) + 1}`,
-      dueAt: new Date(Date.now() + (i % 30) * 86400000).toISOString(),
+      dueAt: new Date(Date.now() + (i % 30) * 86_400_000).toISOString(),
       status: 'pending',
     }));
 

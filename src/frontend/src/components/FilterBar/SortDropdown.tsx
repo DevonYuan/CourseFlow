@@ -7,8 +7,9 @@
  * @module @frontend/components/FilterBar/SortDropdown
  */
 
-import { useSortOption, useSetSortOption } from '../../store/assignmentsStore';
 import type { SortOption } from '@backend/shared/types';
+
+import { useSortOption, useSetSortOption } from '../../store/assignmentsStore';
 
 import './SortDropdown.css';
 

@@ -6,11 +6,13 @@
 
 // @vitest-environment jsdom
 
-import React, { act } from 'react';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ToastProvider, useToast, type ToastContextValue } from '../context/ToastContext';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import React, { act } from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { ToastProvider, useToast, type ToastContextValue } from '../context/ToastContext';
+
 
 // Extend expect with jest-dom matchers for this test file
 expect.extend(matchers);

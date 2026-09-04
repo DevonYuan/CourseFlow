@@ -7,11 +7,11 @@
  * @module @frontend/components/AssignmentRow
  */
 
-import React from 'react';
 import type { Assignment } from '@backend/shared/types';
+import React from 'react';
 
-import { CourseColorBadge } from './CourseColorBadge';
 import { DragHandle } from './AssignmentList/DragHandle';
+import { CourseColorBadge } from './CourseColorBadge';
 import './AssignmentRow.css';
 
 interface AssignmentRowProps {

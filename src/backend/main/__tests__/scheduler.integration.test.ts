@@ -11,8 +11,8 @@
  * @module @backend/main/__tests__/scheduler.integration
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { BrowserWindow, powerMonitor, ipcMain, app } from 'electron';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
 // Mock electron modules
 vi.mock('electron', () => {
@@ -90,11 +90,12 @@ vi.mock('../events.js', () => ({
 }));
 
 // Import mocked modules
-import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError, TimeoutError, ICalParseError } from '../ical/index.js';
 import { repo } from '../db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from '../events.js';
+import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError, TimeoutError, ICalParseError } from '../ical/index.js';
 import { Scheduler, getScheduler, startScheduler, stopScheduler, __resetScheduler } from '../scheduler.js';
-import type { Settings, ImportResult, IsoDateTime } from '../shared/types.js';
+
+import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
 
 const mockFetchICalFeed = fetchICalFeed as Mock;
 const mockParseICalFeed = parseICalFeed as Mock;
@@ -115,7 +116,12 @@ function createMockSettings(overrides: Partial<Settings> = {}): Settings {
     autoFetchIcal: true,
     theme: 'system',
     lastSyncAt: null,
-    icalUrlEncrypted: null,
+    icalFetchIntervalMinutes: 15,
+    defaultPriority: 'medium',
+    showCompletedAssignments: true,
+    notifyDueSoon: true,
+    dueSoonThresholdHours: 24,
+    autoFetchIntervalMs: 15 * 60 * 1000,
     ...overrides,
   };
 }
@@ -137,7 +143,7 @@ function createMockAssignment(overrides: Partial<any> = {}) {
     courseId: 'course-1',
     courseName: 'CS101',
     courseColor: '#e8a838',
-    dueAt: new Date(Date.now() + 86400000).toISOString() as IsoDateTime,
+    dueAt: new Date(Date.now() + 86_400_000).toISOString() as IsoDateTime,
     unlockAt: null,
     lockAt: null,
     pointsPossible: 100,
@@ -378,7 +384,7 @@ describe('Scheduler Integration Tests', () => {
       mockSetSettings.mockResolvedValue(undefined);
 
       // Advance past initial 30s delay
-      await vi.advanceTimersByTimeAsync(30000);
+      await vi.advanceTimersByTimeAsync(30_000);
 
       expect(mockFetchICalFeed).toHaveBeenCalled();
       expect(mockParseICalFeed).toHaveBeenCalled();
@@ -395,7 +401,7 @@ describe('Scheduler Integration Tests', () => {
       mockParseICalFeed.mockReturnValue([]);
       mockMapICalToAssignments.mockReturnValue([]);
 
-      await vi.advanceTimersByTimeAsync(30000);
+      await vi.advanceTimersByTimeAsync(30_000);
 
       expect(mockFetchICalFeed).toHaveBeenCalledTimes(1);
       expect(scheduler.getStatus().running).toBe(false);
@@ -415,7 +421,7 @@ describe('Scheduler Integration Tests', () => {
       });
       mockMapICalToAssignments.mockReturnValue([]);
 
-      await vi.advanceTimersByTimeAsync(30000);
+      await vi.advanceTimersByTimeAsync(30_000);
 
       expect(mockFetchICalFeed).toHaveBeenCalledTimes(1);
       expect(scheduler.getStatus().running).toBe(false);
@@ -453,7 +459,7 @@ describe('Scheduler Integration Tests', () => {
       expect(resumeHandler).toBeDefined();
 
       // Advance timers to simulate time passing during suspend
-      vi.advanceTimersByTime(60000); // 1 minute suspended
+      vi.advanceTimersByTime(60_000); // 1 minute suspended
 
       // Simulate resume
       resumeHandler!();
@@ -502,7 +508,7 @@ describe('Scheduler Integration Tests', () => {
       mockParseICalFeed.mockReturnValue([]);
       mockMapICalToAssignments.mockReturnValue([]);
 
-      await vi.advanceTimersByTimeAsync(30000);
+      await vi.advanceTimersByTimeAsync(30_000);
 
       const status = scheduler.getStatus();
 
@@ -559,7 +565,7 @@ describe('Scheduler Integration Tests', () => {
       mockImportAssignments.mockReturnValue(createMockImportResult());
       mockSetSettings.mockResolvedValue(undefined);
 
-      await vi.advanceTimersByTimeAsync(30000);
+      await vi.advanceTimersByTimeAsync(30_000);
 
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'ical:progress',

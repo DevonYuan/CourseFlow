@@ -7,6 +7,7 @@
  * @module @frontend/components/FilterBar/FilterSummary
  */
 
+import type { IsoDateTime } from '@backend/shared/types';
 import { useMemo } from 'react';
 
 import { useCourseFilter, useDueDateRange, useResetFilters, useSearchQuery, useSetCourseFilter, useSetDueDateRange, useSetSearchQuery, useSetStatusFilter, useStatusFilter } from '../../store/assignmentsStore';
@@ -19,6 +20,15 @@ interface ActiveFilter {
   label: string;
   onRemove: () => void;
   color?: string;
+}
+
+/**
+ * Converts IsoDateTime (ISO string) to Date for formatting.
+ */
+function isoToDate(iso: IsoDateTime | null | undefined): Date | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? null : date;
 }
 
 /**
@@ -59,7 +69,10 @@ export function FilterSummary(): JSX.Element | null {
 
     // Date range filter
     if (dueDateRange) {
-      const formatDate = (date: Date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const formatDate = (iso: IsoDateTime) => {
+        const date = isoToDate(iso);
+        return date ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '∞';
+      };
       const startStr = dueDateRange.start ? formatDate(dueDateRange.start) : '∞';
       const endStr = dueDateRange.end ? formatDate(dueDateRange.end) : '∞';
       filters.push({

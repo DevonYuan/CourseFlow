@@ -29,7 +29,6 @@ import type {
 
 import { repo } from './db/repository.js';
 import { sendEventToRenderers } from './events.js';
-import { updateScheduler } from './scheduler.js';
 import {
   fetchICalFeed,
   parseICalFeed,
@@ -39,6 +38,7 @@ import {
   TimeoutError,
   ICalParseError,
 } from './ical/index.js';
+import { updateScheduler } from './scheduler.js';
 
 /**
  * Error factory for consistent error responses.

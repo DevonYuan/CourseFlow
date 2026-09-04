@@ -26,13 +26,16 @@ interface ErrorBoundaryProps {
  * Logs errors to console and provides a reload fallback UI.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false, error: null };
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo): void {
+  override componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('ErrorBoundary caught:', error, info);
   }
 
@@ -40,11 +43,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     this.setState({ hasError: false, error: null });
   };
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (this.state.hasError) {
       // If a custom fallback is provided, use it
       if (this.props.fallback && this.state.error) {
-        return this.props.fallback({ error: this.state.error, reset: this.reset });
+        return this.props.fallback(this.state.error, this.reset);
       }
 
       // Default fallback UI
