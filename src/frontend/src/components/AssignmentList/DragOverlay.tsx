@@ -7,6 +7,7 @@
  * @module @frontend/components/AssignmentList/DragOverlay
  */
 
+import React from 'react';
 import { CSS } from '@dnd-kit/utilities';
 
 import { AssignmentRow } from '../AssignmentRow';

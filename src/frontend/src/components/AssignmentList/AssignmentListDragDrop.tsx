@@ -7,6 +7,7 @@
  * @module @frontend/components/AssignmentList/AssignmentListDragDrop
  */
 
+import React from 'react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Assignment } from '@backend/shared/types';

@@ -458,8 +458,14 @@ const handlers: IpcHandlers = {
   // ── Scheduler ──────────────────────────────────────────────────────────
   'scheduler:start': async (): Promise<IpcResult<void>> => {
     try {
-      const { startSchedulerForTesting } = await import('./scheduler.js');
-      startSchedulerForTesting();
+      const { getScheduler } = await import('./scheduler.js');
+      const scheduler = getScheduler();
+      // Start with current settings if available
+      const { repo } = await import('./db/repository.js');
+      const settings = await repo.getAllSettings();
+      if (settings.autoFetchIcal && settings.syncIntervalMinutes > 0 && settings.icalUrl) {
+        scheduler.start(settings.syncIntervalMinutes);
+      }
       return ok(undefined);
     } catch (error) {
       return err(`Failed to start scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -468,8 +474,9 @@ const handlers: IpcHandlers = {
 
   'scheduler:stop': async (): Promise<IpcResult<void>> => {
     try {
-      const { stopScheduler } = await import('./scheduler.js');
-      stopScheduler();
+      const { getScheduler } = await import('./scheduler.js');
+      const scheduler = getScheduler();
+      scheduler.stop();
       return ok(undefined);
     } catch (error) {
       return err(`Failed to stop scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -478,8 +485,9 @@ const handlers: IpcHandlers = {
 
   'scheduler:status': async (): Promise<IpcResult<SchedulerStatus>> => {
     try {
-      const { getSchedulerStatus } = await import('./scheduler.js');
-      const status = getSchedulerStatus();
+      const { getScheduler } = await import('./scheduler.js');
+      const scheduler = getScheduler();
+      const status = scheduler.getStatus();
       return ok(status);
     } catch (error) {
       return err(`Failed to get scheduler status: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -488,9 +496,15 @@ const handlers: IpcHandlers = {
 
   'scheduler:config:get': async (): Promise<IpcResult<SchedulerConfig>> => {
     try {
-      const { getSchedulerConfig } = await import('./scheduler.js');
-      const config = getSchedulerConfig();
-      return ok(config);
+      const { getScheduler } = await import('./scheduler.js');
+      const scheduler = getScheduler();
+      const status = scheduler.getStatus();
+      return ok({
+        enabled: status.running,
+        intervalMinutes: status.intervalMinutes,
+        lastRun: status.lastRun,
+        nextRun: status.nextRun,
+      });
     } catch (error) {
       return err(`Failed to get scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -498,9 +512,31 @@ const handlers: IpcHandlers = {
 
   'scheduler:config:set': async (partial: Partial<SchedulerConfig>): Promise<IpcResult<SchedulerConfig>> => {
     try {
-      const { setSchedulerConfig } = await import('./scheduler.js');
-      const config = setSchedulerConfig(partial);
-      return ok(config);
+      const { getScheduler } = await import('./scheduler.js');
+      const scheduler = getScheduler();
+      const { repo } = await import('./db/repository.js');
+      const settings = await repo.getAllSettings();
+
+      let newInterval = settings.syncIntervalMinutes;
+      let newEnabled = settings.autoFetchIcal;
+
+      if (partial.intervalMinutes !== undefined) {
+        newInterval = partial.intervalMinutes;
+      }
+      if (partial.enabled !== undefined) {
+        newEnabled = partial.enabled;
+      }
+
+      const updatedSettings = { ...settings, syncIntervalMinutes: newInterval, autoFetchIcal: newEnabled };
+      scheduler.updateSettings(updatedSettings);
+
+      const status = scheduler.getStatus();
+      return ok({
+        enabled: status.running,
+        intervalMinutes: status.intervalMinutes,
+        lastRun: status.lastRun,
+        nextRun: status.nextRun,
+      });
     } catch (error) {
       return err(`Failed to set scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

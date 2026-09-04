@@ -7,6 +7,7 @@
  * @module @frontend/components/ErrorBoundary
  */
 
+import React from 'react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryState {

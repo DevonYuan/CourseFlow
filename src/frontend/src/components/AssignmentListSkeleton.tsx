@@ -8,6 +8,7 @@
  * @module @frontend/components/AssignmentListSkeleton
  */
 
+import React from 'react';
 import './AssignmentListSkeleton.css';
 
 interface AssignmentListSkeletonProps {

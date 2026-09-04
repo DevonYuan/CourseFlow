@@ -8,6 +8,7 @@
  * @module @frontend/components/AssignmentList/DragHandle
  */
 
+import React from 'react';
 import { forwardRef } from 'react';
 import type { SyntheticEvent } from 'react';
 

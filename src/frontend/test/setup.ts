@@ -1,8 +1,13 @@
 import '@testing-library/jest-dom/vitest';
+import React from 'react';
 import { expect } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { act } from 'react';
 import { vi } from 'vitest';
+
+// Make React available globally for JSX transform
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).React = React;
 
 // Extend vitest's expect with jest-dom matchers
 expect.extend(matchers);

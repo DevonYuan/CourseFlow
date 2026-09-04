@@ -7,6 +7,7 @@
  * @module @frontend/components/Toast
  */
 
+import React from 'react';
 import { useEffect, useRef } from 'react';
 
 import type { Toast as ToastType, ToastType as ToastTypeEnum } from '../context/ToastContext';

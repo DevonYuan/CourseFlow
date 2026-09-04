@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import type { Settings } from '@backend/shared/types';
 import { useIcalSync } from '../hooks/useIcalSync';

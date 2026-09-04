@@ -7,6 +7,7 @@
  * @module @frontend/components/AssignmentRow
  */
 
+import React from 'react';
 import type { Assignment } from '@backend/shared/types';
 
 import { CourseColorBadge } from './CourseColorBadge';

@@ -164,8 +164,9 @@ export interface SchedulerConfig {
  */
 export interface SchedulerStatus {
   running: boolean;
-  nextRun: IsoDateTime | null;
+  intervalMinutes: number;
   lastRun: IsoDateTime | null;
+  nextRun: IsoDateTime | null;
   lastError: string | null;
 }
 

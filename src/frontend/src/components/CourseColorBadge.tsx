@@ -7,6 +7,7 @@
  * @module @frontend/components/CourseColorBadge
  */
 
+import React from 'react';
 import './CourseColorBadge.css';
 
 interface CourseColorBadgeProps {

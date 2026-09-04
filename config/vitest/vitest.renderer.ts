@@ -6,7 +6,7 @@ const projectRoot = resolve(__dirname, '..');
 
 export default defineConfig({
   root: projectRoot,
-  plugins: [react()],
+  plugins: [react({ jsxRuntime: 'automatic', jsxImportSource: 'react' })],
   resolve: {
     alias: {
       '@': resolve(projectRoot, 'src/frontend/src'),

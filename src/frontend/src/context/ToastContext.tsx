@@ -7,6 +7,7 @@
  * @module @frontend/context/ToastContext
  */
 
+import React from 'react';
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
 import { ToastContainer } from '../components/ToastContainer';

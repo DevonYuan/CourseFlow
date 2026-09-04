@@ -7,6 +7,7 @@
  * @module @frontend/components/AssignmentList/PriorityLiveRegion
  */
 
+import React from 'react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 import './PriorityLiveRegion.css';

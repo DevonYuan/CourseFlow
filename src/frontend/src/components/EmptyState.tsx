@@ -7,6 +7,7 @@
  * @module @frontend/components/EmptyState
  */
 
+import React from 'react';
 import './EmptyState.css';
 
 interface EmptyStateProps {
