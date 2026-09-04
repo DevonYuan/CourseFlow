@@ -9,8 +9,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-top: 56px; /* Height of fixed top bar */
-  margin-top: -56px; /* Compensate for fixed header */
+  padding-top: 56px; /* Height of fixed top bar — keep content below it */
 }
 
 .layout__content {
@@ -48,7 +47,6 @@
 @media (max-width: 700px) {
   .layout__main {
     padding-top: 120px; /* Increased height for wrapped top bar on mobile */
-    margin-top: -120px;
   }
 
   .layout__content {

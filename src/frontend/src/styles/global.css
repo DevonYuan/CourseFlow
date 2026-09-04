@@ -1,0 +1,12 @@
+/* Global styles */
+
+/* Hide the native right-hand scroll bar while keeping scroll functionality.
+   This is an Electron desktop app, so a visible OS scrollbar is undesirable. */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge (legacy) */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Edge */
+}
