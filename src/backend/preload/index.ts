@@ -90,6 +90,11 @@ const api = {
     on('ical:progress', callback),
   onSettingsChanged: (callback: (payload: IpcEvents['settings:changed']) => void) =>
     on('settings:changed', callback),
+  // Scheduler event aliases (for backward compatibility / convenience)
+  onSchedulerTick: (callback: (payload: IpcEvents['scheduler:tick']) => void) =>
+    on('scheduler:tick', callback),
+  onSchedulerError: (callback: (payload: IpcEvents['scheduler:error']) => void) =>
+    on('scheduler:error', callback),
 } as const;
 
 contextBridge.exposeInMainWorld('api', api);
