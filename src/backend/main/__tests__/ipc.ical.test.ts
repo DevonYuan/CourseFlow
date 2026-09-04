@@ -13,6 +13,7 @@ import { ipcMain } from 'electron';
 vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn(),
+    on: vi.fn(),
   },
   BrowserWindow: {
     getAllWindows: vi.fn(() => []),

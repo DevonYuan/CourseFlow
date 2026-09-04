@@ -149,16 +149,20 @@ export interface IpcChannels {
 
   // ── Scheduler ──────────────────────────────────────────────────────────
   'scheduler:start': {
-    request: void;
-    response: void;
+    request: { intervalMinutes: number };
+    response: SchedulerStatus;
   };
   'scheduler:stop': {
     request: void;
-    response: void;
+    response: SchedulerStatus;
   };
   'scheduler:status': {
     request: void;
     response: SchedulerStatus;
+  };
+  'scheduler:trigger': {
+    request: void;
+    response: void;
   };
   'scheduler:config:get': {
     request: void;
@@ -206,6 +210,7 @@ export interface IpcEvents {
   };
   'scheduler:error': {
     message: string;
+    code: 'network' | 'auth' | 'parse' | 'unknown';
   };
 }
 

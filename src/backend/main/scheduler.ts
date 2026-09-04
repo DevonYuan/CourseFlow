@@ -21,7 +21,7 @@ import {
   TimeoutError,
   ICalParseError,
 } from './ical/index.js';
-import { sendEventToRenderers } from './events.js';
+import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from './events.js';
 
 /**
  * Scheduler — Background auto-fetch scheduler for iCal sync.
@@ -355,6 +355,16 @@ export class Scheduler {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('[Scheduler] Fetch failed:', error);
 
+      // Determine error code based on error type
+      let errorCode: 'network' | 'auth' | 'parse' | 'unknown' = 'unknown';
+      if (error instanceof NetworkError || error instanceof TimeoutError) {
+        errorCode = 'network';
+      } else if (error instanceof HttpError) {
+        errorCode = 'auth';
+      } else if (error instanceof ICalParseError) {
+        errorCode = 'parse';
+      }
+
       // Update last error and scheduler config
       this.lastError = message;
       this.config = {
@@ -366,7 +376,7 @@ export class Scheduler {
       this.emitProgress('error', 100, `Fetch failed: ${message}`);
 
       // Emit scheduler error event
-      this.emitError(message);
+      this.emitError(message, errorCode);
 
       // Log specific error types for debugging
       if (error instanceof NetworkError) {
@@ -462,7 +472,7 @@ export class Scheduler {
    */
   private emitTick(): void {
     if (this.config.nextRun) {
-      sendEventToRenderers('scheduler:tick', { nextRun: this.config.nextRun });
+      emitSchedulerTick(this.config.nextRun);
     }
   }
 
@@ -470,9 +480,10 @@ export class Scheduler {
    * Emits scheduler:error event to all renderer windows.
    *
    * @param message - Error message
+   * @param code - Error code category
    */
-  private emitError(message: string): void {
-    sendEventToRenderers('scheduler:error', { message });
+  private emitError(message: string, code: 'network' | 'auth' | 'parse' | 'unknown'): void {
+    emitSchedulerError(message, code);
   }
 
   /**

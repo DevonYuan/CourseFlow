@@ -72,6 +72,16 @@ const api = {
   app: {
     version: () => invoke('app:version', undefined),
   },
+  scheduler: {
+    start: (intervalMinutes: number) => invoke('scheduler:start', { intervalMinutes }),
+    stop: () => invoke('scheduler:stop', undefined),
+    status: () => invoke('scheduler:status', undefined),
+    trigger: () => invoke('scheduler:trigger', undefined),
+    onTick: (callback: (payload: IpcEvents['scheduler:tick']) => void) =>
+      on('scheduler:tick', callback),
+    onError: (callback: (payload: IpcEvents['scheduler:error']) => void) =>
+      on('scheduler:error', callback),
+  },
   // Event subscriptions — return cleanup function
   onDbChanged: (callback: (payload: IpcEvents['db:changed']) => void) => on('db:changed', callback),
   onIcalProgress: (callback: (payload: IpcEvents['ical:progress']) => void) =>

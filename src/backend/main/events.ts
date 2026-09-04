@@ -2,7 +2,7 @@
  * Event Emitter — Main Process
  *
  * Sends one-way events to all renderer windows.
- * Used for db:changed, ical:progress, settings:changed notifications.
+ * Used for db:changed, ical:progress, settings:changed, scheduler notifications.
  *
  * @module @backend/main/events
  */
@@ -27,4 +27,25 @@ export function sendEventToRenderers<E extends keyof IpcEvents>(
       window.webContents.send(channel, payload);
     }
   }
+}
+
+/**
+ * Emit scheduler:tick event to all renderer windows.
+ * Called when the scheduler's nextRun time updates.
+ *
+ * @param nextRun - ISO timestamp of the next scheduled run
+ */
+export function emitSchedulerTick(nextRun: string): void {
+  sendEventToRenderers('scheduler:tick', { nextRun });
+}
+
+/**
+ * Emit scheduler:error event to all renderer windows.
+ * Called when the scheduler encounters an error during fetch/import.
+ *
+ * @param message - Error message
+ * @param code - Error code category
+ */
+export function emitSchedulerError(message: string, code: 'network' | 'auth' | 'parse' | 'unknown'): void {
+  sendEventToRenderers('scheduler:error', { message, code });
 }

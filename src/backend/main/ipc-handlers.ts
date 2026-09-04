@@ -456,28 +456,30 @@ const handlers: IpcHandlers = {
   },
 
   // ── Scheduler ──────────────────────────────────────────────────────────
-  'scheduler:start': async (): Promise<IpcResult<void>> => {
+  'scheduler:start': async (input: { intervalMinutes: number }): Promise<IpcResult<SchedulerStatus>> => {
     try {
+      // Input validation: intervalMinutes must be > 0
+      if (!input || typeof input.intervalMinutes !== 'number' || input.intervalMinutes <= 0) {
+        return err('intervalMinutes must be a positive number', 'VALIDATION_ERROR');
+      }
+
       const { getScheduler } = await import('./scheduler.js');
       const scheduler = getScheduler();
-      // Start with current settings if available
-      const { repo } = await import('./db/repository.js');
-      const settings = await repo.getAllSettings();
-      if (settings.autoFetchIcal && settings.syncIntervalMinutes > 0 && settings.icalUrl) {
-        scheduler.start(settings.syncIntervalMinutes);
-      }
-      return ok(undefined);
+      scheduler.start(input.intervalMinutes);
+      const status = scheduler.getStatus();
+      return ok(status);
     } catch (error) {
       return err(`Failed to start scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 
-  'scheduler:stop': async (): Promise<IpcResult<void>> => {
+  'scheduler:stop': async (): Promise<IpcResult<SchedulerStatus>> => {
     try {
       const { getScheduler } = await import('./scheduler.js');
       const scheduler = getScheduler();
       scheduler.stop();
-      return ok(undefined);
+      const status = scheduler.getStatus();
+      return ok(status);
     } catch (error) {
       return err(`Failed to stop scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -491,6 +493,17 @@ const handlers: IpcHandlers = {
       return ok(status);
     } catch (error) {
       return err(`Failed to get scheduler status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  'scheduler:trigger': async (): Promise<IpcResult<void>> => {
+    try {
+      const { getScheduler } = await import('./scheduler.js');
+      const scheduler = getScheduler();
+      await scheduler.triggerManual();
+      return ok(undefined);
+    } catch (error) {
+      return err(`Failed to trigger scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 
@@ -560,5 +573,12 @@ export function registerIpcHandlers(): void {
         return { ok: false, error: message, code: 'INTERNAL_ERROR' };
       }
     });
+  });
+
+  // Listen for settings changes to restart scheduler when sync_interval_minutes changes
+  ipcMain.on('settings:changed', async (_event, settings: Settings) => {
+    const { getScheduler } = await import('./scheduler.js');
+    const scheduler = getScheduler();
+    scheduler.updateSettings(settings);
   });
 }
