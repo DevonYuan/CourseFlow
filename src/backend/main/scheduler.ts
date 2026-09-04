@@ -357,8 +357,8 @@ export class Scheduler {
 
     await this.fetchAndImport(icalUrl, syncIntervalMinutes);
 
-    this.isRunning = false;
-    this.emitTick();
+    // isRunning will be set to false by onFetchSuccess or pauseScheduler when retries are exhausted
+    // Don't set it here because fetchAndImport may schedule retries that need isRunning to be true
   }
 
   /**
@@ -436,6 +436,7 @@ export class Scheduler {
     // Reset retry state on success
     this.retryCount = 0;
     this.lastError = null;
+    this.isRunning = false;
 
     // Emit completion progress
     this.emitProgress(
@@ -443,6 +444,9 @@ export class Scheduler {
       100,
       `Imported ${imported}, updated ${updated}, skipped ${skipped}`,
     );
+
+    // Emit tick with updated nextRun
+    this.emitTick();
 
     // Structured logging
     console.log(
@@ -609,6 +613,7 @@ export class Scheduler {
   private pauseScheduler(reason: string): void {
     this.isPaused = true;
     this.pauseReason = reason;
+    this.isRunning = false;
     this.stop(); // Stop the interval timer
 
     console.log(`[Scheduler] Paused: ${reason}`);
@@ -777,6 +782,17 @@ export function getScheduler(mainWindow?: BrowserWindow | null): Scheduler {
     schedulerInstance.setMainWindow(mainWindow);
   }
   return schedulerInstance;
+}
+
+/**
+ * Resets the singleton scheduler instance (for testing only).
+ * Stops the current scheduler if running and clears the instance.
+ */
+export function __resetScheduler(): void {
+  if (schedulerInstance) {
+    schedulerInstance.stop();
+    schedulerInstance = null;
+  }
 }
 
 /**

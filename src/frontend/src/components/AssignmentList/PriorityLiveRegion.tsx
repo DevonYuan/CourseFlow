@@ -64,6 +64,7 @@ export function PriorityLiveRegion({ className = '' }: PriorityLiveRegionProps):
       aria-live="polite"
       aria-atomic="true"
       aria-relevant="additions text"
+      data-testid="priority-live-region"
     >
       {announcement}
     </div>

@@ -14,6 +14,8 @@
     "format": "prettier --write .",
     "test": "vitest run --config config/vitest/vitest.config.ts",
     "test:watch": "vitest --config config/vitest/vitest.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "typecheck": "tsc --build config/tsconfig.json",
     "db:migrate": "tsx scripts/run-migration.ts"
   },
@@ -39,6 +41,7 @@
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@playwright/test": "^1.62.1",
     "@rollup/rollup-win32-x64-msvc": "4.20.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

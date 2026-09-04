@@ -136,12 +136,13 @@ export function CourseChips(): JSX.Element {
       {/* "All courses" chip - always visible on desktop, part of dropdown on mobile */}
       <div className="course-chips__all-wrapper">
         <button
-          type="button"
-          className={`course-chips__chip course-chips__chip--all ${hasActiveFilters ? 'course-chips__chip--active' : ''}`}
-          onClick={handleClearAll}
-          aria-pressed={hasActiveFilters}
-          aria-label={hasActiveFilters ? 'Clear course filter' : 'All courses (no filter)'}
-        >
+              type="button"
+              className={`course-chips__chip course-chips__chip--all ${hasActiveFilters ? 'course-chips__chip--active' : ''}`}
+              onClick={handleClearAll}
+              aria-pressed={hasActiveFilters}
+              aria-label={hasActiveFilters ? 'Clear course filter' : 'All courses (no filter)'}
+              data-testid="course-chip-all"
+            >
           <CourseColorBadge
             color="#888"
             variant="dot"
@@ -170,6 +171,7 @@ export function CourseChips(): JSX.Element {
               className={`course-chips__chip ${course.isSelected ? 'course-chips__chip--selected' : ''}`}
               onClick={() => handleChipClick(course.name)}
               onKeyDown={(e) => handleKeyDown(e, course.name)}
+              data-testid={`course-chip-${course.name.replace(/\s+/g, '-')}`}
             >
               <CourseColorBadge
                 color={course.color}

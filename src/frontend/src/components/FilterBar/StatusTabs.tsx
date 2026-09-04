@@ -91,6 +91,7 @@ export function StatusTabs(): JSX.Element {
             onClick={() => handleTabClick(tab.value)}
             onKeyDown={handleKeyDown}
             type="button"
+            data-testid={`status-tab-${tab.value}`}
           >
             {tab.label}
           </button>

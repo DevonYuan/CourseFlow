@@ -80,6 +80,7 @@ export function FilterBar(): JSX.Element {
             className="filter-bar__clear-all"
             onClick={resetFilters}
             aria-label={`Clear all ${activeFilterCount} filters`}
+            data-testid="clear-all-filters"
           >
             Clear all
           </button>

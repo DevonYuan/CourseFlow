@@ -99,6 +99,7 @@ export function SearchInput({
         onBlur={handleBlur}
         aria-label={ariaLabel}
         aria-describedby="search-hint"
+        data-testid="search-input"
       />
       {value && (
         <button

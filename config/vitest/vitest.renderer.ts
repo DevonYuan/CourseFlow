@@ -17,6 +17,7 @@ export default defineConfig({
     name: 'renderer',
     environment: 'jsdom',
     include: ['src/frontend/**/*.test.{ts,tsx}'],
+    exclude: ['**/*.spec.ts', '**/integration/**'],
     setupFiles: ['src/frontend/test/setup.ts'],
     globals: true,
   },

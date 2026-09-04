@@ -191,6 +191,7 @@ export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due da
           onChange={handleFromChange}
           aria-label="Filter from date"
           placeholder="mm/dd/yyyy"
+          data-testid="date-from-input"
         />
       </div>
 
@@ -207,6 +208,7 @@ export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due da
           onChange={handleToChange}
           aria-label="Filter to date"
           placeholder="mm/dd/yyyy"
+          data-testid="date-to-input"
         />
       </div>
 
@@ -220,6 +222,7 @@ export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due da
           aria-haspopup="menu"
           aria-expanded={isPresetsOpen}
           aria-label={hasActiveRange ? 'Date range selected. Click to change preset.' : 'Select date range preset'}
+          data-testid="date-presets-trigger"
         >
           <svg
             className="date-range-picker__presets-icon"
@@ -300,6 +303,7 @@ export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due da
               className="date-range-picker__preset-item date-range-picker__preset-item--clear"
               onClick={handleClear}
               disabled={!hasActiveRange}
+              data-testid="date-range-clear"
             >
               <span className="date-range-picker__preset-label">Clear range</span>
             </button>

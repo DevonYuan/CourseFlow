@@ -73,7 +73,7 @@ export function SyncStatusIndicator({ onSync }: SyncStatusIndicatorProps): JSX.E
   };
 
   return (
-    <div className="sync-status" aria-live="polite" aria-atomic="true">
+    <div className="sync-status" aria-live="polite" aria-atomic="true" data-testid="scheduler-status">
       <div className="sync-status__info">
         <span className="sync-status__last" title={lastSyncAt ? new Date(lastSyncAt).toLocaleString() : ''}>
           <span className="sync-status__label">Last sync:</span>

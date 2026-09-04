@@ -56,6 +56,7 @@ export function GroupHeader({ group, isExpanded, onToggle, groupId }: GroupHeade
       aria-controls={controlsId}
       aria-labelledby={labelledById}
       data-group-key={group.groupKey}
+      data-testid={`group-${group.groupKey}`}
     >
       <span id={labelledById} className="group-header__label">
         {group.groupLabel}

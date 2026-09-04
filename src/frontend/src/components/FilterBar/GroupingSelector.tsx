@@ -69,6 +69,7 @@ export function GroupingSelector(): JSX.Element {
         value={groupingType}
         onChange={handleChange}
         aria-label="Group assignments by"
+        data-testid="grouping-dropdown"
       >
         {GROUPING_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>

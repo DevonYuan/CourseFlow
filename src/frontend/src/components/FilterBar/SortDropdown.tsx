@@ -70,6 +70,7 @@ export function SortDropdown(): JSX.Element {
         value={sortOption}
         onChange={handleChange}
         aria-label="Sort assignments by"
+        data-testid="sort-dropdown"
       >
         {SORT_OPTIONS.map((option) => (
           <option key={option.value} value={option.value} title={option.description}>

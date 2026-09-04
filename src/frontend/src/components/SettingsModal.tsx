@@ -182,6 +182,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 disabled={isSaving || isSyncing}
                 aria-invalid={!!urlError}
                 aria-describedby={urlError ? 'icalUrl-error' : undefined}
+                data-testid="ical-url-input"
               />
               {urlError && (
                 <small id="icalUrl-error" className="error-text" role="alert">
@@ -227,6 +228,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   }}
                   disabled={isSaving || isSyncing || !formData.icalUrl?.trim()}
                   aria-busy={isSyncing}
+                  data-testid="sync-now-button"
                 >
                   {isSyncing ? (
                     <>
@@ -282,6 +284,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 value={formData.autoFetchIntervalMs || 3600000}
                 onChange={e => handleInputChange('autoFetchIntervalMs', parseInt(e.target.value, 10))}
                 disabled={isSaving}
+                data-testid="sync-interval-input"
               >
                 <option value={0}>Off</option>
                 <option value={900000}>15 minutes</option>
@@ -337,7 +340,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <button type="button" className="secondary" onClick={onClose} disabled={isSaving}>
                 Cancel
               </button>
-              <button type="submit" className="primary" disabled={isSaving}>
+              <button type="submit" className="primary" disabled={isSaving} data-testid="save-settings-button">
                 {isSaving ? 'Saving...' : 'Save'}
               </button>
             </div>

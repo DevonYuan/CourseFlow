@@ -129,6 +129,7 @@ export function FilterSummary(): JSX.Element | null {
         className="filter-summary__clear-all"
         onClick={handleClearAll}
         aria-label={`Clear all ${activeFilters.length} filters`}
+        data-testid="clear-all-filters"
       >
         Clear all
       </button>
