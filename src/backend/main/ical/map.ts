@@ -180,6 +180,9 @@ function getCurrentIsoTime(): IsoDateTime {
  * Maps an array of parsed ICalEvent objects to AssignmentInput objects
  * ready for database insertion via the repository.
  *
+ * Filters out events that are too far in the past (older than 30 days)
+ * to avoid cluttering the list with ancient history.
+ *
  * @param events - Array of parsed ICalEvent objects
  * @param sourceUrl - The iCal feed URL these events were fetched from
  * @returns Array of AssignmentInput objects
@@ -195,7 +198,25 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
   const now = Date.now();
   const currentIsoTime = getCurrentIsoTime();
 
-  return events.map((event) => {
+  // Only import events from the last 30 days or future events
+  // 30 days = 30 * 24 * 60 * 60 * 1000 ms
+  const cutoffTime = now - 30 * 24 * 60 * 60 * 1000;
+
+  return events
+    .filter((event) => {
+      // Skip events with invalid/missing due dates
+      if (!event.dtStart) return false;
+      const eventTime = new Date(event.dtStart).getTime();
+      if (isNaN(eventTime)) return false;
+
+      // Keep recurring events (have RRULE) regardless of master event age
+      // because they may have future occurrences
+      if (event.rrule) return true;
+
+      // Keep if event is in the future or within the last 30 days
+      return eventTime >= cutoffTime;
+    })
+    .map((event) => {
     const courseName = extractCourseName(event);
     const courseColor = generateCourseColor(courseName);
     const numericPriority = calculateNumericPriority(event.dtStart, now);
