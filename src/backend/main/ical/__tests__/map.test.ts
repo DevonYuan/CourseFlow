@@ -224,35 +224,29 @@ describe('iCal Mapper', () => {
       expect(result[0]!.rrule).toBeUndefined();
     });
 
-    it('calculates priority based on due date (high for overdue, medium for soon, low for future)', () => {
+    it('calculates priority based on due date (only future events included)', () => {
       const now = new Date('2025-01-10T12:00:00.000Z').getTime();
 
-      // Overdue event
-      const overdueEvent = createEvent({
-        uid: 'overdue',
-        dtStart: '2025-01-05T12:00:00.000Z' as IsoDateTime,
-      });
-
-      // Due soon event
+      // Due soon event (2 days)
       const dueSoonEvent = createEvent({
         uid: 'due-soon',
-        dtStart: '2025-01-12T12:00:00.000Z' as IsoDateTime, // 2 days
+        dtStart: '2025-01-12T12:00:00.000Z' as IsoDateTime,
       });
 
-      // Far future event
+      // Far future event (22 days)
       const farEvent = createEvent({
         uid: 'far',
-        dtStart: '2025-02-01T12:00:00.000Z' as IsoDateTime, // 22 days
+        dtStart: '2025-02-01T12:00:00.000Z' as IsoDateTime,
       });
 
       // Mock Date.now for consistent results
       vi.spyOn(global.Date, 'now').mockImplementation(() => now);
 
-      const result = mapICalToAssignments([overdueEvent, dueSoonEvent, farEvent], sourceUrl);
+      const result = mapICalToAssignments([dueSoonEvent, farEvent], sourceUrl);
 
-      expect(result[0]!.priority).toBe('high'); // overdue
-      expect(result[1]!.priority).toBe('medium'); // due soon (2 days)
-      expect(result[2]!.priority).toBe('low'); // far future
+      expect(result).toHaveLength(2);
+      expect(result[0]!.priority).toBe('medium'); // due soon (2 days)
+      expect(result[1]!.priority).toBe('low'); // far future (22 days)
 
       vi.restoreAllMocks();
     });
@@ -306,35 +300,29 @@ describe('iCal Mapper', () => {
       expect(result[0]!.description).toBeUndefined();
     });
 
-    it('calculates priority based on due date', () => {
+    it('calculates priority based on due date (only future events included)', () => {
       const now = new Date('2025-01-10T12:00:00.000Z').getTime();
 
-      // Overdue event
-      const overdueEvent = createEvent({
-        uid: 'overdue',
-        dtStart: '2025-01-05T12:00:00.000Z' as IsoDateTime,
-      });
-
-      // Due soon event
+      // Due soon event (2 days)
       const dueSoonEvent = createEvent({
         uid: 'due-soon',
-        dtStart: '2025-01-12T12:00:00.000Z' as IsoDateTime, // 2 days
+        dtStart: '2025-01-12T12:00:00.000Z' as IsoDateTime,
       });
 
-      // Far future event
+      // Far future event (22 days)
       const farEvent = createEvent({
         uid: 'far',
-        dtStart: '2025-02-01T12:00:00.000Z' as IsoDateTime, // 22 days
+        dtStart: '2025-02-01T12:00:00.000Z' as IsoDateTime,
       });
 
       // Mock Date.now for consistent results
       vi.spyOn(global.Date, 'now').mockImplementation(() => now);
 
-      const result = mapICalToAssignments([overdueEvent, dueSoonEvent, farEvent], sourceUrl);
+      const result = mapICalToAssignments([dueSoonEvent, farEvent], sourceUrl);
 
-      expect(result[0]!.priority).toBe('high'); // overdue
-      expect(result[1]!.priority).toBe('medium'); // due soon (2 days)
-      expect(result[2]!.priority).toBe('low'); // far future
+      expect(result).toHaveLength(2);
+      expect(result[0]!.priority).toBe('medium'); // due soon (2 days)
+      expect(result[1]!.priority).toBe('low'); // far future (22 days)
 
       vi.restoreAllMocks();
     });

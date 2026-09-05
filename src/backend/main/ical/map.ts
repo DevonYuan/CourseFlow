@@ -192,15 +192,43 @@ function getCurrentIsoTime(): IsoDateTime {
  * const events = parseICalFeed(icalText);
  * const assignments = mapICalToAssignments(events, 'https://canvas.example.com/feed.ics');
  * // assignments ready for repository.upsertAssignments(assignments)
+ /**
+ * Extracts UNTIL date from RRULE string, if present.
+ * Returns ISO 8601 string or null if not found/invalid.
+ */
+function extractUntilFromRrule(rrule: string | null): IsoDateTime | null {
+  if (!rrule) return null;
+  const match = rrule.match(/UNTIL=(\d{8}T\d{6}Z?)/i);
+  if (!match) return null;
+  const untilStr = match[1];
+  // Convert 20260214T075959Z -> 2026-02-14T07:59:59.000Z
+  const isoMatch = untilStr.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/);
+  if (!isoMatch) return null;
+  const [, year, month, day, hour, minute, second] = isoMatch;
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z` as IsoDateTime;
+}
+
+/**
+ * Maps an array of parsed ICalEvent objects to AssignmentInput objects
+ * ready for database insertion via the repository.
+ *
+ * Filters out events that are too far in the past (older than 30 days)
+ * to avoid cluttering the list with ancient history.
+ *
+ * @param events - Array of parsed ICalEvent objects
+ * @param sourceUrl - The iCal feed URL these events were fetched from
+ * @returns Array of AssignmentInput objects
+ *
+ * @example
+ * ```typescript
+ * const events = parseICalFeed(icalText);
+ * const assignments = mapICalToAssignments(events, 'https://canvas.example.com/feed.ics');
+ * // assignments ready for repository.upsertAssignments(assignments)
  * ```
  */
 export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): AssignmentInput[] {
   const now = Date.now();
   const currentIsoTime = getCurrentIsoTime();
-
-  // Only import events from the last 30 days or future events
-  // 30 days = 30 * 24 * 60 * 60 * 1000 ms
-  const cutoffTime = now - 30 * 24 * 60 * 60 * 1000;
 
   return events
     .filter((event) => {
@@ -209,43 +237,68 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
       const eventTime = new Date(event.dtStart).getTime();
       if (isNaN(eventTime)) return false;
 
-      // Keep recurring events (have RRULE) regardless of master event age
-      // because they may have future occurrences
-      if (event.rrule) return true;
+      // For recurring events, compute effective dueAt from RRULE UNTIL
+      if (event.rrule) {
+        const untilDate = extractUntilFromRrule(event.rrule);
+        let effectiveDueAt = eventTime;
+        if (untilDate && eventTime < now) {
+          effectiveDueAt = new Date(untilDate).getTime();
+        } else if (eventTime < now) {
+          effectiveDueAt = now + 24 * 60 * 60 * 1000;
+        }
+        // Only keep if effective dueAt is in the future
+        return effectiveDueAt >= now;
+      }
 
-      // Keep if event is in the future or within the last 30 days
-      return eventTime >= cutoffTime;
+      // Non-recurring: only keep future events
+      return eventTime >= now;
     })
     .map((event) => {
-    const courseName = extractCourseName(event);
-    const courseColor = generateCourseColor(courseName);
-    const numericPriority = calculateNumericPriority(event.dtStart, now);
-    const priority = mapPriorityToEnum(numericPriority);
+      const courseName = extractCourseName(event);
+      const courseColor = generateCourseColor(courseName);
+      
+      // For recurring events with old master dtStart, use UNTIL date from RRULE
+      // or current time + 1 day as dueAt so they appear in the list
+      let dueAt = event.dtStart;
+      if (event.rrule) {
+        const untilDate = extractUntilFromRrule(event.rrule);
+        const eventTime = new Date(event.dtStart).getTime();
+        if (untilDate && eventTime < now) {
+          // Master event is in the past but RRULE has future UNTIL - use UNTIL date
+          dueAt = untilDate;
+        } else if (eventTime < now) {
+          // Master event is in the past and no UNTIL - use near future
+          dueAt = new Date(now + 24 * 60 * 60 * 1000).toISOString() as IsoDateTime;
+        }
+      }
+      
+      const numericPriority = calculateNumericPriority(dueAt, now);
+      const priority = mapPriorityToEnum(numericPriority);
 
-    // Use event.url if available, otherwise fall back to sourceUrl
-    const assignmentSourceUrl = event.url ?? sourceUrl;
+      // Use event.url if available, otherwise fall back to sourceUrl
+      const assignmentSourceUrl = event.url ?? sourceUrl;
 
-    return {
-      id: generateEntityId(),
-      title: event.summary.trim(),
-      description: event.description ?? undefined,
-      courseName,
-      courseColor,
-      dueAt: event.dtStart, // Already ISO 8601 UTC from parser
-      unlockAt: null, // Not available from iCal
-      lockAt: null, // Not available from iCal
-      pointsPossible: null, // Not available from iCal
-      submissionTypes: [], // Not available from iCal
-      workflowState: 'published', // Assume published if in iCal feed
-      htmlUrl: event.url ?? '', // Use event URL if available
-      icalUid: event.uid,
-      priority,
-      status: 'pending',
-      source: 'ical',
-      sourceUrl: assignmentSourceUrl,
-      rrule: event.rrule ?? undefined,
-      createdAt: currentIsoTime,
-      updatedAt: currentIsoTime,
-    };
-  });
+      return {
+        id: generateEntityId(),
+        title: event.summary.trim(),
+        description: event.description ?? undefined,
+        courseName,
+        courseColor,
+        dueAt, // Use computed dueAt for recurring events
+        unlockAt: null, // Not available from iCal
+        lockAt: null, // Not available from iCal
+        pointsPossible: null, // Not available from iCal
+        submissionTypes: [], // Not available from iCal
+        workflowState: 'published', // Assume published if in iCal feed
+        htmlUrl: event.url ?? '', // Use event URL if available
+        icalUid: event.uid,
+        priority,
+        status: 'pending',
+        source: 'ical',
+        sourceUrl: assignmentSourceUrl,
+        rrule: event.rrule ?? undefined,
+        createdAt: currentIsoTime,
+        updatedAt: currentIsoTime,
+      };
+    });
 }
