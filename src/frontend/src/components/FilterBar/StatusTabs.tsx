@@ -7,6 +7,8 @@
  * @module @frontend/components/FilterBar/StatusTabs
  */
 
+import { useLayoutEffect, useRef, useState } from 'react';
+
 import { useStatusFilter, useSetStatusFilter } from '../../store/assignmentsStore';
 import './StatusTabs.css';
 
@@ -31,6 +33,33 @@ const STATUS_TABS: StatusTabConfig[] = [
 export function StatusTabs(): JSX.Element {
   const statusFilter = useStatusFilter();
   const setStatusFilter = useSetStatusFilter();
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [indicator, setIndicator] = useState<{ left: number; width: number }>({
+    left: 0,
+    width: 0,
+  });
+
+  // Position the indicator exactly over the active tab, and keep it aligned if
+  // the control resizes (e.g. window resize or font change).
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const measure = () => {
+      const activeTab = container.querySelector<HTMLElement>(
+        `#status-tab-${statusFilter}`,
+      );
+      if (!activeTab) return;
+      setIndicator({ left: activeTab.offsetLeft, width: activeTab.offsetWidth });
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [statusFilter]);
 
   const handleTabClick = (value: StatusFilterValue) => {
     setStatusFilter(value);
@@ -76,7 +105,12 @@ export function StatusTabs(): JSX.Element {
   };
 
   return (
-    <div className="status-tabs" role="tablist" aria-label="Filter by status">
+    <div
+      ref={containerRef}
+      className="status-tabs"
+      role="tablist"
+      aria-label="Filter by status"
+    >
       {STATUS_TABS.map((tab) => {
         const isActive = statusFilter === tab.value;
         return (
@@ -100,9 +134,7 @@ export function StatusTabs(): JSX.Element {
       {/* Active indicator */}
       <div
         className="status-tabs__indicator"
-        style={{
-          '--active-index': STATUS_TABS.findIndex((tab) => tab.value === statusFilter),
-        } as React.CSSProperties}
+        style={{ left: indicator.left, width: indicator.width }}
         aria-hidden="true"
       />
     </div>
