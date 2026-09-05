@@ -15,6 +15,8 @@
 .status-tabs__tab {
   position: relative;
   z-index: 1;
+  flex-shrink: 0;
+  width: var(--tab-width, auto);
   padding: 6px 14px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -25,6 +27,7 @@
   cursor: pointer;
   transition: color var(--transition-fast, 150ms);
   white-space: nowrap;
+  text-align: center;
 }
 
 .status-tabs__tab:hover:not(.status-tabs__tab--active) {

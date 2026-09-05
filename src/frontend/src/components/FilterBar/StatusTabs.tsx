@@ -40,18 +40,28 @@ export function StatusTabs(): JSX.Element {
     width: 0,
   });
 
-  // Position the indicator exactly over the active tab, and keep it aligned if
-  // the control resizes (e.g. window resize or font change).
+  // Make all tabs equal width (based on the widest label) and position the
+  // indicator exactly over the active tab. Re-runs on resize/font changes.
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const measure = () => {
+      const tabs = Array.from(
+        container.querySelectorAll<HTMLElement>('.status-tabs__tab'),
+      );
+      if (tabs.length === 0) return;
+
+      // Equal-width tabs: size every tab to the widest one.
+      const widest = Math.max(...tabs.map((tab) => tab.offsetWidth));
+      container.style.setProperty('--tab-width', `${widest}px`);
+
       const activeTab = container.querySelector<HTMLElement>(
         `#status-tab-${statusFilter}`,
       );
-      if (!activeTab) return;
-      setIndicator({ left: activeTab.offsetLeft, width: activeTab.offsetWidth });
+      if (activeTab) {
+        setIndicator({ left: activeTab.offsetLeft, width: activeTab.offsetWidth });
+      }
     };
 
     measure();
