@@ -67,15 +67,43 @@ function icalTimeToUtcIso(time: ICAL.Time): string {
 }
 
 /**
- * Pre-processes iCal text to preserve spaces in folded lines.
- * RFC 5545: folded lines start with a space or tab, which should be preserved when unfolding.
- * ical.js removes the FIRST space after CRLF during unfolding. To preserve a single space,
- * we ensure folded lines have TWO leading spaces (so one remains after unfolding).
+ * Unfolds RFC 5545 folded lines.
+ * RFC 5545: folded lines start with a space or tab after CRLF.
+ * When unfolding, the CRLF and the SINGLE leading space/tab are removed,
+ * but that space is part of the content and should be preserved as a single space.
+ */
+function unfoldIcalLines(text: string): string {
+  // Replace CRLF + single space/tab with just a space
+  // This preserves the space as content per RFC 5545
+  // Handle both \n and \r\n line endings
+  return text.replace(/\r?\n([ \t])/g, ' ');
+}
+
+/**
+ * Fixes common RRULE formatting issues in iCal feeds.
+ * Google Calendar sometimes outputs BYDAY with spaces after commas
+ * (e.g., "BYDAY=SU,MO,TU, TH,FR,SA" from folded lines)
+ * which violates RFC 5545 and causes ical.js to throw "invalid BYDAY value".
+ */
+function fixRruleFormatting(text: string): string {
+  return text.replace(
+    /^(RRULE:.*?;BYDAY\s*=)([^\n\r]*)/gim,
+    (match, prefix, bydayValue) => {
+      // Remove spaces from BYDAY value: "SU,MO,TU, TH,FR,SA" -> "SU,MO,TU,TH,FR,SA"
+      const cleaned = bydayValue.replace(/\s+/g, '');
+      return `${prefix}${cleaned}`;
+    }
+  );
+}
+
+/**
+ * Pre-processes iCal text: unfold lines, fix RRULE formatting, strip trailing garbage.
  */
 function preprocessIcalText(text: string): string {
-  // Replace folded lines (newline followed by space/tab) with newline + TWO spaces
-  // This ensures ical.js preserves one space when unfolding (it removes the first)
-  return text.replaceAll(/\n([ \t])/g, '\n  ');
+  let processed = unfoldIcalLines(text);
+  processed = fixRruleFormatting(processed);
+  processed = stripTrailingGarbage(processed);
+  return processed;
 }
 
 /**

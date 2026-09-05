@@ -388,11 +388,15 @@ const handlers: IpcHandlers = {
       const assignments = mapICalToAssignments(input.events, input.sourceUrl);
 
       // Import assignments with deduplication
+      console.log('[ical:import] Import completed, updating lastSyncAt');
       const result = repo.importAssignments(assignments);
+      console.log('[ical:import] Import result:', result);
 
       // Update lastSyncAt in settings on successful import
       const now = new Date().toISOString() as IsoDateTime;
+      console.log('[ical:import] Setting lastSyncAt:', now);
       await repo.setSettings({ lastSyncAt: now });
+      console.log('[ical:import] lastSyncAt updated');
 
       // Emit completion progress
       sendEventToRenderers('ical:progress', {
@@ -405,6 +409,7 @@ const handlers: IpcHandlers = {
     } catch (error) {
       // Emit error progress
       const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[ical:import] Error:', error);
       sendEventToRenderers('ical:progress', { stage: 'error', progress: 100, message });
 
       return err(

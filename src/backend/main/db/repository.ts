@@ -48,10 +48,16 @@ import {
 // SQL Helpers
 // ============================================================================
 
-function run(sql: string, params: (string | number | null)[] = []): void {
+/**
+ * Executes a SQL statement (INSERT/UPDATE/DELETE).
+ * @param sql - SQL to execute
+ * @param params - Parameters to bind
+ * @param persist - Whether to save to disk after execution (default: true). Set to false when called inside a transaction to avoid exporting mid-transaction.
+ */
+function run(sql: string, params: (string | number | null)[] = [], persist = true): void {
   const db = getDatabase();
   db.run(sql, params);
-  saveDatabase();
+  if (persist) saveDatabase();
 }
 
 function get<T>(sql: string, params: (string | number | null)[] = []): T | null {
@@ -75,10 +81,15 @@ function all<T>(sql: string, params: (string | number | null)[] = []): T[] {
   return results;
 }
 
-function exec(sql: string): void {
+/**
+ * Executes a SQL statement.
+ * @param sql - SQL to execute
+ * @param persist - Whether to save to disk after execution (default: true). Set to false for transaction control statements (BEGIN/COMMIT/ROLLBACK) to avoid exporting mid-transaction.
+ */
+function exec(sql: string, persist = true): void {
   const db = getDatabase();
   db.exec(sql);
-  saveDatabase();
+  if (persist) saveDatabase();
 }
 
 // ============================================================================
@@ -209,7 +220,7 @@ export const repo = {
     const now = Date.now();
     const results: Assignment[] = [];
 
-    exec('BEGIN TRANSACTION');
+    exec('BEGIN TRANSACTION', false);
     try {
       for (const input of inputs) {
         const id = input.id ?? randomUUID();
@@ -253,14 +264,14 @@ export const repo = {
           ON CONFLICT(id) DO UPDATE SET ${updates.join(', ')}
         `;
 
-        run(sql, values);
+        run(sql, values, false); // Don't persist mid-transaction
 
         const row = get<DbAssignment>('SELECT * FROM assignments WHERE id = ?', [id]);
         if (row) results.push(mapDbAssignmentToAssignment(row));
       }
-      exec('COMMIT');
+      exec('COMMIT', false);
     } catch (e) {
-      exec('ROLLBACK');
+      exec('ROLLBACK', false);
       throw e;
     }
 
@@ -302,12 +313,23 @@ export const repo = {
     // Helper to convert undefined to null for SQL binding
     const toNullable = (v: unknown): string | number | null => (v === undefined ? null : v as string | number | null);
 
-    exec('BEGIN TRANSACTION');
+    exec('BEGIN TRANSACTION', false);
+    console.log('[importAssignments] Transaction started, inputs:', inputs.length);
     try {
+      // Track ical_uids seen in this batch to handle duplicates within the same import
+      // (e.g., recurring events in Google Calendar share the same UID)
+      const seenIcalUids = new Set<string>();
+
       for (const input of inputs) {
         const icalUid = input.icalUid;
         if (!icalUid) {
           // Skip assignments without ical_uid (should not happen in normal iCal import)
+          continue;
+        }
+
+        // Skip if we've already processed this ical_uid in this batch
+        if (seenIcalUids.has(icalUid)) {
+          result.skipped++;
           continue;
         }
 
@@ -398,15 +420,22 @@ export const repo = {
             `INSERT INTO priority_order (assignment_id, position, created_at, updated_at)
              VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM priority_order), ?, ?)`,
             [id, now, now],
+            false, // Don't persist mid-transaction
           );
 
           result.imported++;
           sendEventToRenderers('db:changed', { table: 'assignments', action: 'insert', id });
         }
+
+        // Mark this ical_uid as seen in this batch
+        seenIcalUids.add(icalUid);
       }
-      exec('COMMIT');
+      console.log('[importAssignments] Committing transaction');
+      exec('COMMIT', false);
+      console.log('[importAssignments] Transaction committed');
     } catch (e) {
-      exec('ROLLBACK');
+      console.error('[importAssignments] Error, rolling back:', e);
+      exec('ROLLBACK', false);
       throw e;
     } finally {
       selectStmt.free();
@@ -473,7 +502,7 @@ export const repo = {
    */
   reorderPriority(orderedAssignmentIds: string[]): void {
     const now = Date.now();
-    exec('BEGIN IMMEDIATE TRANSACTION');
+    exec('BEGIN IMMEDIATE TRANSACTION', false);
     try {
       for (let i = 0; i < orderedAssignmentIds.length; i++) {
         run(
@@ -481,9 +510,9 @@ export const repo = {
           [i, now, orderedAssignmentIds[i]!],
         );
       }
-      exec('COMMIT');
+      exec('COMMIT', false);
     } catch (e) {
-      exec('ROLLBACK');
+      exec('ROLLBACK', false);
       throw e;
     }
   },
@@ -556,14 +585,14 @@ export const repo = {
    */
   reorderSubTasks(assignmentId: string, ids: string[]): void {
     const now = Date.now();
-    exec('BEGIN TRANSACTION');
+    exec('BEGIN TRANSACTION', false);
     try {
       for (let i = 0; i < ids.length; i++) {
         run('UPDATE sub_tasks SET position = ?, updated_at = ? WHERE id = ?', [i, now, ids[i]!]);
       }
-      exec('COMMIT');
+      exec('COMMIT', false);
     } catch (e) {
-      exec('ROLLBACK');
+      exec('ROLLBACK', false);
       throw e;
     }
   },
@@ -695,7 +724,7 @@ export const repo = {
       merged.autoFetchIntervalMs = partial.icalFetchIntervalMinutes * 60 * 1000;
     }
 
-    exec('BEGIN TRANSACTION');
+    exec('BEGIN TRANSACTION', false);
     try {
       for (const [key, value] of Object.entries(merged)) {
         let valueToStore: unknown = value;
@@ -709,12 +738,13 @@ export const repo = {
           run(
             'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
             [key, JSON.stringify(valueToStore)],
+            false, // Don't persist mid-transaction
           );
         }
       }
-      exec('COMMIT');
+      exec('COMMIT', false);
     } catch (e) {
-      exec('ROLLBACK');
+      exec('ROLLBACK', false);
       throw e;
     }
 
@@ -740,7 +770,7 @@ export const repo = {
       syncIntervalMinutes: 15,
     };
 
-    exec('BEGIN TRANSACTION');
+    exec('BEGIN TRANSACTION', false);
     try {
       run('DELETE FROM settings');
       // Insert all defaults
@@ -755,9 +785,9 @@ export const repo = {
           [key, JSON.stringify(valueToStore)],
         );
       }
-      exec('COMMIT');
+      exec('COMMIT', false);
     } catch (e) {
-      exec('ROLLBACK');
+      exec('ROLLBACK', false);
       throw e;
     }
 

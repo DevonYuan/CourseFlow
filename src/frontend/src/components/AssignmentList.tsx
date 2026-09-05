@@ -83,13 +83,13 @@ function AssignmentRowRenderer(
     onMarkComplete?: (id: string) => Promise<void>;
   }
 ): React.ReactElement | null {
-  const { index, style, assignments, onClick, onMarkComplete, ...rest } = props;
+  const { index, style, ariaAttributes, assignments, onClick, onMarkComplete } = props;
   const assignment = assignments[index];
   if (!assignment) {
-    return <div style={style} {...rest} />;
+    return <div style={style} {...ariaAttributes} />;
   }
   return (
-    <div style={style} {...rest} data-assignment-id={assignment.id}>
+    <div style={style} {...ariaAttributes} data-assignment-id={assignment.id}>
       <AssignmentRow assignment={assignment} onClick={onClick} onMarkComplete={onMarkComplete} />
     </div>
   );
