@@ -1,6 +1,6 @@
 import type { Settings } from '@backend/shared/types';
-import React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useState as useReactState, useEffect, useCallback } from 'react';
 
 import { useToast } from '../context/ToastContext';
 import { useIcalSync } from '../hooks/useIcalSync';
@@ -10,6 +10,63 @@ import './SettingsModal.css';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+/** Collapsible help panel with platform-specific iCal URL examples */
+function IcalUrlHelp() {
+  const [expanded, setExpanded] = useState(false);
+  
+  return (
+    <details className="ical-help" open={expanded}>
+      <summary onClick={() => setExpanded(!expanded)} className="ical-help__summary">
+        <span className="ical-help__icon">{expanded ? '▼' : '▶'}</span>
+        <span>Where to find your iCal URL</span>
+      </summary>
+      <div className="ical-help__content">
+        <div className="ical-help__platform">
+          <h4>Google Calendar</h4>
+          <ol>
+            <li>Open Google Calendar on desktop</li>
+            <li>Click ⋮ next to your calendar → <strong>Settings and sharing</strong></li>
+            <li>Scroll to <strong>Integrate calendar</strong></li>
+            <li>Copy <strong>Secret address in iCal format</strong> (looks like <code>https://calendar.google.com/calendar/ical/.../private-XXXX/basic.ics</code>)</li>
+            <li><em>Or enable "Make available to public" and use the Public URL</em></li>
+          </ol>
+        </div>
+        <div className="ical-help__platform">
+          <h4>Canvas LMS</h4>
+          <ol>
+            <li>Open Canvas → <strong>Calendar</strong> (left sidebar)</li>
+            <li>Right sidebar: click <strong>Calendar Feed</strong></li>
+            <li>Copy the URL (looks like <code>https://school.instructure.com/feeds/calendars/user_XXXX_YYYY.ics</code>)</li>
+            <li><em>Note: Some institutions disable this feature</em></li>
+          </ol>
+        </div>
+        <div className="ical-help__platform">
+          <h4>Outlook / Office 365</h4>
+          <ol>
+            <li>Open Outlook on the web</li>
+            <li>Right-click your calendar → <strong>Sharing and permissions</strong></li>
+            <li>Set "Can view all details" for the person/link</li>
+            <li>Copy the <strong>ICS</strong> link under "Publish this calendar"</li>
+            <li>(Looks like <code>https://outlook.office.com/owa/calendar/.../calendar.ics</code>)</li>
+          </ol>
+        </div>
+        <div className="ical-help__platform">
+          <h4>Apple Calendar (iCloud)</h4>
+          <ol>
+            <li>Open iCloud.com → Calendar</li>
+            <li>Click the ⛭ next to calendar → <strong>Public Calendar</strong></li>
+            <li>Enable and copy the <strong>.ics</strong> link</li>
+          </ol>
+        </div>
+        <div className="ical-help__platform">
+          <h4>Other / Manual .ics file</h4>
+          <p>If your platform isn't listed, look for "Export", "Subscribe", "iCal feed", "Calendar feed", or ".ics" in your calendar settings.</p>
+        </div>
+      </div>
+    </details>
+  );
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -157,7 +214,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <input
                 id="icalUrl"
                 type="url"
-                placeholder="https://canvas.institution.edu/feeds/calendars/..."
+                placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
                 value={formData.icalUrl || ''}
                 onChange={(e) => {
                   handleInputChange('icalUrl', e.target.value);
@@ -165,7 +222,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 }}
                 disabled={isSaving || isSyncing}
                 aria-invalid={!!urlError}
-                aria-describedby={urlError ? 'icalUrl-error' : undefined}
+                aria-describedby={urlError ? 'icalUrl-error' : 'icalUrl-help'}
                 data-testid="ical-url-input"
               />
               {urlError && (
@@ -173,7 +230,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   {urlError}
                 </small>
               )}
-              <small className="help-text">Your Canvas calendar iCal feed URL</small>
+              <small id="icalUrl-help" className="help-text">
+                Paste any iCal feed URL (Google Calendar, Canvas, Outlook, etc.)
+              </small>
+              <IcalUrlHelp />
             </div>
 
             {/* Fetch Now Section */}

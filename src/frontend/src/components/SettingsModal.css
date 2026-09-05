@@ -297,3 +297,140 @@
   border-color: #dc2626;
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
+
+/* iCal URL Help Panel */
+.ical-help {
+  margin-top: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fafafa;
+  overflow: hidden;
+}
+
+.ical-help__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #333;
+  user-select: none;
+  list-style: none;
+}
+
+.ical-help__summary::-webkit-details-marker {
+  display: none;
+}
+
+.ical-help__summary:hover {
+  background-color: #f0f0f0;
+}
+
+.ical-help__icon {
+  font-size: 0.625rem;
+  color: #666;
+  transition: transform 0.2s;
+}
+
+.ical-help[open] .ical-help__icon {
+  transform: rotate(90deg);
+}
+
+.ical-help__content {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.ical-help__platform {
+  margin-bottom: 1rem;
+}
+
+.ical-help__platform:last-child {
+  margin-bottom: 0;
+}
+
+.ical-help__platform h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.ical-help__platform ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+.ical-help__platform li {
+  margin-bottom: 0.375rem;
+}
+
+.ical-help__platform code {
+  background-color: #e8e8e8;
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.ical-help__platform em {
+  font-style: italic;
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.ical-help__platform p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* Dark mode support for help panel */
+html.dark .ical-help {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+html.dark .ical-help__summary {
+  color: #e0e0e0;
+}
+
+html.dark .ical-help__summary:hover {
+  background-color: #2a2a2a;
+}
+
+html.dark .ical-help__icon {
+  color: #aaa;
+}
+
+html.dark .ical-help__content {
+  border-top-color: #333;
+}
+
+html.dark .ical-help__platform h4 {
+  color: #e0e0e0;
+}
+
+html.dark .ical-help__platform ol {
+  color: #ccc;
+}
+
+html.dark .ical-help__platform code {
+  background-color: #333;
+  color: #e0e0e0;
+}
+
+html.dark .ical-help__platform em {
+  color: #888;
+}
+
+html.dark .ical-help__platform p {
+  color: #ccc;
+}

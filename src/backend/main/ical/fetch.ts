@@ -47,6 +47,60 @@ function sanitizeUrlForLogging(url: string): string {
 }
 
 /**
+ * Builds a user-friendly HTTP error message with platform-specific guidance.
+ */
+function buildHttpErrorMessage(status: number, statusText: string, url: string): string {
+  const base = `HTTP ${status} ${statusText} fetching iCal feed: ${url}`;
+  
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    
+    // Google Calendar specific guidance
+    if (hostname.includes('calendar.google.com') || hostname.includes('google.com')) {
+      if (status === 404) {
+        return `${base}\n\nThis usually means the calendar isn't shared publicly.\n• For Google Calendar: Use the "Secret address in iCal format" from Calendar Settings → Integrate calendar\n• Make sure "Make available to public" is enabled with "See all event details"`;
+      }
+      if (status === 403) {
+        return `${base}\n\nAccess forbidden. The calendar may be private or the token expired.\n• Try regenerating the "Secret address in iCal format" in Google Calendar settings`;
+      }
+    }
+    
+    // Canvas LMS specific guidance
+    if (hostname.includes('instructure.com') || hostname.includes('canvas')) {
+      if (status === 404) {
+        return `${base}\n\nCalendar feed not found.\n• Use the "Calendar Feed" URL from Canvas Calendar settings (right sidebar)\n• Make sure your institution hasn't disabled the Calendar Feed feature`;
+      }
+      if (status === 403) {
+        return `${base}\n\nAccess forbidden. The feed token may be invalid or expired.\n• Try regenerating the Calendar Feed URL in Canvas`;
+      }
+    }
+    
+    // Outlook/Office 365 specific guidance
+    if (hostname.includes('outlook.office.com') || hostname.includes('outlook.live.com') || hostname.includes('office365') || hostname.includes('exchange')) {
+      if (status === 401 || status === 403) {
+        return `${base}\n\nAuthentication required.\n• Use the "Subscribe to calendar" .ics URL from Outlook Web (not the web calendar link)\n• Make sure the calendar is shared with "Can view all details"`;
+      }
+    }
+    
+    // Generic guidance for common status codes
+    if (status === 404) {
+      return `${base}\n\nFeed not found (404).\n• Double-check the URL is correct and complete\n• Make sure the calendar is shared/enabled for external access`;
+    }
+    if (status === 403) {
+      return `${base}\n\nAccess forbidden (403).\n• The feed may require authentication or be private\n• Check if your institution/organization blocks external calendar access`;
+    }
+    if (status === 401) {
+      return `${base}\n\nAuthentication required (401).\n• This feed requires login credentials\n• Try using a tokenized "secret" URL instead (if available)`;
+    }
+  } catch {
+    // URL parsing failed, fall back to base message
+  }
+  
+  return base;
+}
+
+/**
  * Base error class for all iCal fetch errors.
  */
 export class ICalFetchError extends Error {
@@ -174,8 +228,9 @@ export async function fetchICalFeed(
       // Handle case where fetch returns undefined (e.g., exhausted mock in tests)
       if (response && typeof response.ok === 'boolean') {
         if (response.ok === false) {
+          const userFriendlyMessage = buildHttpErrorMessage(response.status, response.statusText, sanitizedUrl);
           const error = new HttpError(
-            `HTTP ${response.status} ${response.statusText} fetching iCal feed: ${sanitizedUrl} (attempt ${attempt}/${config.maxRetries})`,
+            userFriendlyMessage,
             response.status
           );
           // Don't retry on 4xx (client errors) - they won't succeed on retry
