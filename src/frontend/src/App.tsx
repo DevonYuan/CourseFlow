@@ -7,13 +7,14 @@ import { ToastProvider } from './context/ToastContext';
 import { useSettings } from './hooks/useSettings';
 import { AssignmentListPage } from './pages/AssignmentListPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { applyTheme } from './utils/theme';
 
 function ThemedApp(): JSX.Element {
   const { settings } = useSettings();
 
   useEffect(() => {
     if (settings) {
-      document.documentElement.dataset['theme'] = settings.theme;
+      applyTheme(settings.theme);
     }
   }, [settings?.theme]);
 

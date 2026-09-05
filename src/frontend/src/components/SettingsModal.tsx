@@ -4,29 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { useToast } from '../context/ToastContext';
 import { useIcalSync } from '../hooks/useIcalSync';
+import { applyTheme } from '../utils/theme';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-/**
- * Apply theme to document element immediately.
- */
-function applyTheme(theme: 'light' | 'dark' | 'system'): void {
-  const root = document.documentElement;
-  root.classList.remove('light', 'dark');
-  if (theme === 'system') {
-    // Check if matchMedia is available and has matches property (may not be in test environment)
-    const mediaQuery = typeof window.matchMedia === 'function' 
-      ? window.matchMedia('(prefers-color-scheme: dark)') 
-      : null;
-    const prefersDark = mediaQuery?.matches ?? false;
-    root.classList.add(prefersDark ? 'dark' : 'light');
-  } else {
-    root.classList.add(theme);
-  }
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
