@@ -61,9 +61,10 @@ function get<T>(sql: string, params: (string | number | null)[] = []): T | null 
   const db = getDatabase();
   const stmt = db.prepare(sql);
   stmt.bind(params);
-  const result = stmt.getAsObject();
+  // sql.js requires advancing to the first row before reading it
+  const result = stmt.step() ? (stmt.getAsObject() as T) : null;
   stmt.free();
-  return result as T | null;
+  return result;
 }
 
 function all<T>(sql: string, params: (string | number | null)[] = []): T[] {
@@ -134,6 +135,10 @@ export const repo = {
   /**
    * Insert or update an assignment.
    * Returns the created/updated assignment with generated timestamps.
+   *
+   * Partial updates (e.g. marking complete with only `{ id, status }`) are
+   * applied via UPDATE when the row already exists, so the omitted NOT NULL
+   * columns don't cause an INSERT ... ON CONFLICT constraint failure.
    */
   upsertAssignment(input: AssignmentInput): Assignment {
     const now = Date.now();
@@ -142,44 +147,86 @@ export const repo = {
 
     const dbRow = mapAssignmentInputToDb(input, now);
 
-    // Build dynamic INSERT/UPDATE based on provided fields
-    const columns: string[] = ['id'];
-    const values: (string | number | null)[] = [id];
-    const updates: string[] = [];
+    const existing = get<DbAssignment>('SELECT id FROM assignments WHERE id = ?', [id]);
 
-    if (dbRow.canvas_id !== undefined) { columns.push('canvas_id'); values.push(dbRow.canvas_id); updates.push('canvas_id = excluded.canvas_id'); }
-    if (dbRow.title !== undefined) { columns.push('title'); values.push(dbRow.title); updates.push('title = excluded.title'); }
-    if (dbRow.description !== undefined) { columns.push('description'); values.push(dbRow.description); updates.push('description = excluded.description'); }
-    if (dbRow.course_name !== undefined) { columns.push('course_name'); values.push(dbRow.course_name); updates.push('course_name = excluded.course_name'); }
-    if (dbRow.course_color !== undefined) { columns.push('course_color'); values.push(dbRow.course_color); updates.push('course_color = excluded.course_color'); }
-    if (dbRow.due_at !== undefined) { columns.push('due_at'); values.push(dbRow.due_at); updates.push('due_at = excluded.due_at'); }
-    if (dbRow.unlock_at !== undefined) { columns.push('unlock_at'); values.push(dbRow.unlock_at); updates.push('unlock_at = excluded.unlock_at'); }
-    if (dbRow.lock_at !== undefined) { columns.push('lock_at'); values.push(dbRow.lock_at); updates.push('lock_at = excluded.lock_at'); }
-    if (dbRow.points_possible !== undefined) { columns.push('points_possible'); values.push(dbRow.points_possible); updates.push('points_possible = excluded.points_possible'); }
-    if (dbRow.submission_types !== undefined) { columns.push('submission_types'); values.push(dbRow.submission_types); updates.push('submission_types = excluded.submission_types'); }
-    if (dbRow.workflow_state !== undefined) { columns.push('workflow_state'); values.push(dbRow.workflow_state); updates.push('workflow_state = excluded.workflow_state'); }
-    if (dbRow.html_url !== undefined) { columns.push('html_url'); values.push(dbRow.html_url); updates.push('html_url = excluded.html_url'); }
-    if (dbRow.ical_uid !== undefined) { columns.push('ical_uid'); values.push(dbRow.ical_uid); updates.push('ical_uid = excluded.ical_uid'); }
-    if (dbRow.status !== undefined) { columns.push('status'); values.push(dbRow.status); updates.push('status = excluded.status'); }
-    if (dbRow.source !== undefined) { columns.push('source'); values.push(dbRow.source); updates.push('source = excluded.source'); }
-    if (dbRow.source_url !== undefined) { columns.push('source_url'); values.push(dbRow.source_url); updates.push('source_url = excluded.source_url'); }
-    if (dbRow.rrule !== undefined) { columns.push('rrule'); values.push(dbRow.rrule); updates.push('rrule = excluded.rrule'); }
-    if (dbRow.created_at !== undefined) { columns.push('created_at'); values.push(dbRow.created_at); }
-    if (dbRow.updated_at !== undefined) { columns.push('updated_at'); values.push(dbRow.updated_at); updates.push('updated_at = excluded.updated_at'); }
+    if (existing) {
+      // ── UPDATE path (row exists) ─────────────────────────────────────────
+      const updates: string[] = [];
+      const values: (string | number | null)[] = [];
+      const setColumn = (column: string, value: string | number | null | undefined): void => {
+        if (value !== undefined) {
+          updates.push(`${column} = ?`);
+          values.push(value);
+        }
+      };
 
-    // Always update updated_at on conflict
-    if (!updates.some(u => u.startsWith('updated_at'))) {
-      updates.push('updated_at = excluded.updated_at');
+      setColumn('canvas_id', dbRow.canvas_id);
+      setColumn('title', dbRow.title);
+      setColumn('description', dbRow.description);
+      setColumn('course_name', dbRow.course_name);
+      setColumn('course_color', dbRow.course_color);
+      setColumn('due_at', dbRow.due_at);
+      setColumn('unlock_at', dbRow.unlock_at);
+      setColumn('lock_at', dbRow.lock_at);
+      setColumn('points_possible', dbRow.points_possible);
+      setColumn('submission_types', dbRow.submission_types);
+      setColumn('workflow_state', dbRow.workflow_state);
+      setColumn('html_url', dbRow.html_url);
+      setColumn('ical_uid', dbRow.ical_uid);
+      setColumn('status', dbRow.status);
+      setColumn('source', dbRow.source);
+      setColumn('source_url', dbRow.source_url);
+      setColumn('rrule', dbRow.rrule);
+      // created_at is immutable after creation
+      setColumn('updated_at', now);
+
+      if (updates.length === 0) {
+        throw new Error('No fields provided to update assignment');
+      }
+
+      values.push(id);
+      run(`UPDATE assignments SET ${updates.join(', ')} WHERE id = ?`, values);
+    } else {
+      // ── INSERT path (new assignment) ─────────────────────────────────────
+      // Build dynamic INSERT based on provided fields.
+      const columns: string[] = ['id'];
+      const values: (string | number | null)[] = [id];
+      const updates: string[] = [];
+
+      if (dbRow.canvas_id !== undefined) { columns.push('canvas_id'); values.push(dbRow.canvas_id); updates.push('canvas_id = excluded.canvas_id'); }
+      if (dbRow.title !== undefined) { columns.push('title'); values.push(dbRow.title); updates.push('title = excluded.title'); }
+      if (dbRow.description !== undefined) { columns.push('description'); values.push(dbRow.description); updates.push('description = excluded.description'); }
+      if (dbRow.course_name !== undefined) { columns.push('course_name'); values.push(dbRow.course_name); updates.push('course_name = excluded.course_name'); }
+      if (dbRow.course_color !== undefined) { columns.push('course_color'); values.push(dbRow.course_color); updates.push('course_color = excluded.course_color'); }
+      if (dbRow.due_at !== undefined) { columns.push('due_at'); values.push(dbRow.due_at); updates.push('due_at = excluded.due_at'); }
+      if (dbRow.unlock_at !== undefined) { columns.push('unlock_at'); values.push(dbRow.unlock_at); updates.push('unlock_at = excluded.unlock_at'); }
+      if (dbRow.lock_at !== undefined) { columns.push('lock_at'); values.push(dbRow.lock_at); updates.push('lock_at = excluded.lock_at'); }
+      if (dbRow.points_possible !== undefined) { columns.push('points_possible'); values.push(dbRow.points_possible); updates.push('points_possible = excluded.points_possible'); }
+      if (dbRow.submission_types !== undefined) { columns.push('submission_types'); values.push(dbRow.submission_types); updates.push('submission_types = excluded.submission_types'); }
+      if (dbRow.workflow_state !== undefined) { columns.push('workflow_state'); values.push(dbRow.workflow_state); updates.push('workflow_state = excluded.workflow_state'); }
+      if (dbRow.html_url !== undefined) { columns.push('html_url'); values.push(dbRow.html_url); updates.push('html_url = excluded.html_url'); }
+      if (dbRow.ical_uid !== undefined) { columns.push('ical_uid'); values.push(dbRow.ical_uid); updates.push('ical_uid = excluded.ical_uid'); }
+      if (dbRow.status !== undefined) { columns.push('status'); values.push(dbRow.status); updates.push('status = excluded.status'); }
+      if (dbRow.source !== undefined) { columns.push('source'); values.push(dbRow.source); updates.push('source = excluded.source'); }
+      if (dbRow.source_url !== undefined) { columns.push('source_url'); values.push(dbRow.source_url); updates.push('source_url = excluded.source_url'); }
+      if (dbRow.rrule !== undefined) { columns.push('rrule'); values.push(dbRow.rrule); updates.push('rrule = excluded.rrule'); }
+      if (dbRow.created_at !== undefined) { columns.push('created_at'); values.push(dbRow.created_at); }
+      if (dbRow.updated_at !== undefined) { columns.push('updated_at'); values.push(dbRow.updated_at); updates.push('updated_at = excluded.updated_at'); }
+
+      // Always update updated_at on conflict
+      if (!updates.some(u => u.startsWith('updated_at'))) {
+        updates.push('updated_at = excluded.updated_at');
+      }
+
+      const placeholders = columns.map(() => '?').join(', ');
+      const sql = `
+        INSERT INTO assignments (${columns.join(', ')})
+        VALUES (${placeholders})
+        ON CONFLICT(id) DO UPDATE SET ${updates.join(', ')}
+      `;
+
+      run(sql, values);
     }
-
-    const placeholders = columns.map(() => '?').join(', ');
-    const sql = `
-      INSERT INTO assignments (${columns.join(', ')})
-      VALUES (${placeholders})
-      ON CONFLICT(id) DO UPDATE SET ${updates.join(', ')}
-    `;
-
-    run(sql, values);
 
     const row = get<DbAssignment>('SELECT * FROM assignments WHERE id = ?', [id]);
     if (!row) throw new Error('Failed to retrieve upserted assignment');

@@ -53,7 +53,8 @@ export default defineConfig({
   renderer: {
     root: 'src/frontend',
     build: {
-      outDir: '../../dist/frontend',
+      // Absolute path — resolves regardless of electron-vite's root handling
+      outDir: resolve(__dirname, 'dist/frontend'),
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/frontend/index.html'),

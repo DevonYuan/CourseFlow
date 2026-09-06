@@ -66,6 +66,35 @@ Get ready for a public launch.
 - Auto-refresh of the calendar feed.
 - Potential for a recurring-event sync with Canvas.
 
+## Phase 6 (Planned) — Multi-Calendar Unified View
+
+> **Status:** Planned. The app currently supports exactly **one** iCal feed URL
+> (`settings.icalUrl`). This phase replaces that with **N feeds** (Google
+> Calendar primary + Birthdays + a Canvas feed, Outlook, family calendars, etc.)
+> and renders a single unified assignment list with per-calendar attribution.
+
+Planned scope:
+
+- **Calendar sources** — a first-class `calendars` entity: id, display name,
+  feed URL (encrypted), enabled flag, optional accent color, per-calendar sync
+  state (last sync / next sync / last error), and order.
+- **Import/export semantics** — mapper window (past 30d / next 60d) and RRULE
+  expansion stay the same, but **dedupe & prune become per-source** (the current
+  `importAssignments` prune is global across all `ical` rows and must be scoped
+  by source before enabling multiple feeds).
+- **Scheduler** — iterates every enabled source; per-feed retry/backoff,
+  progress events, and per-source `lastSyncAt`; a failure on one feed never
+  blocks the others.
+- **UI** — manage calendars in Settings (add/remove/name/color/enable), unified
+  list with a source/course filter and color badges, per-source sync status in
+  the TopBar.
+- **Migration** — a `calendars` table + `assignments.source_id` FK (existing
+  `source_url` already points at the feed URL, which gives us a backwards-
+  compatible path); the old single `icalUrl` setting becomes one seeded
+  calendar row.
+
+Detailed design + data model/decision record: `docs/architecture/multi-calendar.md`.
+
 ## Architecture (high level)
 
 The app follows a **backend/frontend** architecture within Electron's two-process model:
@@ -106,11 +135,12 @@ flowchart TB
 
 ## Key Decisions & Open Questions
 
-- [ ] Finalize SQLite schema details during Phase 0.
-- [ ] Determine iCal feed interaction: full re-pull vs. incremental sync.
-- [ ] Choose drag-and-drop library (renderer).
+- [x] Finalize SQLite schema details during Phase 0.
+- [x] iCal feed interaction: **full re-pull** on every sync (schedule-driven, with upsert + prune) — chosen over incremental sync for MVP simplicity.
+- [x] Choose drag-and-drop library (renderer): **@dnd-kit**.
 - [ ] Determine cloud backup scope + pricing model (deferred to Phase 4).
-- [ ] Decide whether sync is manual, on-launch, or scheduled.
+- [x] Decide whether sync is manual, on-launch, or scheduled: manual "Sync Now" + configurable background scheduler (Phase 2).
+- [ ] Single feed vs. multiple calendars → **multiple feeds planned (Phase 6)**, see `docs/architecture/multi-calendar.md`.
 
 ## Milestones
 

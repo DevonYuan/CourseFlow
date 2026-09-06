@@ -264,4 +264,30 @@ describe('importAssignments pruning', () => {
     ]);
     expect(uids).not.toContain('series@google.com');
   });
+
+  it('getAssignment reads back a complete row (sql.js step regression)', () => {
+    const db = getDatabase();
+    seedRow(db, { id: 'readback-1', icalUid: 'readback@google.com', title: 'Readback' });
+
+    const assignment = repo.getAssignment('readback-1');
+    expect(assignment).not.toBeNull();
+    expect(assignment!.title).toBe('Readback');
+    expect(assignment!.dueAt).toBeDefined();
+    expect(assignment!.icalUid).toBe('readback@google.com');
+  });
+
+  it('partial upsert updates status without touching other columns (mark-complete)', () => {
+    const db = getDatabase();
+    seedRow(db, { id: 'mc-1', icalUid: 'mc@google.com', title: 'Mark Me' });
+
+    const updated = repo.upsertAssignment({
+      id: 'mc-1' as EntityId,
+      status: 'completed',
+      updatedAt: new Date(Date.now() + 60_000).toISOString() as IsoDateTime,
+    });
+
+    expect(updated.status).toBe('completed');
+    expect(updated.title).toBe('Mark Me');
+    expect(updated.dueAt).toBeDefined();
+  });
 });

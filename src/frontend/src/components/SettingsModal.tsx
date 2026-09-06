@@ -136,7 +136,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setIsSaving(true);
     setError(null);
     try {
-      const result = await window.api.settings.set(formData);
+      // The interval dropdown edits autoFetchIntervalMs (0 = Off). Translate it
+      // into the fields the scheduler actually reads before persisting.
+      const intervalMs = Number(formData.autoFetchIntervalMs ?? 0);
+      const intervalMinutes = intervalMs > 0 ? Math.round(intervalMs / 60_000) : 0;
+      const payload: Partial<Settings> = {
+        ...formData,
+        autoFetchIcal: intervalMinutes > 0,
+        syncIntervalMinutes: intervalMinutes,
+        icalFetchIntervalMinutes: intervalMinutes,
+      };
+      // autoFetchIntervalMs is computed from icalFetchIntervalMinutes and not stored
+      delete payload.autoFetchIntervalMs;
+
+      const result = await window.api.settings.set(payload);
       if (result.ok) {
         setSettings(result.data);
         setFormData(result.data);
