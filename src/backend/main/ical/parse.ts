@@ -44,11 +44,13 @@ function icalDateTimeToIso(icalDateTime: string): string {
 function icalTimeToUtcIso(time: ICAL.Time): string {
   // Check if it's a date-only value (no time component)
   if (time.isDate) {
-    // For date-only, format as YYYY-MM-DDT00:00:00.000Z
+    // All-day events have no timezone/time. Store them at 12:00 UTC (noon)
+    // rather than midnight so they render on the correct calendar date in
+    // most timezones (midnight UTC shows as the previous day west of UTC).
     const year = time.year;
     const month = String(time.month).padStart(2, '0');
     const day = String(time.day).padStart(2, '0');
-    return `${year}-${month}-${day}T00:00:00.000Z`;
+    return `${year}-${month}-${day}T12:00:00.000Z`;
   }
 
   // For date-time with timezone, convert to UTC

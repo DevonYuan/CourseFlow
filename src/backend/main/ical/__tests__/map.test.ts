@@ -369,5 +369,299 @@ describe('iCal Mapper', () => {
       const result = mapICalToAssignments(events, sourceUrl);
       expect(result[0]!.courseColor).not.toBe(result[1]!.courseColor);
     });
+
+    // --- RRULE Expansion Tests ---
+
+    it('expands recurring event with UNTIL date into multiple occurrences', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      // Event starts Jan 1, recurs weekly until Feb 15 (5 weeks = 5 occurrences in window)
+      const recurringEvent = createEvent({
+        uid: 'recurring-1',
+        summary: 'Weekly Lab',
+        categories: ['CS101'],
+        dtStart: '2025-01-01T10:00:00.000Z' as IsoDateTime,
+        dtEnd: '2025-01-01T12:00:00.000Z' as IsoDateTime,
+        rrule: 'FREQ=WEEKLY;UNTIL=20250215T100000Z',
+      });
+
+      const result = mapICalToAssignments([recurringEvent], sourceUrl);
+
+      // Should have 5 occurrences (Jan 1, 8, 15, 22, 29) within 60-day future window
+      expect(result.length).toBeGreaterThanOrEqual(3); // At least 3 in the window
+      expect(result.length).toBeLessThanOrEqual(7); // But not too many
+
+      // Each occurrence should have unique icalUid with date suffix
+      const uids = result.map((a) => a.icalUid);
+      expect(new Set(uids).size).toBe(uids.length);
+
+      // All should have the same rrule
+      result.forEach((a) => {
+        expect(a.rrule).toBe('FREQ=WEEKLY;UNTIL=20250215T100000Z');
+      });
+
+      vi.restoreAllMocks();
+    });
+
+    it('includes past events within 30-day window', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      // Event from 5 days ago (within 30-day past window)
+      const pastEvent: ICalEvent = {
+        uid: 'past-1',
+        summary: 'Past Assignment',
+        description: null,
+        location: null,
+        dtStart: '2025-01-05T10:00:00.000Z' as IsoDateTime,
+        dtEnd: '2025-01-05T11:00:00.000Z' as IsoDateTime,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+
+      // Event from 40 days ago (outside 30-day window)
+      const oldEvent: ICalEvent = {
+        uid: 'old-1',
+        summary: 'Old Assignment',
+        description: null,
+        location: null,
+        dtStart: '2024-12-01T10:00:00.000Z' as IsoDateTime,
+        dtEnd: '2024-12-01T11:00:00.000Z' as IsoDateTime,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+
+      const result = mapICalToAssignments([pastEvent, oldEvent], sourceUrl);
+
+      // Only past event should be included
+      expect(result).toHaveLength(1);
+      expect(result[0]!.icalUid).toBe('past-1');
+
+      vi.restoreAllMocks();
+    });
+
+    it('includes future events within 60-day window', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      // Event in 10 days (within 60-day window)
+      const nearFutureEvent: ICalEvent = {
+        uid: 'near-1',
+        summary: 'Near Future Assignment',
+        description: null,
+        location: null,
+        dtStart: '2025-01-20T10:00:00.000Z' as IsoDateTime,
+        dtEnd: '2025-01-20T11:00:00.000Z' as IsoDateTime,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+
+      // Event in 70 days (outside 60-day window)
+      const farFutureEvent: ICalEvent = {
+        uid: 'far-1',
+        summary: 'Far Future Assignment',
+        description: null,
+        location: null,
+        dtStart: '2025-03-20T10:00:00.000Z' as IsoDateTime,
+        dtEnd: '2025-03-20T11:00:00.000Z' as IsoDateTime,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+
+      const result = mapICalToAssignments([nearFutureEvent, farFutureEvent], sourceUrl);
+
+      // Only near future event should be included
+      expect(result).toHaveLength(1);
+      expect(result[0]!.icalUid).toBe('near-1');
+
+      vi.restoreAllMocks();
+    });
+
+    it('filters out events with invalid dtStart', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      const validEvent: ICalEvent = {
+        uid: 'valid-1',
+        summary: 'Valid Assignment',
+        description: null,
+        location: null,
+        dtStart: '2025-01-15T10:00:00.000Z' as IsoDateTime,
+        dtEnd: '2025-01-15T11:00:00.000Z' as IsoDateTime,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+
+      const invalidEvent: ICalEvent = {
+        uid: 'invalid-1',
+        summary: 'Invalid Assignment',
+        description: null,
+        location: null,
+        dtStart: 'not-a-date' as IsoDateTime,
+        dtEnd: null,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+
+      const missingEvent: ICalEvent = {
+        uid: 'missing-1',
+        summary: 'Missing Assignment',
+        description: null,
+        location: null,
+        dtStart: null as unknown as IsoDateTime,
+        dtEnd: null,
+        rrule: null,
+        url: null,
+        categories: [],
+      };
+
+      const result = mapICalToAssignments([validEvent, invalidEvent, missingEvent], sourceUrl);
+      expect(result).toHaveLength(1);
+      expect(result[0]!.icalUid).toBe('valid-1');
+
+      vi.restoreAllMocks();
+    });
+
+    it('handles recurring event with dtEnd duration', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      // Event with 2-hour duration, recurs weekly
+      const recurringEvent = createEvent({
+        uid: 'recurring-duration',
+        summary: 'Weekly Lecture',
+        categories: ['PHYS101'],
+        dtStart: '2025-01-15T09:00:00.000Z' as IsoDateTime,
+        dtEnd: '2025-01-15T11:00:00.000Z' as IsoDateTime,
+        rrule: 'FREQ=WEEKLY;UNTIL=20250215T090000Z',
+      });
+
+      const result = mapICalToAssignments([recurringEvent], sourceUrl);
+
+      expect(result.length).toBeGreaterThan(0);
+
+      // Each occurrence should preserve the 2-hour duration
+      result.forEach((assignment) => {
+        const dueAt = new Date(assignment.dueAt!).getTime();
+        // We can't easily test dtEnd since it's not stored, but we can verify dueAt is set
+        expect(dueAt).toBeGreaterThan(0);
+      });
+
+      vi.restoreAllMocks();
+    });
+
+    it('falls back to master event when RRULE expansion fails', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      // Invalid RRULE that will fail to expand
+      const badRecurringEvent = createEvent({
+        uid: 'bad-rrule',
+        dtStart: '2025-01-15T10:00:00.000Z' as IsoDateTime,
+        rrule: 'INVALID_RRULE',
+      });
+
+      const result = mapICalToAssignments([badRecurringEvent], sourceUrl);
+
+      // Should fall back to master event
+      expect(result).toHaveLength(1);
+      expect(result[0]!.icalUid).toBe('bad-rrule');
+
+      vi.restoreAllMocks();
+    });
+
+    it('preserves event.url for each occurrence', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      const recurringEvent = createEvent({
+        uid: 'recurring-url',
+        dtStart: '2025-01-15T10:00:00.000Z' as IsoDateTime,
+        dtEnd: '2025-01-15T11:00:00.000Z' as IsoDateTime,
+        rrule: 'FREQ=WEEKLY;UNTIL=20250215T100000Z',
+        url: 'https://canvas.example.com/assignments/recurring',
+      });
+
+      const result = mapICalToAssignments([recurringEvent], sourceUrl);
+
+      expect(result.length).toBeGreaterThan(0);
+      result.forEach((assignment) => {
+        expect(assignment.sourceUrl).toBe('https://canvas.example.com/assignments/recurring');
+        expect(assignment.htmlUrl).toBe('https://canvas.example.com/assignments/recurring');
+      });
+
+      vi.restoreAllMocks();
+    });
+
+    it('expands recurring event whose series started long before the window', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      // Weekly class that started in 2023 (long before the 30d/60d window) —
+      // mirrors Google Calendar recurring masters (e.g. "FREQ=WEEKLY").
+      const recurringEvent = createEvent({
+        uid: 'weekly-class',
+        summary: 'Weekly Class',
+        dtStart: '2023-08-27T15:00:00.000Z' as IsoDateTime, // Sunday
+        dtEnd: '2023-08-27T16:00:00.000Z' as IsoDateTime,
+        rrule: 'FREQ=WEEKLY',
+      });
+
+      const result = mapICalToAssignments([recurringEvent], sourceUrl);
+
+      // Window is [2024-12-11, 2025-03-11] → weekly Sundays inside it.
+      expect(result.length).toBeGreaterThan(0);
+      const windowStart = new Date('2024-12-11T00:00:00.000Z').getTime();
+      const windowEnd = new Date('2025-03-11T23:59:59.999Z').getTime();
+
+      result.forEach((assignment) => {
+        const due = new Date(assignment.dueAt!).getTime();
+        expect(due).toBeGreaterThanOrEqual(windowStart);
+        expect(due).toBeLessThanOrEqual(windowEnd);
+        expect(assignment.icalUid!.startsWith('weekly-class@')).toBe(true);
+      });
+
+      // All occurrences should be distinct (unique per-instance ical_uid)
+      const uids = result.map((a) => a.icalUid);
+      expect(new Set(uids).size).toBe(uids.length);
+
+      vi.restoreAllMocks();
+    });
+
+    it('does not get stuck expanding a very old recurring series', () => {
+      const now = new Date('2025-01-10T12:00:00.000Z').getTime();
+      vi.spyOn(global.Date, 'now').mockImplementation(() => now);
+
+      // Weekly series started ~15 years ago (well past the old 500-iteration cap)
+      const recurringEvent = createEvent({
+        uid: 'ancient-weekly',
+        summary: 'Ancient Weekly',
+        dtStart: '2010-01-03T15:00:00.000Z' as IsoDateTime, // Sunday
+        dtEnd: '2010-01-03T16:00:00.000Z' as IsoDateTime,
+        rrule: 'FREQ=WEEKLY',
+      });
+
+      const result = mapICalToAssignments([recurringEvent], sourceUrl);
+
+      // Should still reach the window and yield Sunday occurrences
+      expect(result.length).toBeGreaterThanOrEqual(10);
+
+      const windowStart = new Date('2024-12-11T00:00:00.000Z').getTime();
+      const windowEnd = new Date('2025-03-11T23:59:59.999Z').getTime();
+      result.forEach((assignment) => {
+        const due = new Date(assignment.dueAt!).getTime();
+        expect(due).toBeGreaterThanOrEqual(windowStart);
+        expect(due).toBeLessThanOrEqual(windowEnd);
+      });
+
+      vi.restoreAllMocks();
+    });
   });
 });

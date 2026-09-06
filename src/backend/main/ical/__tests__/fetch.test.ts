@@ -266,7 +266,8 @@ END:VCALENDAR`;
 
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
-      expect(events[0]?.dtStart).toBe('2025-01-15T00:00:00.000Z');
+      // All-day events are stored at 12:00 UTC so they keep their calendar date in local timezones
+      expect(events[0]?.dtStart).toBe('2025-01-15T12:00:00.000Z');
     });
 
     it('returns empty array for empty calendar', () => {

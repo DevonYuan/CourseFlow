@@ -176,8 +176,8 @@ function parseICalDateTime(value: string): IsoDateTime {
   // Also handles: DTSTART;VALUE=DATE:20250115 (parameter in property name, not value)
   const cleaned = value.replace(/^.*:/, ''); // Remove any parameter prefix from value
   if (cleaned.length === 8) {
-    // DATE only: YYYYMMDD
-    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}T00:00:00.000Z` as IsoDateTime;
+    // DATE only: YYYYMMDD — store at 12:00 UTC so the calendar date is stable across timezones
+    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}T12:00:00.000Z` as IsoDateTime;
   }
   if (cleaned.length >= 15) {
     // DATE-TIME: YYYYMMDDTHHMMSSZ or with timezone

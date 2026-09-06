@@ -76,14 +76,15 @@ describe('iCal Parser (ical.js)', () => {
       const event1 = events[0]!;
       expect(event1.uid).toBe('allday-event-001@example.com');
       expect(event1.summary).toBe('Spring Break - No Classes');
-      expect(event1.dtStart).toBe('2025-03-10T00:00:00.000Z');
-      expect(event1.dtEnd).toBe('2025-03-15T00:00:00.000Z');
+      // All-day events are stored at 12:00 UTC so they keep their calendar date in local timezones
+      expect(event1.dtStart).toBe('2025-03-10T12:00:00.000Z');
+      expect(event1.dtEnd).toBe('2025-03-15T12:00:00.000Z');
       expect(event1.categories).toEqual(['Holiday']);
 
       // Second all-day event: no DTEND
       const event2 = events[1]!;
       expect(event2.uid).toBe('allday-event-002@example.com');
-      expect(event2.dtStart).toBe('2025-05-05T00:00:00.000Z');
+      expect(event2.dtStart).toBe('2025-05-05T12:00:00.000Z');
       expect(event2.dtEnd).toBeNull();
       expect(event2.categories).toEqual(['Exam']);
     });

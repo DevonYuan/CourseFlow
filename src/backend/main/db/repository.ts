@@ -24,12 +24,10 @@ import type {
   DbSubTask,
   DbPriorityOrder,
   DbSettings,
-  IsoDateTime,
   ImportResult,
 } from '../../shared/types.js';
 import { sendEventToRenderers } from '../events.js';
-import type { EncryptedSetting } from '../security/encryption.js';
-import { encryptIcalUrl, decryptIcalUrl, isEncryptedSetting, EncryptionError, DecryptionError } from '../security/encryption.js';
+import { encryptIcalUrl, decryptIcalUrl, isEncryptedSetting } from '../security/encryption.js';
 
 import { getDatabase, saveDatabase } from './connection.js';
 import {
@@ -41,7 +39,6 @@ import {
   mapPriorityOrderRow,
   mapPriorityOrderInputToDb,
   toIsoDateTime,
-  toUnixMs,
 } from './mappers.js';
 
 // ============================================================================
@@ -287,7 +284,9 @@ export const repo = {
    *
    * On UPDATE, preserves user-edited fields: status (if completed or archived), priority, course_color, notes, subtasks.
    * Updates from Canvas: due_at, title, workflow_state, description.
-   * Emits db:changed events for each insert/update.
+   * Prunes stale `ical` rows (not in this batch) that the user hasn't completed/archived,
+   * keeping the DB in sync with the feed + mapper window.
+   * Emits db:changed events for each insert/update/delete.
    * Transactional — all or nothing.
    */
   importAssignments(inputs: AssignmentInput[]): ImportResult {
@@ -309,6 +308,10 @@ export const repo = {
         submission_types = ?, unlock_at = ?, lock_at = ?, rrule = ?, source = ?, source_url = ?, status = ?, updated_at = ?, description = ?
       WHERE id = ?
     `);
+    const staleStmt = db.prepare(
+      "SELECT id, ical_uid FROM assignments WHERE source = 'ical' AND status NOT IN ('completed', 'archived')"
+    );
+    const deleteStmt = db.prepare('DELETE FROM assignments WHERE id = ?');
 
     // Helper to convert undefined to null for SQL binding
     const toNullable = (v: unknown): string | number | null => (v === undefined ? null : v as string | number | null);
@@ -430,6 +433,27 @@ export const repo = {
         // Mark this ical_uid as seen in this batch
         seenIcalUids.add(icalUid);
       }
+
+      // ── Prune stale iCal rows ───────────────────────────────────────────
+      // The iCal feed is the single source of truth for `source='ical'`
+      // assignments. Rows whose ical_uid is NOT in this import batch are stale:
+      //   1. events that fell outside the mapper's date window (past 30 days →
+      //      next 60 days), e.g. far-future/far-past calendar entries,
+      //   2. events deleted/moved on the calendar since the last sync,
+      //   3. legacy collapsed recurring "master" rows (due at UNTIL/now+1d)
+      //      that have now been replaced by expanded per-occurrence rows.
+      // Delete them so the list always mirrors the calendar. Rows the user
+      // explicitly marked completed/archived are preserved.
+      while (staleStmt.step()) {
+        const stale = staleStmt.getAsObject() as { id: string; ical_uid: string };
+        if (!seenIcalUids.has(stale.ical_uid)) {
+          deleteStmt.bind([stale.id]);
+          deleteStmt.step();
+          deleteStmt.reset();
+          sendEventToRenderers('db:changed', { table: 'assignments', action: 'delete', id: stale.id });
+        }
+      }
+
       console.log('[importAssignments] Committing transaction');
       exec('COMMIT', false);
       console.log('[importAssignments] Transaction committed');
@@ -438,6 +462,8 @@ export const repo = {
       exec('ROLLBACK', false);
       throw e;
     } finally {
+      staleStmt.free();
+      deleteStmt.free();
       selectStmt.free();
       insertStmt.free();
       updateStmt.free();

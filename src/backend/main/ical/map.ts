@@ -7,7 +7,18 @@
  * @module @backend/main/ical/map
  */
 
-import type { ICalEvent, AssignmentInput, EntityId, IsoDateTime, AssignmentStatus, AssignmentSource } from '@backend/shared/types';
+import type { ICalEvent, AssignmentInput, EntityId, IsoDateTime } from '@backend/shared/types';
+import ICAL from 'ical.js';
+
+import { getDateWindow } from './date-window.js';
+
+/**
+ * Safety cap for how many occurrences a single recurring event may be
+ * expanded to. Iteration starts at the series DTSTART and walks forward, so a
+ * series that began years ago (daily/weekly) still needs enough room to reach
+ * the window. We break as soon as an occurrence passes windowEnd.
+ */
+const MAX_RECURRENCE_ITERATIONS = 10_000;
 
 /**
  * Generates a deterministic hex color from a course name.
@@ -20,7 +31,7 @@ import type { ICalEvent, AssignmentInput, EntityId, IsoDateTime, AssignmentStatu
 export function generateCourseColor(courseName: string): string {
   let hash = 0;
   for (let i = 0; i < courseName.length; i++) {
-    hash = courseName.charCodeAt(i) + ((hash << 5) - hash);
+    hash = (courseName.codePointAt(i) ?? 0) + ((hash << 5) - hash);
   }
   const hue = Math.abs(hash) % 360;
 
@@ -64,6 +75,140 @@ export function generateCourseColor(courseName: string): string {
 
   // Use saturation 65%, lightness 45% for good visibility on both light/dark backgrounds
   return hslToHex(hue, 65, 45);
+}
+
+/**
+ * Converts an ISO 8601 UTC string to an ICAL.Time object.
+ */
+function isoToIcalTime(isoString: string): ICAL.Time {
+  // Parse ISO string: 2025-03-15T18:00:00.000Z
+  const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+  if (!match) {
+    throw new Error(`Invalid ISO date string: ${isoString}`);
+  }
+  const [, year, month, day, hour, minute, second] = match;
+  const parts = [year, month, day, hour, minute, second].map((p) =>
+    p === undefined ? Number.NaN : Number(p),
+  );
+  const [parsedYear, parsedMonth, parsedDay, parsedHour, parsedMinute, parsedSecond] = parts;
+  if (parts.some((p) => Number.isNaN(p))) {
+    throw new Error(`Invalid ISO date string: ${isoString}`);
+  }
+
+  return new ICAL.Time(
+    {
+      year: parsedYear,
+      month: parsedMonth,
+      day: parsedDay,
+      hour: parsedHour,
+      minute: parsedMinute,
+      second: parsedSecond,
+      isDate: false,
+    },
+    ICAL.Timezone.utcTimezone,
+  );
+}
+
+/**
+ * Converts an ICAL.Time to UTC ISO 8601 string with milliseconds.
+ */
+function icalTimeToIso(time: ICAL.Time): IsoDateTime {
+  if (time.isDate) {
+    // Match parse.ts: all-day (date-only) values use 12:00 UTC so the date is
+    // stable across timezones.
+    const year = time.year;
+    const month = String(time.month).padStart(2, '0');
+    const day = String(time.day).padStart(2, '0');
+    return `${year}-${month}-${day}T12:00:00.000Z` as IsoDateTime;
+  }
+
+  // Convert to UTC if needed
+  let utcTime = time;
+  if (time.zone && time.zone.tzid !== 'UTC' && time.zone.tzid !== 'floating') {
+    try {
+      utcTime = time.convertToZone(ICAL.Timezone.utcTimezone);
+    } catch {
+      // Fallback to original time
+    }
+  }
+
+  const year = utcTime.year;
+  const month = String(utcTime.month).padStart(2, '0');
+  const day = String(utcTime.day).padStart(2, '0');
+  const hour = String(utcTime.hour).padStart(2, '0');
+  const minute = String(utcTime.minute).padStart(2, '0');
+  const second = String(utcTime.second).padStart(2, '0');
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z` as IsoDateTime;
+}
+
+/**
+ * Expands a recurring event (with RRULE) into individual occurrences within the date window.
+ * Uses ical.js RecurIterator for RFC 5545 compliant expansion.
+ *
+ * @param event - The ICalEvent with RRULE
+ * @param windowStart - Start of the window (inclusive)
+ * @param windowEnd - End of the window (inclusive)
+ * @returns Array of occurrence ISO date strings within the window
+ */
+function expandRecurringEvent(
+  event: ICalEvent,
+  windowStart: Date,
+  windowEnd: Date
+): IsoDateTime[] {
+  if (!event.rrule || !event.dtStart) {
+    return [];
+  }
+
+  try {
+    // Parse the RRULE string using fromString static method
+    const recur = ICAL.Recur.fromString(event.rrule);
+
+    // Create iterator starting from dtStart
+    const dtStart = isoToIcalTime(event.dtStart);
+
+    // For RecurIterator, we need to provide the rule and dtstart in the correct format
+    // The iterator options can be an object with rule and dtstart properties
+    const iterator = new ICAL.RecurIterator({
+      rule: recur,
+      dtstart: dtStart,
+    });
+
+    const occurrences: IsoDateTime[] = [];
+    let next: ICAL.Time | null = null;
+    const windowStartMs = windowStart.getTime();
+    const windowEndMs = windowEnd.getTime();
+
+    for (let i = 0; i < MAX_RECURRENCE_ITERATIONS; i++) {
+      try {
+        next = iterator.next();
+      } catch (iteratorError) {
+        // RecurIterator may throw on malformed rules or edge cases
+        console.warn('[iCal Map] RecurIterator error for event:', event.uid, iteratorError);
+        break;
+      }
+      if (!next) break; // No more occurrences
+
+      const occurrenceStart = icalTimeToIso(next);
+      const occurrenceTime = new Date(occurrenceStart).getTime();
+
+      // Check if occurrence is within our window
+      if (occurrenceTime > windowEndMs) {
+        // Past the future window - stop iterating
+        break;
+      }
+
+      if (occurrenceTime >= windowStartMs) {
+        // Within window - add it
+        occurrences.push(occurrenceStart);
+      }
+      // If before windowStart, continue to next occurrence
+    }
+
+    return occurrences;
+  } catch (error) {
+    console.warn('[iCal Map] Failed to expand recurring event:', event.uid, error);
+    return [];
+  }
 }
 
 /**
@@ -127,7 +272,7 @@ function calculateNumericPriority(dueDateIso: string | null, now: number = Date.
   if (!dueDateIso) return 999;
 
   const dueDate = new Date(dueDateIso).getTime();
-  if (isNaN(dueDate)) return 999;
+  if (Number.isNaN(dueDate)) return 999;
 
   const diffMs = dueDate - now;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -163,7 +308,7 @@ function generateEntityId(): EntityId {
   }
   // Fallback for environments without crypto.randomUUID
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replaceAll(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
+    const r = Math.trunc(Math.random() * 16);
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   }) as EntityId;
@@ -180,40 +325,10 @@ function getCurrentIsoTime(): IsoDateTime {
  * Maps an array of parsed ICalEvent objects to AssignmentInput objects
  * ready for database insertion via the repository.
  *
- * Filters out events that are too far in the past (older than 30 days)
- * to avoid cluttering the list with ancient history.
- *
- * @param events - Array of parsed ICalEvent objects
- * @param sourceUrl - The iCal feed URL these events were fetched from
- * @returns Array of AssignmentInput objects
- *
- * @example
- * ```typescript
- * const events = parseICalFeed(icalText);
- * const assignments = mapICalToAssignments(events, 'https://canvas.example.com/feed.ics');
- * // assignments ready for repository.upsertAssignments(assignments)
- /**
- * Extracts UNTIL date from RRULE string, if present.
- * Returns ISO 8601 string or null if not found/invalid.
- */
-function extractUntilFromRrule(rrule: string | null): IsoDateTime | null {
-  if (!rrule) return null;
-  const match = rrule.match(/UNTIL=(\d{8}T\d{6}Z?)/i);
-  if (!match) return null;
-  const untilStr = match[1];
-  // Convert 20260214T075959Z -> 2026-02-14T07:59:59.000Z
-  const isoMatch = untilStr.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/);
-  if (!isoMatch) return null;
-  const [, year, month, day, hour, minute, second] = isoMatch;
-  return `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z` as IsoDateTime;
-}
-
-/**
- * Maps an array of parsed ICalEvent objects to AssignmentInput objects
- * ready for database insertion via the repository.
- *
- * Filters out events that are too far in the past (older than 30 days)
- * to avoid cluttering the list with ancient history.
+ * Filters events to keep:
+ * - Past 30 days (recent history)
+ * - Future 60 days (upcoming events)
+ * Expands recurring events (RRULE) into individual occurrences within the window.
  *
  * @param events - Array of parsed ICalEvent objects
  * @param sourceUrl - The iCal feed URL these events were fetched from
@@ -230,75 +345,114 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
   const now = Date.now();
   const currentIsoTime = getCurrentIsoTime();
 
-  return events
-    .filter((event) => {
-      // Skip events with invalid/missing due dates
-      if (!event.dtStart) return false;
-      const eventTime = new Date(event.dtStart).getTime();
-      if (isNaN(eventTime)) return false;
+  // Date window: past 30 days + future 60 days (shared with repository pruning)
+  const { start: windowStart, end: windowEnd } = getDateWindow(now);
 
-      // For recurring events, compute effective dueAt from RRULE UNTIL
-      if (event.rrule) {
-        const untilDate = extractUntilFromRrule(event.rrule);
-        let effectiveDueAt = eventTime;
-        if (untilDate && eventTime < now) {
-          effectiveDueAt = new Date(untilDate).getTime();
-        } else if (eventTime < now) {
-          effectiveDueAt = now + 24 * 60 * 60 * 1000;
-        }
-        // Only keep if effective dueAt is in the future
-        return effectiveDueAt >= now;
+  const assignments: AssignmentInput[] = [];
+
+  for (const event of events) {
+    // Skip events with invalid/missing due dates
+    if (!event.dtStart) continue;
+    const eventTime = new Date(event.dtStart).getTime();
+    if (Number.isNaN(eventTime)) continue;
+
+    const courseName = extractCourseName(event);
+    const courseColor = generateCourseColor(courseName);
+    const assignmentSourceUrl = event.url ?? sourceUrl;
+
+    // For recurring events, expand into individual occurrences
+    if (event.rrule) {
+      const occurrences = expandRecurringEvent(event, windowStart, windowEnd);
+
+      for (const occurrenceStart of occurrences) {
+        const numericPriority = calculateNumericPriority(occurrenceStart, now);
+        const priority = mapPriorityToEnum(numericPriority);
+
+        assignments.push({
+          id: generateEntityId(),
+          title: event.summary.trim(),
+          description: event.description ?? undefined,
+          courseName,
+          courseColor,
+          dueAt: occurrenceStart,
+          unlockAt: null,
+          lockAt: null,
+          pointsPossible: null,
+          submissionTypes: [],
+          workflowState: 'published',
+          htmlUrl: event.url ?? '',
+          icalUid: `${event.uid}@${occurrenceStart}`, // Unique ID per occurrence
+          priority,
+          status: 'pending',
+          source: 'ical',
+          sourceUrl: assignmentSourceUrl,
+          rrule: event.rrule, // Keep RRULE for reference
+          createdAt: currentIsoTime,
+          updatedAt: currentIsoTime,
+        });
       }
 
-      // Non-recurring: only keep future events
-      return eventTime >= now;
-    })
-    .map((event) => {
-      const courseName = extractCourseName(event);
-      const courseColor = generateCourseColor(courseName);
-      
-      // For recurring events with old master dtStart, use UNTIL date from RRULE
-      // or current time + 1 day as dueAt so they appear in the list
-      let dueAt = event.dtStart;
-      if (event.rrule) {
-        const untilDate = extractUntilFromRrule(event.rrule);
-        const eventTime = new Date(event.dtStart).getTime();
-        if (untilDate && eventTime < now) {
-          // Master event is in the past but RRULE has future UNTIL - use UNTIL date
-          dueAt = untilDate;
-        } else if (eventTime < now) {
-          // Master event is in the past and no UNTIL - use near future
-          dueAt = new Date(now + 24 * 60 * 60 * 1000).toISOString() as IsoDateTime;
-        }
+      // If no occurrences in window but master event is in window, include master
+      // (This handles edge cases where RRULE expansion yields no results but event is in window)
+      if (occurrences.length === 0 && eventTime >= windowStart.getTime() && eventTime <= windowEnd.getTime()) {
+        const dueAt = event.dtStart;
+        const numericPriority = calculateNumericPriority(dueAt, now);
+        const priority = mapPriorityToEnum(numericPriority);
+
+        assignments.push({
+          id: generateEntityId(),
+          title: event.summary.trim(),
+          description: event.description ?? undefined,
+          courseName,
+          courseColor,
+          dueAt,
+          unlockAt: null,
+          lockAt: null,
+          pointsPossible: null,
+          submissionTypes: [],
+          workflowState: 'published',
+          htmlUrl: event.url ?? '',
+          icalUid: event.uid,
+          priority,
+          status: 'pending',
+          source: 'ical',
+          sourceUrl: assignmentSourceUrl,
+          rrule: event.rrule ?? undefined,
+          createdAt: currentIsoTime,
+          updatedAt: currentIsoTime,
+        });
       }
-      
-      const numericPriority = calculateNumericPriority(dueAt, now);
-      const priority = mapPriorityToEnum(numericPriority);
+    } else {
+      // Non-recurring event: check if within window
+      if (eventTime >= windowStart.getTime() && eventTime <= windowEnd.getTime()) {
+        const numericPriority = calculateNumericPriority(event.dtStart, now);
+        const priority = mapPriorityToEnum(numericPriority);
 
-      // Use event.url if available, otherwise fall back to sourceUrl
-      const assignmentSourceUrl = event.url ?? sourceUrl;
+        assignments.push({
+          id: generateEntityId(),
+          title: event.summary.trim(),
+          description: event.description ?? undefined,
+          courseName,
+          courseColor,
+          dueAt: event.dtStart,
+          unlockAt: null,
+          lockAt: null,
+          pointsPossible: null,
+          submissionTypes: [],
+          workflowState: 'published',
+          htmlUrl: event.url ?? '',
+          icalUid: event.uid,
+          priority,
+          status: 'pending',
+          source: 'ical',
+          sourceUrl: assignmentSourceUrl,
+          rrule: undefined,
+          createdAt: currentIsoTime,
+          updatedAt: currentIsoTime,
+        });
+      }
+    }
+  }
 
-      return {
-        id: generateEntityId(),
-        title: event.summary.trim(),
-        description: event.description ?? undefined,
-        courseName,
-        courseColor,
-        dueAt, // Use computed dueAt for recurring events
-        unlockAt: null, // Not available from iCal
-        lockAt: null, // Not available from iCal
-        pointsPossible: null, // Not available from iCal
-        submissionTypes: [], // Not available from iCal
-        workflowState: 'published', // Assume published if in iCal feed
-        htmlUrl: event.url ?? '', // Use event URL if available
-        icalUid: event.uid,
-        priority,
-        status: 'pending',
-        source: 'ical',
-        sourceUrl: assignmentSourceUrl,
-        rrule: event.rrule ?? undefined,
-        createdAt: currentIsoTime,
-        updatedAt: currentIsoTime,
-      };
-    });
+  return assignments;
 }
