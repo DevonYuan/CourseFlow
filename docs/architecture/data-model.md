@@ -72,15 +72,19 @@ User-created sub-tasks for an assignment.
 
 ### Note
 
-Free-form notes attached to an assignment (one note per assignment).
+Free-form notes attached to an assignment (**multiple log entries per assignment**, 1:N model for progress logging).
 
-| Field           | Type   | Required | Description                                   |
-| --------------- | ------ | -------- | --------------------------------------------- |
-| `assignment_id` | `TEXT` | Yes      | FK → `Assignment.id` (also primary key)       |
-| `content`       | `TEXT` | Yes      | Note content (plain text / Markdown-ready)    |
-| `updated_at`    | `INTEGER` | Yes   | Unix epoch milliseconds when last edited (UTC) |
+| Field           | Type      | Required | Description                                   |
+| --------------- | --------- | -------- | --------------------------------------------- |
+| `id`            | `TEXT`    | Yes      | Primary key (UUID)                            |
+| `assignment_id` | `TEXT`    | Yes      | FK → `Assignment.id`                          |
+| `content`       | `TEXT`    | Yes      | Note content (plain text / Markdown-ready)    |
+| `created_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)    |
+| `updated_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when last edited (UTC) |
 
 **Source:** User
+
+**Model decision:** Notes use a 1:N relationship (multiple timestamped log entries per assignment) rather than 1:1. This supports "progress logging" — users can add multiple notes over time to track their work on an assignment. The migration v4 converted the existing 1:1 schema to 1:N.
 
 ---
 
@@ -118,11 +122,12 @@ Key-value store for application settings (JSON values).
 ```
 Assignment 1 ─── 0..1 PriorityOrder
 Assignment 1 ─── 0..N SubTask
-Assignment 1 ─── 0..1 Note
+Assignment 1 ─── 0..N Note
 ```
 
-- `PriorityOrder`, `Note` use `assignment_id` as primary key (one-to-one)
+- `PriorityOrder` uses `assignment_id` as primary key (one-to-one)
 - `SubTask` uses its own `id` as PK, with `assignment_id` as FK (one-to-many)
+- `Note` uses its own `id` as PK, with `assignment_id` as FK (one-to-many, multiple log entries per assignment)
 
 ---
 
@@ -136,5 +141,22 @@ Assignment 1 ─── 0..1 Note
 | `assignments`   | `idx_assignments_course`                      | `course_name`               |
 | `sub_tasks`     | `idx_sub_tasks_assignment`                    | `assignment_id`, `position` |
 | `priority_order`| UNIQUE constraint + `idx_priority_order_position` | `position`              |
-| `notes`         | PK                                            | `assignment_id`             |
+| `notes`         | PK + `idx_notes_assignment`                   | `id`, `assignment_id`, `created_at DESC` |
 | `settings`      | PK                                            | `key`                       |
+
+---
+
+## Protected Fields — iCal Re-import Safety
+
+The following tables/columns are **never modified** by the iCal import/sync process (`importAssignments` in `repository.ts`). They are exclusively user-owned:
+
+| Table / Column | Protection Rule |
+|----------------|-----------------|
+| `sub_tasks` (all columns) | Never touched by iCal import — sub-tasks are user-created only |
+| `notes` (all columns) | Never touched by iCal import — notes are user-created log entries |
+| `priority_order` (all columns) | Never touched by iCal import — priority is user-defined drag-drop order |
+| `assignments.status` | Preserved if user set to `completed` or `archived`; only updated from feed if `pending`/`in_progress` |
+| `assignments.course_color` | Never overwritten from feed (user may customize) |
+| `assignments.description` | Updated from feed (Canvas HTML), but user edits not yet supported in Phase 3 |
+
+This ensures that a user's productivity data (sub-tasks, notes, priority order) survives calendar re-syncs without data loss.

@@ -17,11 +17,13 @@ import type {
   SubTask,
   SubTaskInput,
   Note,
+  NoteInput,
   PriorityOrder,
   PriorityOrderInput,
   Settings,
   DbAssignment,
   DbSubTask,
+  DbNote,
   DbPriorityOrder,
   DbSettings,
   ImportResult,
@@ -35,10 +37,11 @@ import {
   mapAssignmentInputToDb,
   mapDbSubTaskToSubTask,
   mapSubTaskInputToDb,
+  mapDbNoteToNote,
+  mapNoteInputToDb,
   mapDbSettingsToSettings,
   mapPriorityOrderRow,
   mapPriorityOrderInputToDb,
-  toIsoDateTime,
 } from './mappers.js';
 
 // ============================================================================
@@ -88,6 +91,13 @@ function exec(sql: string, persist = true): void {
   const db = getDatabase();
   db.exec(sql);
   if (persist) saveDatabase();
+}
+
+/**
+ * Helper to convert undefined to null for SQL binding.
+ */
+function toNullable(v: unknown): string | number | null {
+  return v === undefined ? null : (v as string | number | null);
 }
 
 // ============================================================================
@@ -360,9 +370,6 @@ export const repo = {
     );
     const deleteStmt = db.prepare('DELETE FROM assignments WHERE id = ?');
 
-    // Helper to convert undefined to null for SQL binding
-    const toNullable = (v: unknown): string | number | null => (v === undefined ? null : v as string | number | null);
-
     exec('BEGIN TRANSACTION', false);
     console.log('[importAssignments] Transaction started, inputs:', inputs.length);
     try {
@@ -612,11 +619,21 @@ export const repo = {
   },
 
   /**
+   * Get a single sub-task by ID.
+   */
+  getSubTask(id: string): SubTask | null {
+    const row = get<DbSubTask>('SELECT * FROM sub_tasks WHERE id = ?', [id]);
+    return row ? mapDbSubTaskToSubTask(row) : null;
+  },
+
+  /**
    * Insert or update a sub-task.
    */
   upsertSubTask(input: SubTaskInput): SubTask {
     const now = Date.now();
     const dbInput = mapSubTaskInputToDb(input, now);
+    // Generate ID for new sub-tasks (input doesn't have id)
+    const id = randomUUID();
 
     run(
       `
@@ -630,7 +647,7 @@ export const repo = {
         updated_at = excluded.updated_at
     `,
       [
-        dbInput.id,
+        id,
         dbInput.assignment_id,
         dbInput.title,
         dbInput.completed,
@@ -640,7 +657,7 @@ export const repo = {
       ],
     );
 
-    const row = get<DbSubTask>('SELECT * FROM sub_tasks WHERE id = ?', [dbInput.id]);
+    const row = get<DbSubTask>('SELECT * FROM sub_tasks WHERE id = ?', [id]);
     if (!row) throw new Error('Failed to retrieve upserted sub-task');
     return mapDbSubTaskToSubTask(row);
   },
@@ -673,45 +690,62 @@ export const repo = {
   // --- Notes ---
 
   /**
-   * Get the note for an assignment.
+   * List all notes for an assignment, ordered by created_at DESC (newest first).
    */
-  getNote(assignmentId: string): Note | null {
-    const row = get<{ assignment_id: string; content: string; updated_at: number }>(
-      'SELECT * FROM notes WHERE assignment_id = ?',
+  listNotes(assignmentId: string): Note[] {
+    const rows = all<DbNote>(
+      'SELECT * FROM notes WHERE assignment_id = ? ORDER BY created_at DESC',
       [assignmentId],
     );
-    if (!row) return null;
-    return {
-      id: row.assignment_id as Note['id'],
-      assignmentId: row.assignment_id as Note['assignmentId'],
-      content: row.content,
-      createdAt: toIsoDateTime(row.updated_at) as Note['createdAt'],
-      updatedAt: toIsoDateTime(row.updated_at) as Note['updatedAt'],
-    };
+    return rows.map(mapDbNoteToNote);
   },
 
   /**
-   * Set (create or update) the note for an assignment.
+   * Get a single note by ID.
    */
-  setNote(assignmentId: string, content: string): Note {
+  getNote(id: string): Note | null {
+    const row = get<DbNote>('SELECT * FROM notes WHERE id = ?', [id]);
+    return row ? mapDbNoteToNote(row) : null;
+  },
+
+  /**
+   * Insert a new note for an assignment (1:N model - multiple log entries).
+   */
+  upsertNote(input: NoteInput): Note {
     const now = Date.now();
+    const dbInput = mapNoteInputToDb(input, now);
+    const id = randomUUID();
+
     run(
       `
-      INSERT INTO notes (assignment_id, content, updated_at)
-      VALUES (?, ?, ?)
-      ON CONFLICT(assignment_id) DO UPDATE SET
-        content = excluded.content,
-        updated_at = excluded.updated_at
+      INSERT INTO notes (id, assignment_id, content, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)
     `,
-      [assignmentId, content, now],
+      [id, dbInput.assignment_id, dbInput.content, now, now],
     );
-    return {
-      id: assignmentId as Note['id'],
-      assignmentId: assignmentId as Note['assignmentId'],
-      content,
-      createdAt: toIsoDateTime(now) as Note['createdAt'],
-      updatedAt: toIsoDateTime(now) as Note['updatedAt'],
-    };
+
+    const row = get<DbNote>('SELECT * FROM notes WHERE id = ?', [id]);
+    if (!row) throw new Error('Failed to retrieve inserted note');
+    return mapDbNoteToNote(row);
+  },
+
+  /**
+   * Delete a note by ID.
+   */
+  deleteNote(id: string): void {
+    run('DELETE FROM notes WHERE id = ?', [id]);
+  },
+
+  /**
+   * Update a note's content by ID.
+   */
+  updateNote(id: string, content: string): Note | null {
+    const now = Date.now();
+    run(
+      'UPDATE notes SET content = ?, updated_at = ? WHERE id = ?',
+      [content, now, id],
+    );
+    return this.getNote(id);
   },
 
   // --- Settings ---

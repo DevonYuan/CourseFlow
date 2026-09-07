@@ -271,8 +271,10 @@ export interface DbSubTask {
 }
 
 export interface DbNote {
+  id: string;
   assignment_id: string;
   content: string;
+  created_at: number;
   updated_at: number;
 }
 

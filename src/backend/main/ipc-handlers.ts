@@ -166,8 +166,8 @@ const handlers: IpcHandlers = {
     completed: boolean;
   }): Promise<IpcResult<SubTask>> => {
     try {
-      // Get existing sub-task, toggle completed, then upsert
-      const existing = repo.listSubTasks('').find((st) => st.id === input.id);
+      // Get existing sub-task by ID, toggle completed, then upsert
+      const existing = repo.getSubTask(input.id);
       if (!existing) {
         return Promise.resolve(err('Sub-task not found', 'NOT_FOUND'));
       }
@@ -192,25 +192,21 @@ const handlers: IpcHandlers = {
 
   'db:notes:list': (assignmentId: string): Promise<IpcResult<Note[]>> => {
     try {
-      const note = repo.getNote(assignmentId);
-      return Promise.resolve(ok(note ? [note] : []));
+      return Promise.resolve(ok(repo.listNotes(assignmentId)));
     } catch (error) {
       return Promise.resolve(
-        err(`Failed to get note: ${error instanceof Error ? error.message : 'Unknown error'}`),
+        err(`Failed to list notes: ${error instanceof Error ? error.message : 'Unknown error'}`),
       );
     }
   },
 
   'db:notes:upsert': (input: NoteInput): Promise<IpcResult<Note>> => {
     try {
-      // Check if note exists to determine insert vs update
-      const existing = repo.getNote(input.assignmentId);
-      const action = existing ? 'update' : 'insert';
-      const note = repo.setNote(input.assignmentId, input.content);
+      const note = repo.upsertNote(input);
       sendEventToRenderers('db:changed', {
         table: 'notes',
-        action,
-        id: input.assignmentId,
+        action: 'insert',
+        id: note.id,
       });
       return Promise.resolve(ok(note));
     } catch (error) {
@@ -220,10 +216,10 @@ const handlers: IpcHandlers = {
     }
   },
 
-  'db:notes:delete': (assignmentId: string): Promise<IpcResult<void>> => {
+  'db:notes:delete': (id: string): Promise<IpcResult<void>> => {
     try {
-      repo.setNote(assignmentId, '');
-      sendEventToRenderers('db:changed', { table: 'notes', action: 'delete', id: assignmentId });
+      repo.deleteNote(id);
+      sendEventToRenderers('db:changed', { table: 'notes', action: 'delete', id });
       return Promise.resolve(ok(undefined));
     } catch (error) {
       return Promise.resolve(

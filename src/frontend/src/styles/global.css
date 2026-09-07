@@ -54,3 +54,18 @@ html.dark {
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
 }
+
+/* --- App Loading State -------------------------------------------------- */
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.25rem;
+  color: var(--text-secondary, #6b7280);
+  background-color: var(--bg-color, #f9fafb);
+}
+
+html.dark .app-loading {
+  color: var(--text-tertiary, #9ca3af);
+}
