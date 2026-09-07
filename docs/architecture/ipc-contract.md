@@ -20,7 +20,7 @@ Channel names follow the convention: `<namespace>:<entity>:<action>` or `<namesp
 
 | Channel                 | Request           | Response             | Description                               |
 | ----------------------- | ----------------- | -------------------- | ----------------------------------------- |
-| `db:assignments:list`   | `void`            | `Assignment[]`       | Fetch all assignments ordered by priority |
+| `db:assignments:list`   | `void`            | `Assignment[]`       | Fetch all assignments ordered by due date (ascending); custom priority order is exposed separately via `db:priority:list` |
 | `db:assignments:get`    | `string` (id)     | `Assignment \| null` | Fetch single assignment by ID             |
 | `db:assignments:upsert` | `AssignmentInput` | `Assignment`         | Create or update assignment               |
 | `db:assignments:delete` | `string` (id)     | `void`               | Delete assignment by ID                   |
@@ -50,12 +50,23 @@ Channel names follow the convention: `<namespace>:<entity>:<action>` or `<namesp
 | `db:priority:reorder` | `string[]` (ordered IDs) | `void`            | Bulk reorder priority           |
 | `db:priority:upsert`  | `PriorityOrderInput`     | `PriorityOrder`   | Create or update priority entry |
 
+### Scheduler
+
+| Channel                 | Request                             | Response         | Description                          |
+| ----------------------- | ----------------------------------- | ---------------- | ------------------------------------ |
+| `scheduler:start`       | `{ intervalMinutes: number }`       | `SchedulerStatus` | Start the background auto-fetch timer |
+| `scheduler:stop`        | `void`                              | `SchedulerStatus` | Stop the background auto-fetch timer  |
+| `scheduler:status`      | `void`                              | `SchedulerStatus` | Current scheduler runtime status      |
+| `scheduler:trigger`     | `void`                              | `void`            | Manual "Sync Now" (single fetch cycle) |
+| `scheduler:config:get`  | `void`                              | `SchedulerConfig` | Current scheduler configuration       |
+| `scheduler:config:set`  | `Partial<SchedulerConfig>`          | `SchedulerConfig` | Update scheduler configuration         |
+
 ### iCal Integration
 
 | Channel       | Request                                      | Response                                | Description                         |
 | ------------- | -------------------------------------------- | --------------------------------------- | ----------------------------------- |
 | `ical:fetch`  | `{ url: string }`                            | `ICalEvent[]`                           | Fetch and parse iCal from URL       |
-| `ical:import` | `{ events: ICalEvent[]; sourceUrl: string }` | `{ imported: number; skipped: number }` | Import parsed events as assignments |
+| `ical:import` | `{ events: ICalEvent[]; sourceUrl: string }` | `ImportResult` (`{ imported, updated, skipped }`) | Import parsed events as assignments (dedupe by `ical_uid`, preserve user-completed rows, prune stale `ical` rows) |
 
 ### Settings
 
@@ -75,11 +86,14 @@ Channel names follow the convention: `<namespace>:<entity>:<action>` or `<namesp
 
 ## Event Definitions (One-way, Main → Renderer)
 
-| Event              | Payload                                                                   | Description                    |
-| ------------------ | ------------------------------------------------------------------------- | ------------------------------ |
-| `db:changed`       | `{ table: string; action: 'insert' \| 'update' \| 'delete'; id: string }` | Database mutation notification |
-| `ical:progress`    | `{ stage: 'fetch' \| 'parse' \| 'store'; progress: number }`              | iCal import progress (0–100)   |
-| `settings:changed` | `Settings`                                                                | Settings updated (broadcast)   |
+| Event                 | Payload                                                                                   | Description                        |
+| --------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------- |
+| `db:changed`          | `{ table: string; action: 'insert' \| 'update' \| 'delete' \| 'reorder'; id: string }`    | Database mutation notification     |
+| `ical:progress`       | `{ stage: 'fetching' \| 'parsing' \| 'importing' \| 'complete' \| 'error'; progress: number; message?: string }` | iCal import progress (0–100) |
+| `settings:changed`    | `Settings`                                                                                | Settings updated (broadcast)       |
+| `scheduler:tick`      | `{ nextRun: IsoDateTime }`                                                                | Scheduler next-run update          |
+| `scheduler:error`     | `{ message: string; code: 'network' \| 'auth' \| 'parse' \| 'server' \| 'unknown' }`       | Background fetch failed            |
+| `scheduler:coalesced` | `{ message: string }`                                                                     | Manual sync ignored (already running) |
 
 ---
 
@@ -93,7 +107,9 @@ All payload types are defined in `src/backend/shared/types.ts`:
 - `PriorityOrder`, `PriorityOrderInput`
 - `Settings`
 - `ICalEvent`
-- `IpcResult<T>` — response wrapper
+- `ImportResult`
+- `SchedulerConfig`, `SchedulerStatus`
+- `IpcResult<T>` — response wrapper (defined in `src/backend/shared/ipc.ts`)
 
 ---
 
@@ -105,13 +121,16 @@ Every request/response channel returns `IpcResult<T>`:
 type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string; code?: string };
 ```
 
-**Standard error codes:**
+**Standard error codes** (mirrors `IpcErrorCode` in `src/backend/shared/ipc.ts`):
 
 - `NOT_FOUND` — Entity not found
 - `VALIDATION_ERROR` — Input validation failed
 - `CONFLICT` — Unique constraint violation
-- `UNAUTHORIZED` — Not applicable (local app), reserved
 - `INTERNAL_ERROR` — Unexpected failure
+- `NETWORK_ERROR` — Network-level failure
+- `HTTP_ERROR` — Bad HTTP response (4xx/5xx)
+- `TIMEOUT_ERROR` — Request timed out
+- `PARSE_ERROR` — Feed could not be parsed
 
 Handlers **never throw** — always return `IpcResult`.
 

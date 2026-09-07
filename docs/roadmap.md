@@ -4,7 +4,7 @@
 
 ## Overview
 
-CourseFlow is a desktop homework tracker built with **Electron + React + TypeScript + SQLite**, pulling assignment data from the Canvas Calendar via **iCal**. The app runs 100% locally by default.
+CourseFlow is a desktop homework tracker built with **Electron + React + TypeScript + SQLite**, pulling assignment data from **any iCal feed** (Google Calendar, Canvas, Outlook, etc.) via iCal. The app runs 100% locally by default.
 
 ### Principles
 
@@ -12,7 +12,13 @@ CourseFlow is a desktop homework tracker built with **Electron + React + TypeScr
 - **Simple + fast UX** — marking things done, re-ordering, and note-taking should feel effortless.
 - **Single source of truth** — the iCal feed is the source for assignments; local data augments it (priority order, sub-tasks, notes).
 
-## Phase 0 — Foundation (scaffold)
+## Status (Sep 2026)
+
+- **Phase 0–2 complete** — tracked MVP is functional and verified: single-feed iCal import (past 30d / next 60d window, recurring + all-day events), local SQLite list, priority ordering, filters/sort/group, and a background auto-sync scheduler.
+- **Phase 3 in progress** — see `docs/tickets/phase3/README.md` (detail view, sub-tasks, notes UI; backend already exists).
+- The app currently syncs **one** iCal feed; multi-calendar support is planned for Phase 6.
+
+## Phase 0 — Foundation (scaffold) ✅ Complete
 
 Lay the project skeleton and prove the core toolchain works end-to-end.
 
@@ -22,17 +28,17 @@ Lay the project skeleton and prove the core toolchain works end-to-end.
 - Decide package manager + Node version (recommended: **Node.js 24 LTS**).
 - CI/lint/format baseline.
 
-## Phase 1 — MVP (tracking assignments)
+## Phase 1 — MVP (tracking assignments) ✅ Complete
 
 Deliver a functional tracker with the minimum viable feature set.
 
-- Fetch and parse the Canvas **iCal** calendar feed.
+- Fetch and parse an **iCal** calendar feed (single feed; Google Calendar, Canvas, Outlook, etc.).
 - Store assignments in SQLite.
 - Render a chronological assignment list.
 - Mark assignments as "done" with instant feedback.
-- Handle feed configuration (iCal URL input).
+- Handle feed configuration (iCal URL input, encrypted at rest).
 
-## Phase 2 — Priority & Organization
+## Phase 2 — Priority & Organization ✅ Complete
 
 Give users control over how their list is ordered and viewed.
 
@@ -40,8 +46,9 @@ Give users control over how their list is ordered and viewed.
 - Persist priority order locally.
 - Filtering (by course, due date, status) and sorting.
 - Basic grouping (e.g., "This week", "Overdue", "Done").
+- Background auto-fetch scheduler (configurable interval, retry/backoff, manual "Sync Now").
 
-## Phase 3 — Productivity Depth
+## Phase 3 — Productivity Depth 🚧 In Progress
 
 Turn CourseFlow from a tracker into a productivity tool.
 

@@ -1,6 +1,6 @@
 # Security Design
 
-This document describes the encryption design for sensitive settings, specifically the Canvas iCal URL.
+This document describes the encryption design for sensitive settings, specifically the iCal feed URL.
 
 ## Threat Model
 
@@ -12,23 +12,27 @@ This document describes the encryption design for sensitive settings, specifical
 
 ### Storage Location
 
-The encrypted iCal URL is stored in the `settings` table with key `ical_url`.
+The encrypted feed URL is stored in the `settings` key-value table under the **camelCase key `icalUrl`** (i.e., a row with `key = 'icalUrl'` whose `value` column holds the JSON envelope below).
 
 ### Encryption Format
 
-The `value` column contains a JSON string with the following structure:
+The `value` column contains a JSON string with the following structure (mirrors the `EncryptedSetting` type):
 
 ```json
 {
-  "ciphertext": "base64-encoded-ciphertext",
-  "iv": "base64-encoded-iv",
-  "salt": "base64-encoded-salt"
+  "v": 1,
+  "ciphertext": "base64url-encoded-ciphertext",
+  "iv": "base64url-encoded-iv",
+  "salt": "base64url-encoded-salt"
 }
 ```
 
+- **v**: format version (currently `1`)
 - **ciphertext**: AES-GCM encrypted payload (includes authentication tag)
 - **iv**: 12-byte initialization vector (96 bits, recommended for GCM)
 - **salt**: 16-byte salt for PBKDF2 key derivation
+
+All binary fields are **base64url**-encoded (URL-safe, no padding) in the actual implementation.
 
 ### Algorithm
 
@@ -42,13 +46,13 @@ The `value` column contains a JSON string with the following structure:
 
 **Phase 1 (Current Design):**
 
-- Application-generated key stored in OS keychain via `keytar` / `electron-store`
-- Key is derived from a machine-specific secret (not user password)
-- Simpler UX: no master password required
+- No OS-keychain dependency yet — a deterministic **machine passphrase** is derived from the Electron `userData` path: `courseflow-<userData>-v1` (see `getPassphrase()` in `src/backend/main/security/encryption.ts`)
+- A fresh random 16-byte salt is generated per encryption, so the derived key differs for every stored value
+- Simpler UX: no master password required; encryption/decryption happens only in the main process
 
 **Future Enhancement (Post-MVP):**
 
-- Optional user-set master password
+- Optional user-set master password or OS-keychain-backed secret
 - Key derived from password + salt via PBKDF2
 - Allows portable encrypted settings across machines
 
@@ -128,11 +132,10 @@ JSON from settings.value
 
 ### Implementation Location
 
-- **Main process only** — Renderer never sees plaintext URL
-- **Repository methods** (Phase 1 implementation):
-  - `setEncryptedSetting(key: string, value: string): Promise<void>`
-  - `getDecryptedSetting(key: string): Promise<string | null>`
-- **IPC handlers** expose only high-level `setSetting` / `getSetting` which handle encryption transparently for sensitive keys
+- **Main process only** — Renderer never sees the plaintext URL during save (it is encrypted before it leaves `repository.setSettings`)
+- **Module** (current implementation): `src/backend/main/security/encryption.ts` exposes `encryptIcalUrl(url)` / `decryptIcalUrl(payload)`
+- **Repository** (`src/backend/main/db/repository.ts`): the generic `setSetting`/`setSettings`/`getAllSettings` transparently encrypt/decrypt whenever the key is `icalUrl` — no separate `setEncryptedSetting` helper exists
+- **IPC handlers** expose only high-level `settings:get` / `settings:set` / `settings:reset`, which handle encryption transparently
 
 ### Web Crypto API Usage
 
@@ -169,35 +172,36 @@ const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciph
 1. **Auth tag included**: AES-GCM authentication tag is appended to ciphertext (standard Web Crypto behavior)
 2. **Unique IV per encryption**: Never reuse IV with same key
 3. **Salt per encryption**: Unique salt enables key rotation and prevents rainbow tables
-4. **No plaintext in renderer**: Preload bridge only exposes `setSetting`/`getSetting` — encryption/decryption happens in main process
+5. **No plaintext in renderer**: Preload exposes `settings.get`/`settings.set`/`settings.reset` only — encryption/decryption happens in the main process (the decrypted `icalUrl` is delivered to the renderer for display in Settings)
 5. **Machine secret storage**: Use `keytar` (cross-platform native keychain) or `electron-store` with encryption for the master key
 
 ---
 
 ## Auto-Sync Interval Setting
 
-### Setting Key
+### Setting Keys
 
-`sync_interval_minutes`
+- `syncIntervalMinutes` — scheduler interval in minutes
+- `autoFetchIcal` — boolean that enables/disables the background scheduler
+- `icalFetchIntervalMinutes` — interval used by the Settings dropdown and the `autoFetchIntervalMs` computation (kept in sync with `syncIntervalMinutes` when saved from the UI)
 
 ### Default Value
 
-`15` (minutes)
+`syncIntervalMinutes = 15`, `autoFetchIcal = false`
 
 ### User Configurable
 
-Yes — exposed in Settings UI (Phase 2+)
+Yes — exposed in Settings (Phase 2+): "Auto-fetch Interval" dropdown with **Off / 15 min / 30 min / 1 h / 6 h / 12 h / 24 h**.
 
 ### Behavior
 
-- Background timer in main process fetches iCal feed at interval
-- Minimum allowed value: `5` minutes (to avoid Canvas rate limits)
-- Maximum allowed value: `1440` minutes (24 hours)
-- Value `0` disables auto-sync (manual only)
+- The main-process scheduler fetches the iCal feed on the configured interval while `autoFetchIcal` is true, the URL is set, and the interval is > 0.
+- Value `0` (Off) disables auto-sync (manual "Sync Now" still works).
+- Manual "Sync Now" always works regardless of the auto-fetch setting.
 
 ### Storage
 
-Plaintext JSON number in `settings.value` for key `sync_interval_minutes` (not encrypted — not sensitive).
+Plaintext JSON numbers/booleans in `settings.value` for the camelCase keys above (not encrypted — not sensitive).
 
 ---
 

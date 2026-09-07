@@ -6,28 +6,34 @@ This document defines the core data entities and their fields for CourseFlow. Al
 
 ### Assignment
 
-Represents a Canvas assignment synced via iCal, with user-extensible fields.
+Represents an item synced from an **iCal feed** (Google Calendar, Canvas, Outlook, etc.), with user-extensible fields.
 
-| Field              | Type      | Required | Description                                                            |
-| ------------------ | --------- | -------- | ---------------------------------------------------------------------- |
-| `id`               | `TEXT`    | Yes      | Primary key (UUID)                                                     |
-| `canvas_id`        | `TEXT`    | No       | Canvas assignment ID (numeric, stored as text)                         |
-| `title`            | `TEXT`    | Yes      | Assignment title                                                       |
-| `description`      | `TEXT`    | No       | Full description (HTML from Canvas)                                    |
-| `course_name`      | `TEXT`    | Yes      | Course name from Canvas                                                |
-| `course_color`     | `TEXT`    | No       | Course color hex (e.g., `#e83e8c`)                                     |
-| `due_at`           | `TEXT`    | No       | ISO 8601 datetime (UTC)                                                |
-| `unlock_at`        | `TEXT`    | No       | ISO 8601 datetime (UTC)                                                |
-| `lock_at`          | `TEXT`    | No       | ISO 8601 datetime (UTC)                                                |
-| `points_possible`  | `INTEGER` | No       | Maximum points                                                         |
-| `submission_types` | `TEXT`    | No       | JSON array of strings (e.g., `["online_text_entry", "online_upload"]`) |
-| `workflow_state`   | `TEXT`    | No       | Canvas workflow state (e.g., `published`, `unpublished`)               |
-| `html_url`         | `TEXT`    | No       | Direct link to assignment in Canvas                                    |
-| `ical_uid`         | `TEXT`    | No       | iCal UID for deduplication across syncs                                |
-| `created_at`       | `TEXT`    | Yes      | ISO 8601 datetime when record created (UTC)                            |
-| `updated_at`       | `TEXT`    | Yes      | ISO 8601 datetime when record last updated (UTC)                       |
+| Field              | Type      | Required | Description                                                                      |
+| ------------------ | --------- | -------- | -------------------------------------------------------------------------------- |
+| `id`               | `TEXT`    | Yes      | Primary key (UUID)                                                               |
+| `canvas_id`        | `TEXT`    | No       | Legacy Canvas-style ID (unused by the iCal importer; nullable)                   |
+| `title`            | `TEXT`    | Yes      | Assignment/event title (from `SUMMARY`)                                          |
+| `description`      | `TEXT`    | No       | Full description from the feed (may contain HTML/newlines)                       |
+| `course_name`      | `TEXT`    | Yes      | Course name derived from the feed (CATEGORIES/SUMMARY heuristic or "Unknown Course") |
+| `course_color`     | `TEXT`    | No       | Deterministic hex color derived from `course_name`                                |
+| `due_at`           | `INTEGER` | Yes      | Due/start time — Unix epoch **milliseconds** (UTC)                                |
+| `unlock_at`        | `INTEGER` | No       | Unix epoch milliseconds (UTC)                                                    |
+| `lock_at`          | `INTEGER` | No       | Unix epoch milliseconds (UTC)                                                    |
+| `points_possible`  | `REAL`    | No       | Maximum points (nullable)                                                        |
+| `submission_types` | `TEXT`    | No       | JSON array of strings (unused by the iCal importer; default `[]`)                |
+| `workflow_state`   | `TEXT`    | No       | Feed state (default `published`)                                                 |
+| `html_url`         | `TEXT`    | No       | Event URL when the feed provides one (e.g., `URL:` property)                     |
+| `ical_uid`         | `TEXT`    | No       | iCal UID — dedupe key across syncs (unique; per-occurrence for recurring events) |
+| `status`           | `TEXT`    | No       | User state: `pending` \| `in_progress` \| `completed` \| `archived` (default `pending`) |
+| `source`           | `TEXT`    | No       | `ical` or `manual` (default `manual`)                                            |
+| `source_url`       | `TEXT`    | No       | Feed URL this assignment was imported from                                        |
+| `rrule`            | `TEXT`    | No       | Recurrence rule string, preserved for reference                                   |
+| `created_at`       | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)                                        |
+| `updated_at`       | `INTEGER` | Yes      | Unix epoch milliseconds when last updated (UTC)                                   |
 
-**Source:** iCal feed + Canvas API + user extensions
+**Source:** iCal feed (single feed in the MVP) + user actions
+
+> **Note:** All `*_at` columns are stored as **Unix epoch milliseconds** (SQLite `INTEGER`), not ISO strings. The repository mappers (`toIsoDateTime` / `toUnixMs`) convert to ISO 8601 UTC strings at the TypeScript boundary.
 
 ---
 
@@ -35,10 +41,12 @@ Represents a Canvas assignment synced via iCal, with user-extensible fields.
 
 User-defined priority ordering for assignments (drag-and-drop position).
 
-| Field           | Type      | Required | Description                                     |
-| --------------- | --------- | -------- | ----------------------------------------------- |
-| `assignment_id` | `TEXT`    | Yes      | FK → `Assignment.id` (also primary key)         |
-| `position`      | `INTEGER` | Yes      | Zero-based sort order (lower = higher priority) |
+| Field           | Type      | Required | Description                                             |
+| --------------- | --------- | -------- | ------------------------------------------------------- |
+| `assignment_id` | `TEXT`    | Yes      | FK → `Assignment.id` (also primary key)                 |
+| `position`      | `INTEGER` | Yes      | Zero-based sort order (lower = higher priority, UNIQUE) |
+| `created_at`    | `INTEGER` | No       | Unix epoch milliseconds (added by migration v3)         |
+| `updated_at`    | `INTEGER` | No       | Unix epoch milliseconds (added by migration v3)         |
 
 **Source:** User drag-drop
 
@@ -55,8 +63,8 @@ User-created sub-tasks for an assignment.
 | `title`         | `TEXT`    | Yes      | Sub-task title                  |
 | `completed`     | `INTEGER` | Yes      | Boolean (0/1)                   |
 | `position`      | `INTEGER` | Yes      | Display order within assignment |
-| `created_at`    | `TEXT`    | Yes      | ISO 8601 datetime (UTC)         |
-| `updated_at`    | `TEXT`    | Yes      | ISO 8601 datetime (UTC)         |
+| `created_at`    | `INTEGER` | Yes      | Unix epoch milliseconds (UTC)   |
+| `updated_at`    | `INTEGER` | Yes      | Unix epoch milliseconds (UTC)   |
 
 **Source:** User
 
@@ -69,8 +77,8 @@ Free-form notes attached to an assignment (one note per assignment).
 | Field           | Type   | Required | Description                                   |
 | --------------- | ------ | -------- | --------------------------------------------- |
 | `assignment_id` | `TEXT` | Yes      | FK → `Assignment.id` (also primary key)       |
-| `content`       | `TEXT` | Yes      | Note content (Markdown or plain text)         |
-| `updated_at`    | `TEXT` | Yes      | ISO 8601 datetime when note last edited (UTC) |
+| `content`       | `TEXT` | Yes      | Note content (plain text / Markdown-ready)    |
+| `updated_at`    | `INTEGER` | Yes   | Unix epoch milliseconds when last edited (UTC) |
 
 **Source:** User
 
@@ -87,11 +95,21 @@ Key-value store for application settings (JSON values).
 
 **Source:** User + app
 
-**Known keys:**
+**Known keys (camelCase JSON values in `settings.value`):**
 
-- `ical_url`: Encrypted iCal URL (see `security.md` for encryption format)
-- `sync_interval_minutes`: Auto-sync interval in minutes (default: `15`, user-configurable)
-- `theme`: UI theme preference (`"light"`, `"dark"`, `"system"`)
+- `theme`: `"light"` | `"dark"` | `"system"`
+- `autoFetchIcal`: boolean — enables the background scheduler
+- `icalFetchIntervalMinutes`: interval shown by the Settings "Auto-fetch Interval" dropdown
+- `syncIntervalMinutes`: scheduler interval in minutes (default `15`; `0` disables auto-fetch)
+- `defaultPriority`: `"low" | "medium" | "high"` (reserved — no manual-add UI yet)
+- `showCompletedAssignments`: boolean (TopBar "Show Completed" toggle)
+- `notifyDueSoon`: boolean (reserved for Phase 5 notifications)
+- `dueSoonThresholdHours`: number (reserved for Phase 5 notifications)
+- `icalUrl`: **encrypted** iCal feed URL — JSON envelope `{ v: 1, ciphertext, iv, salt }`, see `security.md`
+- `lastSyncAt`: ISO 8601 string (UTC) of the last successful import
+- `autoFetchIntervalMs`: **computed** field (`icalFetchIntervalMinutes * 60 000`) — never persisted
+
+> **Note:** The `settings` table is key-value (`key`, `value`) with JSON in `value`. Migration v2 also added legacy columns `ical_url` / `last_sync_at` to the table, but new code reads and writes through the key-value rows above.
 
 ---
 
@@ -110,11 +128,13 @@ Assignment 1 ─── 0..1 Note
 
 ## Indexes
 
-| Table           | Index                      | Columns         |
-| --------------- | -------------------------- | --------------- |
-| `Assignment`    | `idx_assignment_canvas_id` | `canvas_id`     |
-| `Assignment`    | `idx_assignment_due_at`    | `due_at`        |
-| `Assignment`    | `idx_assignment_course`    | `course_name`   |
-| `SubTask`       | `idx_subtask_assignment`   | `assignment_id` |
-| `PriorityOrder` | (PK)                       | `assignment_id` |
-| `Note`          | (PK)                       | `assignment_id` |
+| Table           | Index                                         | Columns                     |
+| --------------- | --------------------------------------------- | --------------------------- |
+| `assignments`   | UNIQUE constraint on `canvas_id`              | `canvas_id`                 |
+| `assignments`   | UNIQUE index `idx_assignments_ical_uid`       | `ical_uid`                  |
+| `assignments`   | `idx_assignments_due_at`                      | `due_at`                    |
+| `assignments`   | `idx_assignments_course`                      | `course_name`               |
+| `sub_tasks`     | `idx_sub_tasks_assignment`                    | `assignment_id`, `position` |
+| `priority_order`| UNIQUE constraint + `idx_priority_order_position` | `position`              |
+| `notes`         | PK                                            | `assignment_id`             |
+| `settings`      | PK                                            | `key`                       |

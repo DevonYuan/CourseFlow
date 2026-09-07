@@ -29,8 +29,13 @@ We adopt a **three-process model** with strict boundaries:
 - **Owns:** SQLite database (single connection, WAL mode)
 - **Owns:** Network I/O (iCal fetch with retry/backoff)
 - **Owns:** IPC request handlers (registered via `ipcMain.handle`)
+- **Owns:** Background auto-fetch scheduler (`src/backend/main/scheduler.ts`)
 - **Owns:** App protocol handling (`courseflow://`)
 - **Forbidden:** React, DOM, CSS, Vite HMR, any renderer-side code
+
+> **Current implementation note:** the app implements window lifecycle, SQLite,
+> iCal fetch/import, IPC handlers, and the scheduler. Native menus/dialogs,
+> auto-update, and the `courseflow://` protocol are **not implemented yet**.
 
 ### 2. Backend — Preload Process (`src/backend/preload/`)
 
@@ -58,16 +63,17 @@ We adopt a **three-process model** with strict boundaries:
 | Category | Namespace   | Pattern                | Example                                      |
 | -------- | ----------- | ---------------------- | -------------------------------------------- |
 | Database | `db:`       | `db:<entity>:<action>` | `db:assignments:list`, `db:priority:reorder` |
-| iCal     | `ical:`     | `ical:<action>`        | `ical:fetch`, `ical:parse`                   |
+| iCal     | `ical:`     | `ical:<action>`        | `ical:fetch`, `ical:import`                  |
 | Settings | `settings:` | `settings:<action>`    | `settings:get`, `settings:set`               |
+| Scheduler | `scheduler:` | `scheduler:<action>`  | `scheduler:status`, `scheduler:trigger`      |
 | App      | `app:`      | `app:<action>`         | `app:version`                                |
-| Events   | (same)      | `<namespace>:<event>`  | `db:changed`, `ical:progress`                |
+| Events   | (same)      | `<namespace>:<event>`  | `db:changed`, `ical:progress`, `scheduler:tick` |
 
 **All channels defined in** `src/backend/shared/ipc.ts` **as `IpcChannels` and `IpcEvents`**.
 
 ---
 
-## ContextBridge Exposure Pattern
+## ContextBridge Exposure Pattern (abridged)
 
 ```typescript
 // src/backend/preload/index.ts
@@ -93,6 +99,9 @@ contextBridge.exposeInMainWorld('api', {
   onIcalProgress: (cb) => ipcRenderer.on('ical:progress', (_e, payload) => cb(payload)),
 });
 ```
+
+> The full bridge also exposes `db.subtasks.*`, `db.notes.*`,
+> `db.priority.list`, and `scheduler.*` — see `src/backend/preload/index.ts`.
 
 **Renderer usage:**
 

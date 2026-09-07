@@ -20,18 +20,20 @@ Unlike Canvas, which crams the to-do list into a small sidebar component, Course
 
 Go beyond simple tracking. Break assignments into sub-tasks and add detailed notes about your progress. Use CourseFlow as a productivity app to log what you've been working on, not just what's due.
 
+> **Status:** In progress (Phase 3). The database + IPC layer already exist; the assignment detail view and sub-task/note UI are being built.
+
 ## Platform & Data
 
 - **Cross-platform**: Built on Electron, CourseFlow runs on Windows, macOS, and Linux — no browser tab required.
 - **100% local**: All data is stored locally in SQLite. Your data does NOT go to the cloud.
-- **Sync**: Pull your latest assignments directly from the Canvas Calendar via iCal, keeping your list up to date.
+- **Sync**: Pull your latest assignments from any **iCal feed** (Google Calendar, Canvas, Outlook, etc.), keeping your list up to date. The MVP syncs a single feed; multi-calendar support is planned (Phase 6).
 
 ## Tech Stack
 
 | Component            | Technology     | Notes                                              |
 | -------------------- | -------------- | -------------------------------------------------- |
 | Desktop Framework    | **Electron**   | Cross-platform desktop app (Windows, macOS, Linux) |
-| Calendar Integration | **iCal**       | Pulls data directly from the Canvas Calendar       |
+| Calendar Integration | **iCal**       | Generic iCal feed importer (Google Calendar, Canvas, Outlook, …); single feed in the MVP |
 | Backend              | **TypeScript** | Best support for working with iCal                 |
 | Frontend             | **React**      | Modern, responsive desktop UI                      |
 | Database             | **SQLite**     | Local data storage                                 |
@@ -69,19 +71,23 @@ flowchart TB
 
 ## Roadmap
 
-### v0.1 — MVP
+> **Status:** Phases 1–2 shipped and verified as an MVP. Phase 3 (sub-tasks + notes UI) is in progress.
 
-- Parse the Canvas iCal calendar feed
+### ✅ v0.1 — MVP (done)
+
+- Import a single iCal feed into a local SQLite assignment list
 - Display assignments in a chronological list
-- Mark assignments as done
+- Mark assignments as done (persisted)
 
-### v0.2 — Priority & Organization
+### ✅ v0.2 — Priority & Organization (done)
 
-- Re-order assignments by personal priority (drag-and-drop)
-- Filter and sort views
+- Re-order assignments by personal priority (drag-and-drop + keyboard)
+- Filter, sort, and group views (This Week / Overdue / Upcoming / Completed / By Course)
+- Background auto-sync scheduler with manual "Sync Now"
 
-### v0.3 — Productivity Depth
+### 🚧 v0.3 — Productivity Depth (in progress)
 
+- Assignment detail view
 - Break assignments into sub-tasks
 - Add notes and log your progress
 
@@ -94,6 +100,7 @@ flowchart TB
 ### Later
 
 - Due-date reminders and notifications
+- Multiple calendar feeds (Phase 6)
 - Optional cloud backup *
 
 *<small>Backup details and pricing are still being decided.</small>
