@@ -7,6 +7,8 @@
  * @module @frontend/pages/AssignmentListPage
  */
 
+import { useNavigate } from 'react-router-dom';
+
 import { AssignmentList } from '../components/AssignmentList';
 import { FilterBar } from '../components/FilterBar';
 
@@ -22,6 +24,13 @@ interface AssignmentListPageProps {
 export function AssignmentListPage({
   onAssignmentClick,
 }: AssignmentListPageProps): JSX.Element {
+  const navigate = useNavigate();
+
+  const handleAssignmentClick = (assignment: import('@backend/shared/types').Assignment) => {
+    navigate(`/assignments/${assignment.id}`);
+    onAssignmentClick?.(assignment);
+  };
+
   return (
     <section className="assignment-list-page" aria-label="Assignments">
       <FilterBar />
@@ -31,7 +40,7 @@ export function AssignmentListPage({
           // This is a fallback - in practice, the TopBar handles this
           window.location.href = '/settings';
         }}
-        onAssignmentClick={onAssignmentClick}
+        onAssignmentClick={handleAssignmentClick}
       />
     </section>
   );

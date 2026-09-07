@@ -46,6 +46,8 @@ export const DragHandle = forwardRef<HTMLButtonElement, DragHandleProps>(
         event.stopPropagation();
         return;
       }
+      // Prevent row click from firing when clicking drag handle
+      event.stopPropagation();
       onClick?.(event);
     };
 

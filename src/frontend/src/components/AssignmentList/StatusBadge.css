@@ -1,0 +1,31 @@
+/**
+ * StatusBadge Styles
+ */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  color: white;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.status-badge--sm {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+}
+
+.status-badge--md {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+.status-badge--lg {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+}
