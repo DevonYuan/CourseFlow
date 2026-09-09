@@ -7,6 +7,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+  margin-bottom: var(--spacing-lg, 24px); /* Space between filter bar and first assignment */
   background-color: var(--surface-color, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: var(--radius-lg, 12px);
