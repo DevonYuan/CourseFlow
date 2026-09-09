@@ -3,6 +3,7 @@
  *
  * Displays a single assignment with course color, title, due date, and status.
  * Supports keyboard navigation, click handling, and drag-and-drop reordering.
+ * Includes optional compact sub-task progress indicator.
  *
  * @module @frontend/components/AssignmentRow
  */
@@ -12,7 +13,17 @@ import React from 'react';
 
 import { DragHandle } from './AssignmentList/DragHandle';
 import { CourseColorBadge } from './CourseColorBadge';
+import { ProgressBar } from './ui/ProgressBar';
 import './AssignmentRow.css';
+
+interface SubTaskProgress {
+  /** Number of completed sub-tasks */
+  completedCount: number;
+  /** Total number of sub-tasks */
+  totalCount: number;
+  /** Completion percentage (0-100) */
+  percentage: number;
+}
 
 interface AssignmentRowProps {
   /** Assignment data to display */
@@ -23,6 +34,8 @@ interface AssignmentRowProps {
   onMarkComplete?: (id: string) => Promise<void>;
   /** Whether the row is currently being dragged */
   isDragging?: boolean;
+  /** Optional sub-task progress data for compact indicator */
+  subTaskProgress?: SubTaskProgress;
   /** Ref setter from @dnd-kit useSortable */
   ref?: (element: HTMLDivElement | null) => void;
   /** Attributes from @dnd-kit useSortable for the root element */
@@ -72,6 +85,7 @@ export function AssignmentRow({
   onClick,
   onMarkComplete,
   isDragging = false,
+  subTaskProgress,
   ref,
   attributes,
   listeners,
@@ -145,7 +159,20 @@ export function AssignmentRow({
         />
         <span className="assignment-row__course-name">{assignment.courseName}</span>
       </div>
-      <div className="assignment-row__title">{assignment.title}</div>
+      <div className="assignment-row__title-wrapper">
+        <div className="assignment-row__title">{assignment.title}</div>
+        {subTaskProgress && subTaskProgress.totalCount > 0 && (
+          <div className="assignment-row__progress" role="status" aria-label={`${subTaskProgress.completedCount} of ${subTaskProgress.totalCount} sub-tasks complete`}>
+            <ProgressBar
+              value={subTaskProgress.percentage}
+              label={`${subTaskProgress.completedCount}/${subTaskProgress.totalCount}`}
+              size="sm"
+              color={assignment.courseColor}
+              showPercentage={false}
+            />
+          </div>
+        )}
+      </div>
       <div className="assignment-row__due" aria-label={`Due ${dueDate}`}>
         {isOverdue && !isCompleted && (
           <span className="assignment-row__overdue-badge" aria-label="Overdue">

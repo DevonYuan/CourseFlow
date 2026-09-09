@@ -2,15 +2,17 @@
  * AssignmentHeader — Assignment Detail Header Component
  *
  * Renders the assignment header section: back button, title, course badge,
- * due date (with overdue/all-day handling), status, points, and description.
- * Used by the assignment detail page.
+ * due date (with overdue/all-day handling), status, points, sub-task progress,
+ * and description. Used by the assignment detail page.
  *
  * @module @frontend/components/assignments/AssignmentHeader
  */
 
-import type { Assignment } from '@backend/shared/types';
+import type { Assignment, SubTask } from '@backend/shared/types';
 import React from 'react';
 
+import { ProgressBar } from '../../components/ui/ProgressBar';
+import { useSubTaskProgressFromArray } from '../../hooks/useSubTaskProgress';
 import { formatDueDateDetail } from '../../utils/date';
 import { createSafeHtml } from '../../utils/sanitize';
 import { StatusBadge } from '../AssignmentList/StatusBadge';
@@ -19,23 +21,30 @@ import { CourseColorBadge } from '../CourseColorBadge';
 interface AssignmentHeaderProps {
   /** Assignment data to display */
   assignment: Assignment;
+  /** Sub-tasks for progress calculation */
+  subTasks?: SubTask[];
   /** Callback when back button is clicked */
   onBack: () => void;
   /** Callback when "Open in Canvas" is clicked */
   onOpenInCanvas: () => void;
+  /** Callback when progress bar is clicked (scroll to sub-tasks) */
+  onProgressClick?: () => void;
 }
 
 /**
  * AssignmentHeader - Displays assignment identity and metadata.
- * Includes: back button, title, course badge, due date, status, points, and
- * the "Open in Canvas" link.
+ * Includes: back button, title, course badge, due date, status, points,
+ * sub-task progress indicator, and the "Open in Canvas" link.
  */
 export function AssignmentHeader({
   assignment,
+  subTasks = [],
   onBack,
   onOpenInCanvas,
+  onProgressClick,
 }: AssignmentHeaderProps): JSX.Element {
   const { label: dueDateLabel, isOverdue, isAllDay } = formatDueDateDetail(assignment.dueAt);
+  const progress = useSubTaskProgressFromArray(subTasks);
 
   return (
     <header className="assignment-detail__header">
@@ -93,6 +102,21 @@ export function AssignmentHeader({
           </span>
         )}
       </div>
+
+      {/* Sub-task Progress */}
+      {progress.totalCount > 0 && (
+        <div className="assignment-detail__progress" role="status" aria-label={`Sub-task progress: ${progress.completedCount} of ${progress.totalCount} complete, ${progress.percentage} percent`}>
+          <ProgressBar
+            value={progress.percentage}
+            label={`${progress.completedCount} of ${progress.totalCount} sub-tasks complete`}
+            size="md"
+            color={assignment.courseColor}
+            showPercentage={true}
+            onClick={onProgressClick}
+            ariaLabel={`Sub-task progress: ${progress.completedCount} of ${progress.totalCount} sub-tasks complete, ${progress.percentage} percent`}
+          />
+        </div>
+      )}
 
       {/* Description */}
       {assignment.description && assignment.description.trim() !== '' && (

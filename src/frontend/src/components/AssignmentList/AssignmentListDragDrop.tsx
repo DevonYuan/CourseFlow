@@ -16,6 +16,12 @@ import { SortableAssignmentRow } from '../AssignmentList';
 import { EmptyState } from '../EmptyState';
 import '../AssignmentList.css';
 
+interface SubTaskProgress {
+  completedCount: number;
+  totalCount: number;
+  percentage: number;
+}
+
 interface AssignmentListDragDropProps {
   /** Sorted assignments to render */
   sortedAssignments: Assignment[];
@@ -41,6 +47,8 @@ interface AssignmentListDragDropProps {
     activatorEvent: { active: { id: string } | null } | null;
     transition: string | undefined;
   }) => React.ReactElement | null;
+  /** Map of assignmentId -> sub-task progress for compact indicators */
+  subTaskProgressMap?: Map<string, SubTaskProgress>;
 }
 
 /**
@@ -56,6 +64,7 @@ export function AssignmentListDragDrop({
   sensors,
   onOpenSettings,
   renderDragOverlay,
+  subTaskProgressMap,
 }: AssignmentListDragDropProps): JSX.Element {
   return (
     <DndContext
@@ -71,15 +80,19 @@ export function AssignmentListDragDrop({
             items={sortedAssignments.map((a) => a.id)}
             strategy={verticalListSortingStrategy}
           >
-            {sortedAssignments.map((assignment) => (
-              <SortableAssignmentRow
-                key={assignment.id}
-                assignment={assignment}
-                onClick={onAssignmentClick}
-                onMarkComplete={onMarkComplete}
-                id={assignment.id}
-              />
-            ))}
+            {sortedAssignments.map((assignment) => {
+              const progress = subTaskProgressMap?.get(assignment.id);
+              return (
+                <SortableAssignmentRow
+                  key={assignment.id}
+                  assignment={assignment}
+                  onClick={onAssignmentClick}
+                  onMarkComplete={onMarkComplete}
+                  id={assignment.id}
+                  subTaskProgress={progress}
+                />
+              );
+            })}
           </SortableContext>
         )}
         <DragOverlay>{renderDragOverlay as unknown as React.ReactNode}</DragOverlay>

@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { List } from 'react-window';
 
 import { useToast } from '../context/ToastContext';
+import { useAssignmentSubTaskProgress } from '../hooks/useAssignmentSubTaskProgress';
 import { useAssignments as useAssignmentsHook } from '../hooks/useAssignments';
 import { usePriorityKeyboard } from '../hooks/usePriorityKeyboard';
 import {
@@ -81,18 +82,33 @@ function AssignmentRowRenderer(
     assignments: Assignment[];
     onClick?: (assignment: Assignment) => void;
     onMarkComplete?: (id: string) => Promise<void>;
+    subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }>;
   }
 ): React.ReactElement | null {
-  const { index, style, ariaAttributes, assignments, onClick, onMarkComplete } = props;
+  const { index, style, ariaAttributes, assignments, onClick, onMarkComplete, subTaskProgressMap } = props;
   const assignment = assignments[index];
   if (!assignment) {
     return <div style={style} {...ariaAttributes} />;
   }
+  const progress = subTaskProgressMap?.get(assignment.id);
   return (
     <div style={style} {...ariaAttributes} data-assignment-id={assignment.id}>
-      <AssignmentRow assignment={assignment} onClick={onClick} onMarkComplete={onMarkComplete} />
+      <AssignmentRow
+        assignment={assignment}
+        onClick={onClick}
+        onMarkComplete={onMarkComplete}
+        subTaskProgress={progress ? { completedCount: progress.completedCount, totalCount: progress.totalCount, percentage: progress.percentage } : undefined}
+      />
     </div>
   );
+}
+
+interface SortableAssignmentRowProps {
+  assignment: Assignment;
+  onClick?: (assignment: Assignment) => void;
+  onMarkComplete?: (id: string) => Promise<void>;
+  id: string;
+  subTaskProgress?: { completedCount: number; totalCount: number; percentage: number };
 }
 
 /**
@@ -104,12 +120,8 @@ export function SortableAssignmentRow({
   onClick,
   onMarkComplete,
   id,
-}: {
-  assignment: Assignment;
-  onClick?: (assignment: Assignment) => void;
-  onMarkComplete?: (id: string) => Promise<void>;
-  id: string;
-}): JSX.Element {
+  subTaskProgress,
+}: SortableAssignmentRowProps): JSX.Element {
   const {
     attributes,
     listeners,
@@ -128,6 +140,7 @@ export function SortableAssignmentRow({
         onClick={onClick}
         onMarkComplete={onMarkComplete}
         isDragging={isDragging}
+        subTaskProgress={subTaskProgress}
       />
     </div>
   );
@@ -161,6 +174,25 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
 
   // Filtered, sorted, and grouped assignments for display
   const filteredAssignments = useFilteredAssignments();
+
+  // Get assignment IDs for sub-task progress fetching
+  const flatFilteredAssignmentsForProgress = useMemo(() => {
+    if (
+      Array.isArray(filteredAssignments) &&
+      filteredAssignments.length > 0 &&
+      'groupKey' in (filteredAssignments[0] as object)
+    ) {
+      return (filteredAssignments as GroupedAssignments[]).flatMap((g) => g.assignments);
+    }
+    return filteredAssignments as Assignment[];
+  }, [filteredAssignments]);
+
+  // Fetch sub-task progress for visible assignments
+  const assignmentIds = useMemo(
+    () => flatFilteredAssignmentsForProgress.map((a) => a.id),
+    [flatFilteredAssignmentsForProgress]
+  );
+  const subTaskProgressMap = useAssignmentSubTaskProgress(assignmentIds);
 
   // Get markComplete from hook
   const { markComplete } = useAssignmentsHook();
@@ -355,19 +387,24 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
             assignments={assignmentsToRender}
             onAssignmentClick={onClick}
             onMarkComplete={onMarkComplete}
+            subTaskProgressMap={subTaskProgressMap}
           />
         );
       }
-      return assignmentsToRender.map((assignment) => (
-        <AssignmentRow
-          key={assignment.id}
-          assignment={assignment}
-          onClick={onClick}
-          onMarkComplete={onMarkComplete}
-        />
-      ));
+      return assignmentsToRender.map((assignment) => {
+        const progress = subTaskProgressMap.get(assignment.id);
+        return (
+          <AssignmentRow
+            key={assignment.id}
+            assignment={assignment}
+            onClick={onClick}
+            onMarkComplete={onMarkComplete}
+            subTaskProgress={progress ? { completedCount: progress.completedCount, totalCount: progress.totalCount, percentage: progress.percentage } : undefined}
+          />
+        );
+      });
     },
-    []
+    [subTaskProgressMap]
   );
 
   // Render skeleton while loading
@@ -427,6 +464,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
                   priorityOrder={priorityOrder}
                   onDragEnd={handleDragEnd}
                   onOpenSettings={onOpenSettings}
+                  subTaskProgressMap={subTaskProgressMap}
                 />
               )
               : renderFlatAssignments(
@@ -455,6 +493,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           assignments={flatFilteredAssignments}
           onAssignmentClick={onAssignmentClick}
           onMarkComplete={markComplete}
+          subTaskProgressMap={subTaskProgressMap}
         />
         <PriorityLiveRegion />
       </div>
@@ -484,6 +523,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           priorityOrder={priorityOrder}
           onDragEnd={handleDragEnd}
           onOpenSettings={onOpenSettings}
+          subTaskProgressMap={subTaskProgressMap}
         />
         <PriorityLiveRegion />
       </div>
@@ -501,6 +541,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
         sensors={sensors}
         onOpenSettings={onOpenSettings}
         renderDragOverlay={renderDragOverlay}
+        subTaskProgressMap={subTaskProgressMap}
       />
       <PriorityLiveRegion />
     </>
@@ -516,18 +557,20 @@ function VirtualizedAssignmentList({
   assignments,
   onAssignmentClick,
   onMarkComplete,
+  subTaskProgressMap,
 }: {
   assignments: Assignment[];
   onAssignmentClick?: (assignment: Assignment) => void;
   onMarkComplete?: (id: string) => Promise<void>;
+  subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }>;
 }): JSX.Element {
   const itemData = useMemo(
-    () => ({ assignments, onClick: onAssignmentClick, onMarkComplete }),
-    [assignments, onAssignmentClick, onMarkComplete]
+    () => ({ assignments, onClick: onAssignmentClick, onMarkComplete, subTaskProgressMap }),
+    [assignments, onAssignmentClick, onMarkComplete, subTaskProgressMap]
   );
 
   return (
-    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void; onMarkComplete?: (id: string) => Promise<void> }>
+    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void; onMarkComplete?: (id: string) => Promise<void>; subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }> }>
       className="assignment-list__virtualized"
       style={{ height: 600, width: '100%' }}
       rowCount={assignments.length}

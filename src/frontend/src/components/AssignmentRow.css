@@ -82,6 +82,13 @@
 }
 
 /* Title column */
+.assignment-row__title-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 .assignment-row__title {
   font-size: 0.95rem;
   font-weight: 500;
@@ -90,6 +97,36 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+}
+
+/* Compact progress indicator */
+.assignment-row__progress {
+  min-width: 0;
+  max-width: 140px; /* Limit width to leave room for due date/overdue badge */
+}
+
+.assignment-row__progress :global(.progress-bar--sm) {
+  --progress-gap: 4px;
+  --progress-height: 6px; /* Thinner for compact row */
+  --progress-label-size: 0.625rem;
+  --progress-radius: 9999px;
+}
+
+.assignment-row__progress :global(.progress-bar__label-text) {
+  font-size: 0.625rem;
+}
+
+.assignment-row__progress :global(.progress-bar__track) {
+  min-width: 60px; /* Minimum track width */
+  box-sizing: border-box;
+}
+
+.assignment-row__progress :global(.progress-bar__label) {
+  min-width: fit-content;
+}
+
+.assignment-row--completed .assignment-row__progress {
+  opacity: 0.5;
 }
 
 /* Due date column */

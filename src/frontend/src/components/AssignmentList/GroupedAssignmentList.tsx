@@ -32,6 +32,12 @@ import { GroupHeader } from './GroupHeader';
 
 import './GroupedAssignmentList.css';
 
+interface SubTaskProgress {
+  completedCount: number;
+  totalCount: number;
+  percentage: number;
+}
+
 interface GroupedAssignmentListProps {
   /** Grouped assignments to render */
   groupedAssignments: GroupedAssignments[];
@@ -49,6 +55,8 @@ interface GroupedAssignmentListProps {
   onDragEnd?: (event: DragEndEvent) => void;
   /** Callback to open settings modal */
   onOpenSettings?: () => void;
+  /** Map of assignmentId -> sub-task progress for compact indicators */
+  subTaskProgressMap?: Map<string, SubTaskProgress>;
 }
 
 /**
@@ -169,6 +177,7 @@ interface GroupItemProps {
     activatorEvent: { active: { id: string } | null } | null;
     transition: string | undefined;
   }) => React.ReactNode;
+  subTaskProgressMap?: Map<string, SubTaskProgress>;
 }
 
 /**
@@ -188,6 +197,7 @@ function GroupItem({
   sensors,
   onDragEnd,
   renderDragOverlay,
+  subTaskProgressMap,
 }: GroupItemProps): JSX.Element {
   const groupId = `${group.groupKey}-${index}`;
   const controlsId = `group-${groupId}`;
@@ -244,15 +254,19 @@ function GroupItem({
               items={sortedAssignments.map((a) => a.id)}
               strategy={verticalListSortingStrategy}
             >
-              {sortedAssignments.map((assignment) => (
-                <SortableAssignmentRow
-                  key={assignment.id}
-                  assignment={assignment}
-                  onClick={onAssignmentClick}
-                  onMarkComplete={onMarkComplete}
-                  id={assignment.id}
-                />
-              ))}
+              {sortedAssignments.map((assignment) => {
+                const progress = subTaskProgressMap?.get(assignment.id);
+                return (
+                  <SortableAssignmentRow
+                    key={assignment.id}
+                    assignment={assignment}
+                    onClick={onAssignmentClick}
+                    onMarkComplete={onMarkComplete}
+                    id={assignment.id}
+                    subTaskProgress={progress}
+                  />
+                );
+              })}
             </SortableContext>
             <DragOverlay>
               {(({
@@ -269,14 +283,18 @@ function GroupItem({
             </DragOverlay>
           </DndContext>
         ) : (
-          sortedAssignments.map((assignment) => (
-            <AssignmentRow
-              key={assignment.id}
-              assignment={assignment}
-              onClick={onAssignmentClick}
-              onMarkComplete={onMarkComplete}
-            />
-          ))
+          sortedAssignments.map((assignment) => {
+            const progress = subTaskProgressMap?.get(assignment.id);
+            return (
+              <AssignmentRow
+                key={assignment.id}
+                assignment={assignment}
+                onClick={onAssignmentClick}
+                onMarkComplete={onMarkComplete}
+                subTaskProgress={progress}
+              />
+            );
+          })
         )}
       </div>
     </div>
@@ -295,6 +313,7 @@ export function GroupedAssignmentList({
   sortOption,
   priorityOrder,
   onDragEnd,
+  subTaskProgressMap,
 }: GroupedAssignmentListProps): JSX.Element {
   // Per-group expanded state (session only, not persisted)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
@@ -385,6 +404,7 @@ export function GroupedAssignmentList({
           sensors={sensors}
           onDragEnd={onDragEnd}
           renderDragOverlay={renderDragOverlay}
+          subTaskProgressMap={subTaskProgressMap}
         />
       ))}
     </div>

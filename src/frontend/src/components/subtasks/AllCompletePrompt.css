@@ -1,0 +1,150 @@
+/**
+ * AllCompletePrompt Styles
+ *
+ * Inline banner prompting user to mark assignment complete
+ * when all sub-tasks are done.
+ */
+
+.all-complete-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--prompt-gap, 12px);
+  padding: var(--prompt-padding, 12px 16px);
+  background-color: var(--prompt-bg, var(--color-success-light, #d1fae5));
+  border: 1px solid var(--prompt-border, var(--color-success, #10b981));
+  border-radius: var(--prompt-radius, 8px);
+  color: var(--prompt-text, var(--color-success-dark, #065f46));
+  animation: promptSlideIn 0.2s ease;
+}
+
+@keyframes promptSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .all-complete-prompt {
+    animation: none;
+  }
+}
+
+.all-complete-prompt__content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.all-complete-prompt__icon {
+  flex-shrink: 0;
+  color: var(--prompt-icon-color, var(--color-success, #10b981));
+}
+
+.all-complete-prompt__message {
+  font-size: var(--prompt-font-size, 0.875rem);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.all-complete-prompt__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.all-complete-prompt__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.all-complete-prompt__btn:focus-visible {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .all-complete-prompt__btn {
+    transition: none;
+  }
+}
+
+/* Primary button - "Mark Complete" */
+.all-complete-prompt__btn--primary {
+  background-color: var(--color-success, #10b981);
+  color: white;
+}
+
+.all-complete-prompt__btn--primary:hover {
+  background-color: var(--color-success-hover, #059669);
+}
+
+.all-complete-prompt__btn--primary:active {
+  background-color: var(--color-success-active, #047857);
+}
+
+/* Dismiss button - secondary style */
+.all-complete-prompt__btn--dismiss {
+  background-color: transparent;
+  color: var(--prompt-text, var(--color-success-dark, #065f46));
+  border: 1px solid var(--prompt-border, var(--color-success, #10b981));
+}
+
+.all-complete-prompt__btn--dismiss:hover {
+  background-color: var(--prompt-bg, var(--color-success-light, #d1fae5));
+}
+
+.all-complete-prompt__btn--dismiss:active {
+  background-color: var(--color-success-light, #d1fae5);
+}
+
+/* High contrast mode */
+@media (forced-colors: active) {
+  .all-complete-prompt {
+    border: 1px solid CanvasText;
+    background-color: Canvas;
+  }
+
+  .all-complete-prompt__btn--primary {
+    border: 1px solid CanvasText;
+    background-color: CanvasText;
+    color: Canvas;
+  }
+
+  .all-complete-prompt__btn--dismiss {
+    border: 1px solid CanvasText;
+    color: CanvasText;
+  }
+}
+
+/* Responsive - stack on small screens */
+@media (max-width: 480px) {
+  .all-complete-prompt {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .all-complete-prompt__actions {
+    justify-content: flex-end;
+  }
+}

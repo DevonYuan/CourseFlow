@@ -97,6 +97,35 @@
   gap: 1rem;
 }
 
+/* Sub-task Progress (prominent) */
+.assignment-detail__progress {
+  width: 100%;
+  max-width: 400px;
+}
+
+.assignment-detail__progress :global(.progress-bar--md) {
+  --progress-gap: 10px;
+}
+
+.assignment-detail__progress :global(.progress-bar__label-text) {
+  font-size: 0.8125rem;
+}
+
+.assignment-detail__progress :global(.progress-bar__percentage) {
+  font-size: 0.8125rem;
+}
+
+/* Clickable progress bar */
+.assignment-detail__progress :global(.progress-bar[tabindex="0"]) {
+  cursor: pointer;
+}
+
+.assignment-detail__progress :global(.progress-bar:focus-visible .progress-bar__track) {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+  border-radius: calc(var(--progress-radius) + 2px);
+}
+
 .assignment-detail__due-date {
   display: inline-flex;
   align-items: center;
@@ -137,6 +166,29 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-secondary, #6b7280);
+}
+
+/* All-complete prompt */
+.assignment-detail__content > :global(.all-complete-prompt) {
+  margin-bottom: 0.5rem;
+  animation: promptSlideIn 0.2s ease;
+}
+
+@keyframes promptSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assignment-detail__content > :global(.all-complete-prompt) {
+    animation: none;
+  }
 }
 
 /* Content */

@@ -1,0 +1,125 @@
+/**
+ * ProgressBar Styles
+ *
+ * Reusable progress bar with animated fill, multiple sizes,
+ * and accessibility support.
+ */
+
+/* Base container */
+.progress-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--progress-gap, 8px);
+  width: 100%;
+  max-width: 100%;
+  padding: 2px 0; /* Ensure labels have vertical breathing room */
+  min-height: var(--progress-height, 12px); /* At least as tall as the track */
+  padding-left: 4px; /* Left buffer - shifts track right so its left rounded end is visible */
+  box-sizing: border-box;
+}
+
+/* Track - the background bar */
+.progress-bar__track {
+  flex: 1;
+  height: var(--progress-height, 8px);
+  background-color: var(--progress-track-bg, var(--color-bg-tertiary, #e5e7eb));
+  border-radius: var(--progress-radius, 9999px);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--progress-track-border, var(--color-border, #d1d5db)); /* Makes rounded ends visible */
+}
+
+/* Fill - the animated progress */
+.progress-bar__fill {
+  height: 100%;
+  width: var(--progress-value, 0%);
+  background-color: var(--progress-color, var(--color-accent, #3b82f6));
+  border-radius: var(--progress-radius, 9999px);
+  transition: width 0.3s ease;
+  will-change: width;
+}
+
+/* Reduced motion - disable animation */
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar__fill {
+    transition: none;
+  }
+}
+
+/* Label area (label + percentage) */
+.progress-bar__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: fit-content;
+  padding-right: 8px; /* Space after label text before component end */
+}
+
+.progress-bar__label-text {
+  font-size: var(--progress-label-size, 0.75rem);
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  white-space: nowrap;
+}
+
+.progress-bar__percentage {
+  font-size: var(--progress-label-size, 0.75rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary, #111827);
+  white-space: nowrap;
+}
+
+/* Size variants */
+.progress-bar--sm {
+  --progress-height: 8px;
+  --progress-gap: 8px;
+  --progress-label-size: 0.75rem;
+}
+
+.progress-bar--md {
+  --progress-height: 12px;
+  --progress-gap: 10px;
+  --progress-label-size: 0.8125rem;
+}
+
+.progress-bar--lg {
+  --progress-height: 16px;
+  --progress-gap: 12px;
+  --progress-label-size: 0.9375rem;
+}
+
+/* Clickable variant (for detail view) */
+.progress-bar:has(:focus-visible) .progress-bar__track {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+  border-radius: calc(var(--progress-radius) + 2px);
+}
+
+.progress-bar[role="progressbar"]:focus-visible {
+  outline: none;
+}
+
+.progress-bar[role="progressbar"]:focus-visible .progress-bar__track {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+  border-radius: calc(var(--progress-radius) + 2px);
+}
+
+/* Cursor for clickable progress bars */
+.progress-bar[tabindex="0"] {
+  cursor: pointer;
+}
+
+/* High contrast mode adjustments */
+@media (forced-colors: active) {
+  .progress-bar__track {
+    border: 1px solid CanvasText;
+  }
+
+  .progress-bar__fill {
+    background-color: CanvasText;
+  }
+}

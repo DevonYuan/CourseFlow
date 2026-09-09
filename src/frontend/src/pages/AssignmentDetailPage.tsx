@@ -8,12 +8,15 @@
  * @module @frontend/pages/AssignmentDetailPage
  */
 
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AssignmentHeader } from '../components/assignments/AssignmentHeader';
+import { AllCompletePrompt } from '../components/subtasks/AllCompletePrompt';
 import { SubTaskList } from '../components/subtasks/SubTaskList';
 import { useAssignmentDetail } from '../hooks/useAssignmentDetail';
+import { isPromptDismissed, setPromptDismissed } from '../utils/localStorage';
+import type { SubTask } from '@backend/shared/types';
 
 import './AssignmentDetailPage.css';
 
@@ -96,14 +99,16 @@ function DetailError({ error, onRetry, onBack }: { error: string; onRetry: () =>
 /**
  * AssignmentDetailPage - Main detail view component.
  * Renders assignment header with title, course, due date, status,
- * and the Canvas description content.
+ * sub-task progress, and the Canvas description content.
  */
 export function AssignmentDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const assignmentId = id ?? '';
-  const { assignment, isLoading, error, notFound, refetch } = useAssignmentDetail(assignmentId);
+  const { assignment, subTasks, isLoading, error, notFound, refetch } = useAssignmentDetail(assignmentId);
+
+  const subtasksSectionRef = useRef<HTMLDivElement>(null);
 
   const handleBack = () => {
     void navigate(-1);
@@ -118,6 +123,29 @@ export function AssignmentDetailPage(): JSX.Element {
       window.open(assignment.htmlUrl, '_blank', 'noopener,noreferrer');
     }
   };
+
+  // Scroll to sub-tasks section when progress bar is clicked
+  const handleProgressClick = useCallback(() => {
+    subtasksSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // Handle "Mark Complete" from all-complete prompt
+  const handleMarkComplete = useCallback(async () => {
+    if (!assignment) return;
+    try {
+      await window.api.db.assignments.upsert({
+        id: assignment.id,
+        status: 'completed',
+      });
+      // Dismiss prompt after marking complete
+      setPromptDismissed(assignment.id, true);
+    } catch {
+      // Error handling - toast will show from the store
+    }
+  }, [assignment]);
+
+  // Check if prompt is dismissed
+  const dismissed = assignment ? isPromptDismissed(assignment.id) : false;
 
   // Handle not found
   if (notFound) {
@@ -134,19 +162,37 @@ export function AssignmentDetailPage(): JSX.Element {
     return <DetailSkeleton />;
   }
 
+  // Compute progress for all-complete prompt
+  const completedCount = subTasks.filter((st) => st.completed).length;
+  const totalCount = subTasks.length;
+  const isAllComplete = totalCount > 0 && completedCount === totalCount;
+  const showAllCompletePrompt = isAllComplete && assignment.status === 'pending' && !dismissed;
+
   return (
     <article className="assignment-detail" role="main" aria-label={assignment.title}>
       {/* Header Section */}
       <AssignmentHeader
         assignment={assignment}
+        subTasks={subTasks}
         onBack={handleBack}
         onOpenInCanvas={handleOpenInCanvas}
+        onProgressClick={handleProgressClick}
       />
 
       {/* Content Section */}
       <div className="assignment-detail__content">
+        {/* All-complete prompt (shows when all sub-tasks done and assignment pending) */}
+        {showAllCompletePrompt && (
+          <AllCompletePrompt
+            assignmentId={assignment.id}
+            onMarkComplete={handleMarkComplete}
+            dismissed={dismissed}
+            onDismissChange={() => setPromptDismissed(assignment.id, true)}
+          />
+        )}
+
         {/* Sub-tasks Section */}
-        <section className="assignment-detail__section" aria-labelledby="subtasks-heading">
+        <section ref={subtasksSectionRef} className="assignment-detail__section" aria-labelledby="subtasks-heading">
           <h2 id="subtasks-heading" className="assignment-detail__section-title">
             Sub-tasks
           </h2>
