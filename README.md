@@ -16,11 +16,17 @@ Assignments in Canvas are listed in chronological order only. CourseFlow allows 
 
 Unlike Canvas, which crams the to-do list into a small sidebar component, CourseFlow offers a dedicated, smooth UI — a convenience layer built specifically for students. The process of marking assignments as "done" is simpler, faster, and more satisfying.
 
-### 3. Sub-tasks & Note-Taking
+### 3. Sub-tasks & Assignment Notes
 
 Go beyond simple tracking. Break assignments into sub-tasks and add detailed notes about your progress. Use CourseFlow as a productivity app to log what you've been working on, not just what's due.
 
 > **Status:** In progress (Phase 3). The database + IPC layer already exist; the assignment detail view and sub-task/note UI are being built.
+
+### 4. Standalone Notes & Pages (Notion-style)
+
+Create notes and pages independently — not tied to any assignment. Organize with a collapsible sidebar, nested pages, and rich text/markdown editing. Use CourseFlow as your personal knowledge base for class notes, project planning, or anything else.
+
+> **Status:** Planned for Phase 3+. Backend schema and IPC will be extended to support a `pages` table with hierarchical structure (parent/child), rich content blocks, and full-text search.
 
 ## Platform & Data
 
@@ -89,7 +95,8 @@ flowchart TB
 
 - Assignment detail view
 - Break assignments into sub-tasks
-- Add notes and log your progress
+- Add notes and log your progress (per-assignment)
+- **Standalone Notes & Pages workspace** (Notion-style): create pages, nest hierarchically, rich text/markdown editing, full-text search, wiki-style linking
 
 ### v1.0 — Launch
 

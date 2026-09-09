@@ -3,11 +3,13 @@ applyTo: 'docs/tickets/phase3/phase3-07-notes-history.md'
 issue: 'N/A'
 ---
 
-# phase3-07-notes-history — Note Ordering & Timestamps
+# phase3-07-notes-history — Per-Assignment Note Ordering & Timestamps
 
 ## Description
 
-Polish the notes feature with proper ordering, timestamp display, and edited indicators. This ticket ensures notes are displayed newest-first, timestamps are human-readable and accurate, and users can see when notes were created vs. last edited. It builds on the notes editor from Ticket 3.6 and finalizes the notes UX for Phase 3.
+Polish the **per-assignment notes feature** with proper ordering, timestamp display, and edited indicators. This ticket ensures assignment-scoped notes are displayed newest-first, timestamps are human-readable and accurate, and users can see when notes were created vs. last edited. It builds on the notes editor from Ticket 3.6 and finalizes the assignment-notes UX for Phase 3.
+
+> **Distinction from Standalone Pages**: This ticket covers **assignment-scoped notes only** (stored in `notes` table with `assignment_id` FK). The **standalone Notes/Pages workspace** has its own timestamp/ordering requirements handled in `phase3-13-notes-editor` and `phase3-14-notes-search`.
 
 **Prerequisite**: Ticket 3.0 (audit) must have finalized the note model with `created_at` and `updated_at` fields. Ticket 3.6 (notes core) must be functionally complete — add/edit/delete works, optimistic UI, live updates.
 

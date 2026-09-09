@@ -54,8 +54,9 @@ Turn CourseFlow from a tracker into a productivity tool.
 
 - Break assignments into **sub-tasks**.
 - Add **notes** and progress logging per assignment.
+- **Standalone notes & pages** — Create notes and pages independently (like Notion), not tied to any assignment. Organize with a sidebar, nested pages, and rich text/markdown support.
 - Link sub-tasks/notes to the assignment in the DB.
-- UI for the above (expandable assignment cards / detail view).
+- UI for the above (expandable assignment cards / detail view + dedicated Notes workspace).
 
 ## Phase 4 — Polish & Cross-Platform
 

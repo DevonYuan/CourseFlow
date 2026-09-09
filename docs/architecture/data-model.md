@@ -88,6 +88,29 @@ Free-form notes attached to an assignment (**multiple log entries per assignment
 
 ---
 
+### Page
+
+Standalone pages for the Notes workspace (Notion-style), independent of assignments. Pages can be nested hierarchically to create a personal knowledge base.
+
+| Field           | Type      | Required | Description                                                                    |
+| --------------- | --------- | -------- | ------------------------------------------------------------------------------ |
+| `id`            | `TEXT`    | Yes      | Primary key (UUID)                                                             |
+| `parent_id`     | `TEXT`    | No       | Self-referential FK → `Page.id` for nesting (NULL = root level)                |
+| `title`         | `TEXT`    | Yes      | Page title                                                                     |
+| `content`       | `TEXT`    | No       | Page content — stored as Markdown (MVP) or JSON for block-based editor (future) |
+| `icon`          | `TEXT`    | No       | Emoji or icon identifier for sidebar display                                   |
+| `cover`         | `TEXT`    | No       | Cover image URL or color (future)                                              |
+| `position`      | `INTEGER` | Yes      | Display order among siblings (for drag-drop reordering)                        |
+| `created_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)                                     |
+| `updated_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when last edited (UTC)                                 |
+| `created_by`    | `TEXT`    | No       | User identifier (for future multi-user/collab)                                 |
+
+**Source:** User
+
+**Model decision:** Pages use a self-referential adjacency list (`parent_id`) for hierarchical nesting. This is simple and performant for typical notebook depths (<1000 pages). For very deep trees, a closure table or materialized path could be added later. Content is stored as Markdown for MVP; a block-based JSON format (TipTap/Slate) can be migrated to later without schema changes (just content format).
+
+---
+
 ### Settings
 
 Key-value store for application settings (JSON values).
@@ -123,11 +146,13 @@ Key-value store for application settings (JSON values).
 Assignment 1 ─── 0..1 PriorityOrder
 Assignment 1 ─── 0..N SubTask
 Assignment 1 ─── 0..N Note
+Page 1 ─────── 0..N Page (self-referential for nesting)
 ```
 
 - `PriorityOrder` uses `assignment_id` as primary key (one-to-one)
 - `SubTask` uses its own `id` as PK, with `assignment_id` as FK (one-to-many)
 - `Note` uses its own `id` as PK, with `assignment_id` as FK (one-to-many, multiple log entries per assignment)
+- `Page` uses `parent_id` as self-referential FK for hierarchical nesting (adjacency list); root pages have `parent_id = NULL`
 
 ---
 
@@ -142,6 +167,8 @@ Assignment 1 ─── 0..N Note
 | `sub_tasks`     | `idx_sub_tasks_assignment`                    | `assignment_id`, `position` |
 | `priority_order`| UNIQUE constraint + `idx_priority_order_position` | `position`              |
 | `notes`         | PK + `idx_notes_assignment`                   | `id`, `assignment_id`, `created_at DESC` |
+| `pages`         | PK + `idx_pages_parent` + `idx_pages_position` | `id`, `parent_id`, `position` |
+| `pages`         | FTS5 virtual table `pages_fts`                | `id`, `title`, `content` (for full-text search) |
 | `settings`      | PK                                            | `key`                       |
 
 ---
@@ -154,9 +181,10 @@ The following tables/columns are **never modified** by the iCal import/sync proc
 |----------------|-----------------|
 | `sub_tasks` (all columns) | Never touched by iCal import — sub-tasks are user-created only |
 | `notes` (all columns) | Never touched by iCal import — notes are user-created log entries |
+| `pages` (all columns) | Never touched by iCal import — pages are standalone user content |
 | `priority_order` (all columns) | Never touched by iCal import — priority is user-defined drag-drop order |
 | `assignments.status` | Preserved if user set to `completed` or `archived`; only updated from feed if `pending`/`in_progress` |
 | `assignments.course_color` | Never overwritten from feed (user may customize) |
 | `assignments.description` | Updated from feed (Canvas HTML), but user edits not yet supported in Phase 3 |
 
-This ensures that a user's productivity data (sub-tasks, notes, priority order) survives calendar re-syncs without data loss.
+This ensures that a user's productivity data (sub-tasks, notes, pages, priority order) survives calendar re-syncs without data loss.

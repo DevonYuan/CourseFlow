@@ -42,6 +42,19 @@ Channel names follow the convention: `<namespace>:<entity>:<action>` or `<namesp
 | `db:notes:upsert` | `NoteInput`             | `Note`   | Create or update note         |
 | `db:notes:delete` | `string` (id)           | `void`   | Delete note by ID             |
 
+### Database — Pages (Standalone Notes Workspace)
+
+| Channel                 | Request                          | Response    | Description                              |
+| ----------------------- | -------------------------------- | ----------- | ---------------------------------------- |
+| `db:pages:list`         | `{ parentId?: string }`          | `Page[]`    | Fetch pages (optionally filtered by parent; root if null) |
+| `db:pages:get`          | `string` (id)                    | `Page \| null` | Fetch single page by ID                  |
+| `db:pages:tree`         | `void`                           | `PageTreeNode[]` | Fetch full page tree for sidebar (hierarchical) |
+| `db:pages:create`       | `PageInput`                      | `Page`      | Create new page                          |
+| `db:pages:update`       | `PageUpdateInput`                | `Page`      | Update page (title, content, parent, position, icon) |
+| `db:pages:delete`       | `string` (id)                    | `void`      | Delete page (cascades to children)       |
+| `db:pages:move`         | `{ id: string; parentId: string; position: number }` | `Page` | Move page to new parent/position         |
+| `db:pages:search`       | `{ query: string; limit?: number }` | `PageSearchResult[]` | Full-text search across pages (FTS5)    |
+
 ### Database — Priority Order
 
 | Channel               | Request                  | Response          | Description                     |
@@ -104,6 +117,7 @@ All payload types are defined in `src/backend/shared/types.ts`:
 - `Assignment`, `AssignmentInput`
 - `SubTask`, `SubTaskInput`
 - `Note`, `NoteInput`
+- `Page`, `PageInput`, `PageUpdateInput`, `PageTreeNode`, `PageSearchResult`
 - `PriorityOrder`, `PriorityOrderInput`
 - `Settings`
 - `ICalEvent`

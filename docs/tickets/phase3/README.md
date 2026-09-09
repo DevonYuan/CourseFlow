@@ -1,8 +1,8 @@
 # Phase 3 — Productivity Depth
 
-> **Goal:** Turn CourseFlow from a simple tracker into a productivity tool. Users can open any assignment, break it down into **sub-tasks**, and attach **notes / progress logs** — all persisted locally in SQLite and preserved across syncs and restarts.
+> **Goal:** Turn CourseFlow from a simple tracker into a productivity tool. Users can open any assignment, break it down into **sub-tasks**, and attach **notes / progress logs** — all persisted locally in SQLite and preserved across syncs and restarts. Additionally, users can create **standalone notes and pages** (Notion-style) independent of assignments, organized in a sidebar with nesting, rich text/markdown support, and full-text search.
 >
-> **Exit Criteria:** A user can click any assignment to open a detail view, add and complete sub-tasks with instant feedback, and write persistent notes/progress entries. Backend data survives re-imports and app restarts.
+> **Exit Criteria:** A user can click any assignment to open a detail view, add and complete sub-tasks with instant feedback, and write persistent notes/progress entries. Users can also navigate to a dedicated Notes workspace to create, organize, and search standalone pages. Backend data survives re-imports and app restarts.
 
 ---
 
@@ -13,8 +13,9 @@ Phases 1 and 2 gave us a **tracker**: pull assignments from iCal, see them in a 
 1. **Open** → Click any assignment row to open a detail view (title, course, due date, description, status).
 2. **Break down** → Split large assignments into smaller, actionable sub-tasks (e.g., "Outline essay", "Draft intro", "Cite sources").
 3. **Check off** → Complete sub-tasks one by one with instant feedback and a visible progress indicator.
-4. **Log progress** → Add notes / a short journal per assignment (what's done, what's blocked, next steps).
-5. **Keep it local** → All sub-tasks and notes live in SQLite, are never overwritten by an iCal re-sync, and survive restarts.
+4. **Log progress (per-assignment)** → Add notes / a short journal per assignment (what's done, what's blocked, next steps).
+5. **Standalone Notes Workspace** → A dedicated Notes view (accessible via sidebar) where users create pages, nest them hierarchically, write in rich text/markdown, and search across all content — completely independent of assignments.
+6. **Keep it local** → All sub-tasks, assignment notes, and standalone pages live in SQLite, are never overwritten by an iCal re-sync, and survive restarts.
 
 ---
 
@@ -68,14 +69,25 @@ Much of the data layer was scaffolded in Phases 0–2 and is **ready to use** �
 | 3.4 | `phase3-04-subtask-complete` | Complete / Toggle Sub-task | One-click complete/un-complete with instant feedback via `db:subtasks:toggle`; persisted. |
 | 3.5 | `phase3-05-subtask-progress` | Progress Indicator | Show `x/y complete` + progress bar on the assignment row and/or detail header. Decide interplay with assignment status (e.g., prompt "Mark assignment complete?" when all sub-tasks are done). |
 
-### C. Notes & Progress Logging
+### C. Notes & Progress Logging (Per-Assignment)
 
 | # | Ticket | Title | Description |
 | --- | --- | --- | --- |
 | 3.6 | `phase3-06-notes-core` | Notes Editor | Add/edit/delete notes per assignment. Decide markdown vs. plain text (design decision below); persist via `db:notes:*`. |
 | 3.7 | `phase3-07-notes-history` | Note Ordering & Timestamps | Show newest-first log with timestamps; store `created_at`/`updated_at`; indicate edited notes. |
 
-### D. Integration & Polish
+### D. Standalone Notes & Pages (Notion-style Workspace)
+
+| # | Ticket | Title | Description |
+| --- | --- | --- | --- |
+| 3.11 | `phase3-11-notes-pages-schema` | **Pages Table Schema & IPC** | Create `pages` table with: `id`, `parent_id` (self-referential FK for nesting), `title`, `content` (JSON for block-based or markdown string), `icon`, `cover`, `created_at`, `updated_at`, `created_by`. Add `db:pages:*` IPC channels (list, get, create, update, delete, move, search) and preload bridge. Run migration v5. |
+| 3.12 | `phase3-12-notes-sidebar` | Notes Sidebar & Navigation | Build collapsible sidebar (left panel) showing page tree with drag-and-drop reordering, create page/folder, rename, delete, duplicate. Persist expanded/collapsed state per folder. Keyboard navigation (arrows, Enter to open). |
+| 3.13 | `phase3-13-notes-editor` | Rich Text / Markdown Editor | Implement editor for page content. MVP: markdown textarea with live preview (split view) + toolbar (headings, bold, italic, code, lists, links). Future: block-based editor (TipTap/Slate). Auto-save on change (debounced). |
+| 3.14 | `phase3-14-notes-search` | Full-Text Search | Add SQLite FTS5 virtual table for `pages` content. Implement search IPC (`db:pages:search`) with ranking. UI: cmd+k / cmd+shift+p style command palette for quick search + dedicated search results view. |
+| 3.15 | `phase3-15-notes-linking` | Page Linking & Backlinks | Support `[[page title]]` wiki-style links in markdown. Auto-create backlinks panel showing "Linked from" references. Click to navigate. |
+| 3.16 | `phase3-16-notes-templates` | Page Templates | Pre-built templates (Class Notes, Meeting Notes, Project Plan, Daily Journal). Template picker on new page creation. Custom templates saved by user. |
+
+### E. Integration & Polish
 
 | # | Ticket | Title | Description |
 | --- | --- | --- | --- |
@@ -114,29 +126,35 @@ By the end of Phase 3:
 ### Backend (Main Process)
 
 - [ ] Schema/migration v4 if the audit (3.0) found gaps (e.g., sub-task position, note timestamps)
+- [ ] Schema/migration v5 for `pages` table (3.11): hierarchical structure, content, FTS5 search index
 - [ ] Repo + IPC + preload aligned with final types (audit output)
-- [ ] `db:changed` events verified for `sub_tasks` and `notes`
+- [ ] `db:changed` events verified for `sub_tasks`, `notes`, and `pages`
 
 ### Frontend (Renderer)
 
 - [ ] Assignment rows are clickable → detail view (`/assignments/:id`)
 - [ ] Detail view: header info (title/course/due/status/description)
 - [ ] Sub-task list: add, complete/un-complete, delete, ordered, progress indicator
-- [ ] Notes: add/edit/delete, newest-first log with timestamps
+- [ ] Assignment Notes: add/edit/delete, newest-first log with timestamps
+- [ ] **Notes Workspace**: Sidebar with nested page tree, drag-drop reorder, create/rename/delete/duplicate
+- [ ] **Page Editor**: Markdown editor with live preview, toolbar, auto-save
+- [ ] **Search**: Command palette + search results view with FTS5 ranking
+- [ ] **Linking**: Wiki-style `[[links]]` with backlinks panel
 - [ ] Optimistic updates + error toasts; loading/empty/not-found states
 - [ ] Keyboard + screen-reader support for all new interactions
 
 ### Integration
 
 - [ ] End-to-end: sync iCal → open assignment → add sub-tasks → complete them → restart → state persists
-- [ ] End-to-end: iCal re-import does not wipe sub-tasks/notes
+- [ ] End-to-end: iCal re-import does not wipe sub-tasks/notes/pages
 - [ ] End-to-end: assignment delete cascades sub-tasks/notes cleanly
+- [ ] End-to-end: page delete cascades children; move updates hierarchy
 - [ ] Existing filters/sort/group + priority drag-drop unaffected by the new UI
 
 ### Documentation
 
 - [ ] Phase 3 tickets created in `docs/tickets/phase3/`
-- [ ] `docs/architecture/data-model.md` updated (sub-task/note model + protected fields)
+- [ ] `docs/architecture/data-model.md` updated (sub-task/note model + pages model + protected fields)
 - [ ] `docs/architecture/ipc-contract.md` updated with any new channels
 - [ ] Root README updated with current phase
 
@@ -149,12 +167,19 @@ flowchart TD
     T3_0[3.0 Data Model & IPC Audit] --> T3_1[3.1 Detail Route & Navigation]
     T3_0 --> T3_3[3.3 Sub-task List + Add]
     T3_0 --> T3_6[3.6 Notes Editor]
+    T3_0 --> T3_11[3.11 Pages Schema & IPC]
 
     T3_1 --> T3_2[3.2 Detail Data Loading & Store]
     T3_2 --> T3_3
     T3_3 --> T3_4[3.4 Complete / Toggle Sub-task]
     T3_4 --> T3_5[3.5 Progress Indicator]
     T3_6 --> T3_7[3.7 Notes Ordering & Timestamps]
+
+    T3_11 --> T3_12[3.12 Notes Sidebar]
+    T3_12 --> T3_13[3.13 Rich Text Editor]
+    T3_13 --> T3_14[3.14 Full-Text Search]
+    T3_13 --> T3_15[3.15 Page Linking]
+    T3_15 --> T3_16[3.16 Page Templates]
 
     T3_1 --> T3_8[3.8 Delete & Sync Safety]
     T3_8 --> T3_9[3.9 Accessibility]

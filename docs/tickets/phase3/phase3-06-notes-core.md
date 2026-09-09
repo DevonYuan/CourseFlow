@@ -3,11 +3,13 @@ applyTo: 'docs/tickets/phase3/phase3-06-notes-core.md'
 issue: 'N/A'
 ---
 
-# phase3-06-notes-core — Notes Editor
+# phase3-06-notes-core — Per-Assignment Notes Editor
 
 ## Description
 
-Implement the notes editor in the assignment detail view. Users can add, edit, and delete notes for an assignment. Notes support plain text (Markdown rendering deferred to a later phase). The editor is a textarea with save/cancel actions, keyboard shortcuts (Ctrl+Enter to save, Escape to cancel), and optimistic updates with toast on failure. This builds on the data layer from Ticket 3.2 and the note model decision from Ticket 3.0 (1:1 vs 1:N).
+Implement the **per-assignment notes editor** in the assignment detail view. Users can add, edit, and delete notes **for a specific assignment** — this is a progress log tied to that assignment (what's done, what's blocked, next steps). Notes support plain text (Markdown rendering deferred to a later phase). The editor is a textarea with save/cancel actions, keyboard shortcuts (Ctrl+Enter to save, Escape to cancel), and optimistic updates with toast on failure. This builds on the data layer from Ticket 3.2 and the note model decision from Ticket 3.0 (1:1 vs 1:N).
+
+> **Distinction from Standalone Pages**: This ticket covers **assignment-scoped notes only** (stored in `notes` table with `assignment_id` FK). The **standalone Notes/Pages workspace** (Notion-style, independent of assignments) is handled in separate tickets: `phase3-11-notes-pages-schema` through `phase3-16-notes-templates`. Those use a separate `pages` table with hierarchical structure, rich text/markdown blocks, and full-text search.
 
 **Prerequisite**: Ticket 3.0 (audit) must be complete — `Note` type, `db:notes:*` IPC channels, and `window.api.db.notes.*` preload bridge verified. Ticket 3.2 (detail data loading) provides the `notes` array in the store.
 
