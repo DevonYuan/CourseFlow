@@ -66,6 +66,12 @@ export function Toast({ toast, onDismiss }: ToastProps): JSX.Element {
   const role = toast.type === 'error' ? 'alert' : 'status';
   const ariaLive = toast.type === 'error' ? 'assertive' : 'polite';
 
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast.action?.onClick();
+    onDismiss(toast.id);
+  };
+
   return (
     <div
       ref={toastRef}
@@ -85,6 +91,15 @@ export function Toast({ toast, onDismiss }: ToastProps): JSX.Element {
         </span>
         <p className="toast__message">{toast.message}</p>
       </div>
+      {toast.action && (
+        <button
+          className="toast__action"
+          onClick={handleActionClick}
+          aria-label={toast.action.label}
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         className="toast__dismiss"
         onClick={(e) => {

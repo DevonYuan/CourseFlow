@@ -19,11 +19,21 @@ export interface Toast {
   type: ToastType;
   message: string;
   duration?: number;
+  /** Optional action button for the toast (e.g., Retry) */
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 export interface ToastOptions {
   duration?: number; // ms, default 5000
   onDismiss?: () => void;
+  /** Optional action button for the toast (e.g., Retry) */
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 export interface ToastContextValue {
@@ -58,7 +68,7 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
     (type: ToastType, message: string, options?: ToastOptions): string => {
       const id = generateId();
       const duration = options?.duration ?? DEFAULT_DURATION;
-      const toast: Toast = { id, type, message, duration };
+      const toast: Toast = { id, type, message, duration, action: options?.action };
 
       setToasts((prev) => {
         const updated = [...prev, toast];
@@ -67,13 +77,10 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
       });
 
       // Auto-dismiss after duration
-      const timeoutId = setTimeout(() => {
+      setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
         options?.onDismiss?.();
       }, duration);
-
-      // Store timeout ID for potential cleanup (not implemented for simplicity)
-      // Could be extended to support canceling auto-dismiss
 
       return id;
     },

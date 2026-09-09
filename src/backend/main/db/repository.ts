@@ -627,6 +627,40 @@ export const repo = {
   },
 
   /**
+   * Update a sub-task by ID (partial update).
+   */
+  updateSubTask(id: string, updates: { completed?: boolean; title?: string; position?: number }): SubTask | null {
+    const now = Date.now();
+    const setParts: string[] = [];
+    const params: (string | number)[] = [];
+
+    if (updates.completed !== undefined) {
+      setParts.push('completed = ?');
+      params.push(updates.completed ? 1 : 0);
+    }
+    if (updates.title !== undefined) {
+      setParts.push('title = ?');
+      params.push(updates.title);
+    }
+    if (updates.position !== undefined) {
+      setParts.push('position = ?');
+      params.push(updates.position);
+    }
+
+    if (setParts.length === 0) {
+      return this.getSubTask(id);
+    }
+
+    setParts.push('updated_at = ?');
+    params.push(now, id);
+
+    run(`UPDATE sub_tasks SET ${setParts.join(', ')} WHERE id = ?`, params);
+
+    const row = get<DbSubTask>('SELECT * FROM sub_tasks WHERE id = ?', [id]);
+    return row ? mapDbSubTaskToSubTask(row) : null;
+  },
+
+  /**
    * Insert or update a sub-task.
    */
   upsertSubTask(input: SubTaskInput): SubTask {

@@ -9,10 +9,11 @@
  */
 
 import type { SubTask, EntityId, IsoDateTime } from '@backend/shared/types';
-import React, { useEffect, useCallback, useMemo, useState } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 
 import { useToast } from '../../context/ToastContext';
 import { useSubTasks } from '../../hooks/useSubTasks';
+
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SubTaskAddInput } from './SubTaskAddInput';
 import { SubTaskRow } from './SubTaskRow';
@@ -27,16 +28,16 @@ interface SubTaskListProps {
 
 /**
  * SubTaskList - Main container for sub-tasks in the assignment detail view.
- * Handles: loading, empty state, list rendering, add/delete, live updates.
+ * Handles: loading, empty state, list rendering, add/delete, toggle, live updates.
  */
 export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
   const {
     subTasks,
     isLoading,
-    error: _subTasksError,
     fetchSubTasks,
     addSubTask,
     deleteSubTask,
+    toggleSubTask,
     optimisticAdd,
     rollbackAdd,
     getTempId,
@@ -45,6 +46,7 @@ export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
   const { error: showErrorToast } = useToast();
   const [deleteTargetId, setDeleteTargetId] = React.useState<EntityId | null>(null);
   const [deleteTargetTitle, setDeleteTargetTitle] = React.useState<string>('');
+  const [togglingId, setTogglingId] = React.useState<EntityId | null>(null);
 
   // Initial fetch
   useEffect(() => {
@@ -120,6 +122,36 @@ export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
     setDeleteTargetTitle('');
   }, []);
 
+  // Handle toggle sub-task completion
+  const handleToggle = useCallback(
+    async (id: EntityId, completed: boolean) => {
+      setTogglingId(id);
+      try {
+        const result = await toggleSubTask(id, completed);
+        if (!result.ok) {
+          showErrorToast('Failed to update sub-task', {
+            duration: 5000,
+            action: {
+              label: 'Retry',
+              onClick: () => void handleToggle(id, completed),
+            },
+          });
+        }
+      } catch {
+        showErrorToast('Failed to update sub-task', {
+          duration: 5000,
+          action: {
+            label: 'Retry',
+            onClick: () => void handleToggle(id, completed),
+          },
+        });
+      } finally {
+        setTogglingId(null);
+      }
+    },
+    [toggleSubTask, showErrorToast]
+  );
+
   // Memoize sorted sub-tasks by order
   const sortedSubTasks = useMemo(
     () => [...subTasks].sort((a, b) => a.order - b.order),
@@ -152,7 +184,9 @@ export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
               key={subTask.id}
               subTask={subTask}
               onDelete={handleDeleteClick}
+              onToggle={handleToggle}
               isDeleting={deleteTargetId === subTask.id}
+              isToggling={togglingId === subTask.id}
             />
           ))}
         </ul>

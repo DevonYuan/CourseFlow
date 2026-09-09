@@ -170,6 +170,32 @@
   outline-offset: 2px;
 }
 
+/* Action button */
+.toast__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 4px 12px;
+  background: var(--primary-color, #6366f1);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.toast__action:hover {
+  background: var(--primary-hover, #4f46e5);
+}
+
+.toast__action:focus-visible {
+  outline: 2px solid var(--focus-ring, rgba(0, 102, 204, 0.4));
+  outline-offset: 2px;
+}
+
 /* Focus styles for keyboard navigation */
 .toast:focus-visible {
   outline: 2px solid var(--focus-ring, rgba(0, 102, 204, 0.4));

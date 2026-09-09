@@ -1,7 +1,7 @@
 /**
  * SubTaskRow — Individual Sub-task Row Component
  *
- * Renders a single sub-task with checkbox, title, drag handle (placeholder),
+ * Renders a single sub-task with interactive checkbox, title, drag handle (placeholder),
  * and delete button. Keyboard accessible and screen reader friendly.
  *
  * @module @frontend/components/subtasks/SubTaskRow
@@ -15,34 +15,45 @@ interface SubTaskRowProps {
   subTask: SubTask;
   /** Callback when delete is clicked (opens confirmation) */
   onDelete: (id: EntityId, title: string) => void;
+  /** Callback when checkbox is toggled */
+  onToggle: (id: EntityId, completed: boolean) => void | Promise<void>;
   /** Whether this row is the target of a delete confirmation */
   isDeleting?: boolean;
+  /** Whether a toggle operation is in progress */
+  isToggling?: boolean;
 }
 
 /**
  * SubTaskRow - Single sub-task item in the list.
- * Includes: checkbox (read-only for now, Ticket 3.4 handles toggle),
- * title, drag handle placeholder, delete button.
+ * Includes: interactive checkbox, title, drag handle placeholder, delete button.
  */
 export function SubTaskRow({
   subTask,
   onDelete,
+  onToggle,
   isDeleting = false,
+  isToggling = false,
 }: SubTaskRowProps): JSX.Element {
   const { completed, title, id } = subTask;
 
+  const handleCheckboxChange = () => {
+    if (isToggling) return;
+    void onToggle(id, !completed);
+  };
+
   return (
     <li
-      className={`subtask-row${completed ? ' subtask-row--completed' : ''}${isDeleting ? ' subtask-row--deleting' : ''}`}
+      className={`subtask-row${completed ? ' subtask-row--completed' : ''}${isDeleting ? ' subtask-row--deleting' : ''}${isToggling ? ' subtask-row--toggling' : ''}`}
       data-subtask-id={id}
     >
-      {/* Completion checkbox (read-only for now - Ticket 3.4 implements toggle) */}
+      {/* Completion checkbox */}
       <label className="subtask-row__checkbox-wrapper">
         <input
           type="checkbox"
           className="subtask-row__checkbox"
           checked={completed}
-          readOnly
+          onChange={handleCheckboxChange}
+          disabled={isToggling}
           aria-checked={completed}
           aria-label={`Sub-task: ${title}, ${completed ? 'completed' : 'incomplete'}`}
         />
@@ -76,7 +87,7 @@ export function SubTaskRow({
         className="subtask-row__delete"
         onClick={() => onDelete(id, title)}
         aria-label={`Delete sub-task: ${title}`}
-        disabled={isDeleting}
+        disabled={isDeleting || isToggling}
       >
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <polyline points="3 6 5 6 21 6" />

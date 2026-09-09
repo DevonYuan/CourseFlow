@@ -7,6 +7,7 @@
  * @module @frontend/stores/subtaskStore
  */
 
+import type { IpcResult } from '@backend/shared/ipc';
 import type { SubTask, EntityId, IsoDateTime } from '@backend/shared/types';
 import { create } from 'zustand';
 
@@ -44,6 +45,12 @@ interface SubTaskActions {
   confirmToggle: (subTaskId: EntityId, subTask: SubTask) => void;
   /** Rolls back toggle */
   rollbackToggle: (subTaskId: EntityId, previousCompleted: boolean) => void;
+  /** Orchestrates the full toggle flow: optimistic update -> IPC -> confirm/rollback */
+  toggleSubTask: (
+    subTaskId: EntityId,
+    completed: boolean,
+    ipcCall: () => Promise<IpcResult<SubTask>>,
+  ) => Promise<IpcResult<SubTask>>;
   /** Sets loading state */
   setLoading: (isLoading: boolean) => void;
   /** Sets error state */
@@ -149,6 +156,33 @@ export const createSubTaskStore = () =>
           st.id === subTaskId ? { ...st, completed: previousCompleted } : st
         ),
       }));
+    },
+
+    /** Orchestrates the full toggle flow: optimistic update -> IPC -> confirm/rollback */
+    toggleSubTask: async (
+      subTaskId: EntityId,
+      completed: boolean,
+      ipcCall: () => Promise<IpcResult<SubTask>>,
+    ): Promise<IpcResult<SubTask>> => {
+      // Get the previous state for potential rollback
+      const previousCompleted = get().subTasks.find((st) => st.id === subTaskId)?.completed ?? !completed;
+
+      // Optimistic update
+      get().optimisticToggle(subTaskId, completed);
+
+      try {
+        const result = await ipcCall();
+        if (result.ok) {
+          get().confirmToggle(subTaskId, result.data);
+        } else {
+          // Rollback on error
+          get().rollbackToggle(subTaskId, previousCompleted);
+        }
+        return result;
+      } catch (err) {
+        get().rollbackToggle(subTaskId, previousCompleted);
+        return { ok: false, error: err instanceof Error ? err.message : 'Failed to toggle sub-task' };
+      }
     },
 
     setLoading: (isLoading: boolean) => {

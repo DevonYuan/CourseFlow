@@ -166,17 +166,11 @@ const handlers: IpcHandlers = {
     completed: boolean;
   }): Promise<IpcResult<SubTask>> => {
     try {
-      // Get existing sub-task by ID, toggle completed, then upsert
-      const existing = repo.getSubTask(input.id);
-      if (!existing) {
+      // Update sub-task by ID
+      const updated = repo.updateSubTask(input.id, { completed: input.completed });
+      if (!updated) {
         return Promise.resolve(err('Sub-task not found', 'NOT_FOUND'));
       }
-      const updated = repo.upsertSubTask({
-        assignmentId: existing.assignmentId,
-        title: existing.title,
-        completed: input.completed,
-        order: existing.order,
-      });
       sendEventToRenderers('db:changed', { table: 'sub_tasks', action: 'update', id: updated.id });
       return Promise.resolve(ok(updated));
     } catch (error) {

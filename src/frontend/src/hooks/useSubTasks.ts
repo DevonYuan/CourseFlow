@@ -27,7 +27,7 @@ interface UseSubTasksReturn {
   addSubTask: (assignmentId: EntityId, title: string) => Promise<IpcResult<SubTask>>;
   /** Deletes a sub-task (optimistic + IPC with rollback on error) */
   deleteSubTask: (subTaskId: EntityId) => Promise<IpcResult<void>>;
-  /** Toggles sub-task completion */
+  /** Toggles sub-task completion (optimistic + IPC with rollback on error) */
   toggleSubTask: (subTaskId: EntityId, completed: boolean) => Promise<IpcResult<SubTask>>;
   /** Optimistic add (immediate UI update) */
   optimisticAdd: (subTask: SubTask) => void;
@@ -128,11 +128,13 @@ export function useSubTasks(assignmentId: EntityId): UseSubTasksReturn {
     [subTasks, optimisticRemove, confirmRemove, rollbackRemove]
   );
 
-  // Toggle sub-task completion
+  // Toggle sub-task completion (optimistic + IPC with rollback on error)
   const toggleSubTask = useCallback(
-    async (id: EntityId, completed: boolean) => {
-      const result = await window.api.db.subtasks.toggle({ id, completed });
-      return result;
+    async (id: EntityId, completed: boolean): Promise<IpcResult<SubTask>> => {
+      const { toggleSubTask: storeToggleSubTask } = useSubTaskStore.getState();
+      return storeToggleSubTask(id, completed, () =>
+        window.api.db.subtasks.toggle({ id, completed })
+      );
     },
     []
   );

@@ -75,6 +75,14 @@
   border-color: var(--color-error, #ef4444);
 }
 
+.subtask-row--toggling {
+  opacity: 0.8;
+}
+
+.subtask-row--toggling .subtask-row__checkbox {
+  cursor: wait;
+}
+
 .subtask-row--skeleton {
   pointer-events: none;
 }
