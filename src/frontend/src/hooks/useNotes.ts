@@ -194,7 +194,7 @@ export function useNotes(assignmentId: EntityId): UseNotesReturn {
   );
 
   return {
-    notes,
+    notes: [...notes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
     isLoading,
     error,
     isSaving,

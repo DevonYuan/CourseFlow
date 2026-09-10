@@ -145,10 +145,43 @@
   flex-wrap: wrap;
 }
 
+/* Timestamps container */
+.note-entry__timestamps {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  flex-wrap: wrap;
+}
+
 .note-entry__timestamp {
   font-size: var(--font-size-xs, 12px);
   color: var(--color-text-tertiary, #999);
   white-space: nowrap;
+  cursor: help;
+  transition: color var(--transition-fast, 150ms);
+}
+
+.note-entry__timestamp:hover,
+.note-entry__timestamp:focus {
+  color: var(--color-text-secondary, #666);
+}
+
+/* Updated timestamp (primary) */
+.note-entry__timestamp--updated {
+  font-weight: 500;
+}
+
+/* Created timestamp (secondary) */
+.note-entry__timestamp--created {
+  font-size: var(--font-size-xs, 11px);
+  color: var(--color-text-quaternary, #aaa);
+  opacity: 0.8;
+}
+
+.note-entry__timestamp--created:hover,
+.note-entry__timestamp--created:focus {
+  color: var(--color-text-tertiary, #999);
+  opacity: 1;
 }
 
 .note-entry__edited-badge {

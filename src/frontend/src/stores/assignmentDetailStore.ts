@@ -387,7 +387,9 @@ export const useAssignmentDetailStore = create<AssignmentDetailStore>()((set, ge
   setNotes: (notes: Note[]) => {
     const noteAssignmentMap = new Map<string, EntityId>();
     notes.forEach((n) => noteAssignmentMap.set(n.id, n.assignmentId));
-    set({ notes, _noteAssignmentMap: noteAssignmentMap });
+    // Sort by updatedAt descending (newest first)
+    const sortedNotes = [...notes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    set({ notes: sortedNotes, _noteAssignmentMap: noteAssignmentMap });
   },
 
   addSubTask: (subTask: SubTask) => {

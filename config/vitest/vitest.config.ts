@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
-const projectRoot = resolve(__dirname, '..');
+const projectRoot = resolve(__dirname, '../..');
 
 export default defineConfig({
   resolve: {

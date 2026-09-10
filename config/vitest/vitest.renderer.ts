@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 
-const projectRoot = resolve(__dirname, '..');
+const projectRoot = resolve(__dirname, '../..');
 
 export default defineConfig({
   root: projectRoot,
@@ -16,7 +16,7 @@ export default defineConfig({
   test: {
     name: 'renderer',
     environment: 'jsdom',
-    include: ['src/frontend/**/*.test.{ts,tsx}'],
+    include: ['src/frontend/src/**/*.test.{ts,tsx}'],
     exclude: ['**/*.spec.ts', '**/integration/**'],
     setupFiles: ['src/frontend/test/setup.ts'],
     globals: true,

@@ -724,11 +724,11 @@ export const repo = {
   // --- Notes ---
 
   /**
-   * List all notes for an assignment, ordered by created_at DESC (newest first).
+   * List all notes for an assignment, ordered by updated_at DESC (newest first).
    */
   listNotes(assignmentId: string): Note[] {
     const rows = all<DbNote>(
-      'SELECT * FROM notes WHERE assignment_id = ? ORDER BY created_at DESC',
+      'SELECT * FROM notes WHERE assignment_id = ? ORDER BY updated_at DESC',
       [assignmentId],
     );
     return rows.map(mapDbNoteToNote);
