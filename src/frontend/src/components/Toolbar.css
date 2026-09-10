@@ -1,0 +1,154 @@
+/* ==========================================================================
+   Toolbar — Secondary Row (Row 2)
+   Organize controls: Course filter, Due date filter, Sort, Group, View toggle.
+   Matches: docs/design-inspo/courseflow-dashbar-redesign.html
+   ========================================================================== */
+
+.bar-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #FBFAF6;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+html.dark .bar-toolbar {
+  background: #1E2220;
+}
+
+/* Groups */
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Divider */
+.tb-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+/* Spacer */
+.tb-spacer {
+  flex: 1;
+}
+
+/* Chip */
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--line-strong);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+.chip .muted {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.chip .count {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 20px;
+}
+
+.chip .chev {
+  color: var(--ink-faint);
+  margin-left: 1px;
+  flex-shrink: 0;
+}
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.view-btn {
+  border: none;
+  background: var(--surface);
+  width: 32px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-faint);
+  cursor: pointer;
+  border-left: 1px solid var(--line);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.view-btn:first-child {
+  border-left: none;
+}
+
+.view-btn:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+html.dark .view-btn:hover {
+  background: #2A2F2C;
+}
+
+.view-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.view-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .bar-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .tb-divider {
+    display: none;
+  }
+
+  .chip .muted {
+    display: none;
+  }
+
+  .chip {
+    padding: 5px 8px;
+    font-size: 12.5px;
+  }
+}

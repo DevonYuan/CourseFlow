@@ -1,71 +1,212 @@
-/* Global styles */
+/* ==========================================================================
+   CourseFlow — Global Design System (Redesign)
+   Based on: docs/design-inspo/courseflow-dashbar-redesign.html
+   ========================================================================== */
 
-/* Hide the native right-hand scroll bar while keeping scroll functionality.
-   This is an Electron desktop app, so a visible OS scrollbar is undesirable. */
+/* --- Fonts --------------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+/* --- Scrollbar ----------------------------------------------------------- */
 * {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE / Edge (legacy) */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--scrollbar-thumb, var(--line)) transparent;
 }
-
 *::-webkit-scrollbar {
-  display: none; /* Chrome / Safari / Edge */
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, var(--line));
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, var(--line-strong));
 }
 
-/* --- Theme basics ------------------------------------------------------- */
-/* The app has no :root token file; components use inline fallbacks like
-   var(--surface-color, #fff). To make dark mode actually change the UI, we
-   override those shared variables on html.dark so every component that uses
-   them automatically shifts to the dark palette. */
+/* --- Design Tokens (Light Mode) ------------------------------------------ */
+:root {
+  /* Core Colors */
+  --paper: #F7F6F1;           /* App background */
+  --surface: #FFFFFF;         /* Cards, windows, inputs */
+  --ink: #1C2420;             /* Primary text */
+  --ink-soft: #66716B;        /* Secondary text */
+  --ink-faint: #9AA39D;       /* Muted/placeholder text */
+  --line: #E4E1D5;            /* Borders, dividers */
+  --line-strong: #D3CFC1;     /* Stronger borders, hover states */
 
+  /* Accent (Teal) */
+  --accent: #3B6E71;          /* Primary accent */
+  --accent-ink: #25494B;      /* Accent text on accent backgrounds */
+  --accent-soft: #E7F0EF;     /* Accent background (chips, active states) */
+
+  /* Amber (Warning/Urgent) */
+  --amber: #AD7440;           /* Warning text */
+  --amber-soft: #F3E8DA;      /* Warning background */
+
+  /* Error (Red) */
+  --error-bg: #FEF2F2;
+  --error-border: #FECACA;
+  --error-text: #991B1B;
+  --error-icon: #DC2626;
+  --error-retry-bg: #DC2626;
+  --error-retry-hover: #B91C1C;
+  --error-dismiss-bg: #E5E7EB;
+  --error-dismiss-color: #374151;
+  --error-dismiss-hover: #D1D5DB;
+
+  /* Geometry */
+  --radius: 7px;              /* Default border radius */
+  --radius-sm: 4px;           /* Small radius (progress track) */
+  --radius-lg: 12px;          /* Large radius (window) */
+  --shadow: 0 1px 2px rgba(28,36,32,0.05), 0 4px 14px rgba(28,36,32,0.05); /* Window shadow */
+
+  /* Typography */
+  --font-display: 'Fraunces', serif;       /* Headings, brand */
+  --font-ui: 'IBM Plex Sans', sans-serif;  /* All UI text */
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  /* Spacing Scale (based on 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Component Variables (Legacy compatibility) */
+  --bg-color: var(--paper);
+  --surface-color: var(--surface);
+  --border-color: var(--line);
+  --border-hover: var(--line-strong);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-soft);
+  --text-tertiary: var(--ink-faint);
+  --text-muted: var(--ink-faint);
+  --hover-bg: var(--paper);
+  --primary: var(--accent);
+  --primary-hover: var(--accent-ink);
+  --primary-light: var(--accent-soft);
+  --danger: var(--amber);
+  --danger-hover: var(--amber);
+  --danger-light: var(--amber-soft);
+  --focus-ring: rgba(59, 110, 113, 0.3);
+  --focus-border: var(--accent);
+  --shadow-sm: 0 1px 2px rgba(28,36,32,0.05);
+  --shadow-md: var(--shadow);
+  --shadow-lg: 0 8px 24px rgba(28,36,32,0.08);
+  --group-header-bg: var(--paper);
+  --group-indent-line: var(--line);
+  --skeleton-base: var(--line);
+  --skeleton-highlight: var(--paper);
+  --empty-illustration-color: var(--ink-faint);
+  --color-text-muted: var(--ink-faint);
+  --scrollbar-thumb: var(--line);
+  --scrollbar-thumb-hover: var(--line-strong);
+}
+
+/* --- Dark Mode ----------------------------------------------------------- */
+html.dark {
+  --paper: #1A1D1B;
+  --surface: #222624;
+  --ink: #F0F3F1;
+  --ink-soft: #A8B1AC;
+  --ink-faint: #7C8580;
+  --line: #2D332F;
+  --line-strong: #3A423C;
+  --accent: #5AA3A8;
+  --accent-ink: #E7F0EF;
+  --accent-soft: #1E3A3C;
+  --amber: #D4A56A;
+  --amber-soft: #3D2E1A;
+
+  /* Error (Red) - Dark mode */
+  --error-bg: #450A0A;
+  --error-border: #7F1D1D;
+  --error-text: #FCA5A5;
+  --error-icon: #EF4444;
+  --error-retry-bg: #EF4444;
+  --error-retry-hover: #DC2626;
+  --error-dismiss-bg: #374151;
+  --error-dismiss-color: #F3F4F6;
+  --error-dismiss-hover: #4B5563;
+
+  /* Legacy compatibility */
+  --bg-color: var(--paper);
+  --surface-color: var(--surface);
+  --border-color: var(--line);
+  --border-hover: var(--line-strong);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-soft);
+  --text-tertiary: var(--ink-faint);
+  --text-muted: var(--ink-faint);
+  --hover-bg: #2A2F2C;
+  --primary: var(--accent);
+  --primary-hover: var(--accent-ink);
+  --primary-light: var(--accent-soft);
+  --danger: var(--amber);
+  --danger-light: var(--amber-soft);
+  --focus-ring: rgba(90, 163, 168, 0.3);
+  --focus-border: var(--accent);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.2);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.25);
+  --group-header-bg: #2A2F2C;
+  --group-indent-line: var(--line);
+  --skeleton-base: var(--line);
+  --skeleton-highlight: #2A2F2C;
+  --empty-illustration-color: var(--ink-faint);
+  --color-text-muted: var(--ink-faint);
+  --scrollbar-thumb: var(--line-strong);
+  --scrollbar-thumb-hover: var(--ink-faint);
+}
+
+/* --- Base Styles --------------------------------------------------------- */
 html {
-  background-color: #ffffff;
+  background-color: var(--paper);
   color-scheme: light;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
+  color: var(--ink);
 }
 
-html.dark {
-  background-color: var(--bg-color, #121212);
-  color-scheme: dark;
-
-  --bg-color: #121212;
-  --surface-color: #1e1e1e;
-  --border-color: #333333;
-  --border-hover: #444444;
-  --text-primary: #f5f5f5;
-  --text-secondary: #b3b3b3;
-  --text-tertiary: #888888;
-  --text-muted: #777777;
-  --hover-bg: #2a2a2a;
-  --group-header-bg: #2a2a2a;
-  --group-indent-line: #333333;
-  --skeleton-base: #2e2e2e;
-  --skeleton-highlight: #3d3d3d;
-  --empty-illustration-color: #555555;
-  --color-text-muted: #9ca3af;
-  --primary-light: rgba(59, 130, 246, 0.18);
-  --danger-light: rgba(220, 38, 38, 0.16);
-  --focus-ring: rgba(96, 165, 250, 0.4);
-  --focus-border: #60a5fa;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+/* --- Focus Styles -------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
 }
 
-/* --- App Loading State -------------------------------------------------- */
+/* Remove default button styles */
+button {
+  font-family: inherit;
+}
+
+/* --- App Loading State --------------------------------------------------- */
 .app-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   font-size: 1.25rem;
-  color: var(--text-secondary, #6b7280);
-  background-color: var(--bg-color, #f9fafb);
+  color: var(--ink-soft);
+  background-color: var(--paper);
+  font-family: var(--font-ui);
 }
 
-html.dark .app-loading {
-  color: var(--text-tertiary, #9ca3af);
+/* --- Selection ----------------------------------------------------------- */
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }

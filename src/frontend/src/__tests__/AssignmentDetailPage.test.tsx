@@ -18,6 +18,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AssignmentDetailPage } from '../pages/AssignmentDetailPage';
 import { useAssignmentDetailStore } from '../stores/assignmentDetailStore';
+import { ToastProvider } from '../context/ToastContext';
 
 expect.extend(matchers);
 
@@ -89,11 +90,13 @@ function resetStore(): void {
 function renderDetailPage(path = `/assignments/${assignmentId}`): void {
   render(
     <ErrorBoundary>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
-        </Routes>
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>
     </ErrorBoundary>,
   );
 }

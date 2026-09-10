@@ -1,94 +1,122 @@
 /**
- * TopBar Component
+ * TopBar Component — Primary Bar (Row 1)
  *
- * Fixed header with app title, sync status, show completed toggle, and settings button.
+ * Brand, Status Tabs, Search, Sync Pill, Settings.
+ * Matches design: docs/design-inspo/courseflow-dashbar-redesign.html
  *
  * @module @frontend/components/TopBar
  */
 
 import { useNavigate } from 'react-router-dom';
 
-import { useSettings } from '../hooks/useSettings';
+import { useStatusFilter, useSetStatusFilter, useSearchQuery, useSetSearchQuery } from '../store/assignmentsStore';
 
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import './TopBar.css';
 
 export function TopBar(): JSX.Element {
   const navigate = useNavigate();
-  const { settings, isLoading, updateSettings } = useSettings();
+  const statusFilter = useStatusFilter();
+  const setStatusFilter = useSetStatusFilter();
+  const searchQuery = useSearchQuery();
+  const setSearchQuery = useSetSearchQuery();
 
-  const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateSettings({ showCompletedAssignments: event.target.checked });
+  const handleTabChange = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const tab = event.currentTarget.textContent?.toLowerCase() || 'all';
+    if (tab === 'all') {
+      setStatusFilter('all');
+    } else if (tab === 'pending') {
+      setStatusFilter('pending');
+    } else if (tab === 'completed') {
+      setStatusFilter('completed');
+    }
+  };
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const handleSyncClick = () => {
+    // Trigger manual sync via IPC
+    window.api.scheduler.trigger?.();
   };
 
   const handleOpenSettings = () => {
     navigate('/settings');
   };
 
-  if (isLoading || !settings) {
-    return (
-      <header className="top-bar" role="banner">
-        <div className="top-bar__inner">
-          <h1 className="top-bar__title">CourseFlow</h1>
-          <div className="top-bar__center" aria-busy="true">
-            <span className="top-bar__loading">Loading...</span>
-          </div>
-          <div className="top-bar__actions" />
-        </div>
-      </header>
-    );
-  }
+  // We don't have isLoading here since filters are loaded from localStorage
+  // The assignments loading is handled separately
 
   return (
-    <header className="top-bar" role="banner">
-      <div className="top-bar__inner">
-        <h1 className="top-bar__title">
-          <a href="/" className="top-bar__title-link" onClick={(e) => e.preventDefault()}>
-            CourseFlow
-          </a>
-        </h1>
+    <header className="bar-primary" role="banner">
+      {/* Brand */}
+      <div className="brand">CourseFlow</div>
 
-        <nav className="top-bar__center" aria-label="Sync status">
-          <SyncStatusIndicator />
-        </nav>
-
-        <div className="top-bar__actions">
-          <label className="top-bar__toggle" htmlFor="show-completed">
-            <input
-              type="checkbox"
-              id="show-completed"
-              checked={settings.showCompletedAssignments}
-              onChange={handleToggleChange}
-              className="top-bar__toggle-input"
-              aria-label="Show completed assignments"
-            />
-            <span className="top-bar__toggle-text">Show Completed</span>
-          </label>
-
-          <button
-            className="top-bar__settings-btn"
-            onClick={handleOpenSettings}
-            aria-label="Open settings"
-            type="button"
-          >
-            <svg
-              className="top-bar__settings-icon"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </button>
-        </div>
+      {/* Status Tabs */}
+      <div className="tabs" role="tablist" aria-label="Assignment status">
+        <button
+          className={`tab ${statusFilter === 'all' ? 'active' : ''}`}
+          onClick={handleTabChange}
+          role="tab"
+          aria-selected={statusFilter === 'all'}
+          type="button"
+        >
+          All
+        </button>
+        <button
+          className={`tab ${statusFilter === 'pending' ? 'active' : ''}`}
+          onClick={handleTabChange}
+          role="tab"
+          aria-selected={statusFilter === 'pending'}
+          type="button"
+        >
+          Pending
+        </button>
+        <button
+          className={`tab ${statusFilter === 'completed' ? 'active' : ''}`}
+          onClick={handleTabChange}
+          role="tab"
+          aria-selected={statusFilter === 'completed'}
+          type="button"
+        >
+          Completed
+        </button>
       </div>
+
+      {/* Search */}
+      <div className="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search assignments…"
+          value={searchQuery || ''}
+          onChange={handleSearch}
+          className="search-input"
+          aria-label="Search assignments"
+        />
+      </div>
+
+      <div className="spacer" />
+
+      {/* Sync Pill */}
+      <SyncStatusIndicator onSync={handleSyncClick} compact={true} />
+
+      {/* Settings Button */}
+      <button
+        className="icon-btn"
+        onClick={handleOpenSettings}
+        aria-label="Open settings"
+        type="button"
+      >
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
     </header>
   );
 }

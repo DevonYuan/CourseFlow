@@ -150,8 +150,8 @@ describe('AssignmentList', () => {
 
     expect(screen.getByText('CS101')).toBeInTheDocument();
     expect(screen.getByText('Pending')).toBeInTheDocument();
-    // Due date format: "Mon, Dec 1 • 03:59 PM" (weekday, month, day • time)
-    expect(screen.getByText('Mon, Dec 1 • 03:59 PM')).toBeInTheDocument();
+    // Due date format: "Mon, Dec 1 · 03:59 PM" (weekday, month, day · time)
+    expect(screen.getByText('Mon, Dec 1 · 03:59 PM')).toBeInTheDocument();
   });
 
   it('shows error state when fetch fails', async () => {

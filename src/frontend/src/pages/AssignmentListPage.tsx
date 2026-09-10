@@ -3,6 +3,7 @@
  *
  * Page wrapper for the AssignmentList component with proper page semantics.
  * This is the main landing page showing all assignments.
+ * FilterBar removed - filters are now in the Toolbar (Layout component).
  *
  * @module @frontend/pages/AssignmentListPage
  */
@@ -10,7 +11,6 @@
 import { useNavigate } from 'react-router-dom';
 
 import { AssignmentList } from '../components/AssignmentList';
-import { FilterBar } from '../components/FilterBar';
 
 interface AssignmentListPageProps {
   /** Optional callback when an assignment is clicked (for future detail view) */
@@ -33,7 +33,6 @@ export function AssignmentListPage({
 
   return (
     <section className="assignment-list-page" aria-label="Assignments">
-      <FilterBar />
       <AssignmentList
         onOpenSettings={() => {
           // Navigation to settings is handled by the TopBar settings button

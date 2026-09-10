@@ -1,9 +1,8 @@
 /**
  * AssignmentRow — Individual Assignment Row Component
  *
- * Displays a single assignment with course color, title, due date, and status.
- * Supports keyboard navigation, click handling, and drag-and-drop reordering.
- * Includes optional compact sub-task progress indicator.
+ * Displays a single assignment with grip handle, course, title+progress, due date, status, checkbox.
+ * Matches: docs/design-inspo/courseflow-dashbar-redesign.html
  *
  * @module @frontend/components/AssignmentRow
  */
@@ -11,7 +10,6 @@
 import type { Assignment } from '@backend/shared/types';
 import React from 'react';
 
-import { DragHandle } from './AssignmentList/DragHandle';
 import { CourseColorBadge } from './CourseColorBadge';
 import { ProgressBar } from './ui/ProgressBar';
 import './AssignmentRow.css';
@@ -45,7 +43,8 @@ interface AssignmentRowProps {
 }
 
 /**
- * Formats due date as "Mon, Jan 15 • 11:59 PM" in local timezone.
+ * Formats due date as "Sat, Aug 15 · 10:00 AM" in local timezone.
+ * Matches design inspiration format.
  */
 function formatDueDate(dueAt: string | null): string {
   if (!dueAt) return 'No due date';
@@ -59,8 +58,9 @@ function formatDueDate(dueAt: string | null): string {
   const time = date.toLocaleTimeString(undefined, {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: true,
   });
-  return `${day} • ${time}`;
+  return `${day} · ${time}`;
 }
 
 const statusLabels: Record<Assignment['status'], string> = {
@@ -70,15 +70,9 @@ const statusLabels: Record<Assignment['status'], string> = {
   archived: 'Archived',
 };
 
-const statusColors: Record<Assignment['status'], string> = {
-  pending: 'var(--status-pending, #f59e0b)',
-  in_progress: 'var(--status-in-progress, #3b82f6)',
-  completed: 'var(--status-completed, #10b981)',
-  archived: 'var(--status-archived, #9ca3af)',
-};
-
 /**
  * Individual assignment row with click/keyboard handling and drag support.
+ * Design: grip | course (dot + name) | title + progress | due | status badge | checkbox
  */
 export function AssignmentRow({
   assignment,
@@ -128,11 +122,16 @@ export function AssignmentRow({
   // Merge ref with dnd-kit ref
   const mergedRef = ref;
 
+  // Determine if due date is urgent (within 24 hours and not completed)
+  const isUrgent = !isCompleted && assignment.dueAt
+    ? (new Date(assignment.dueAt).getTime() - Date.now()) < 24 * 60 * 60 * 1000
+    : false;
+
   return (
     <div
       ref={mergedRef}
       {...attributes}
-      className={`assignment-row${isCompleted ? ' assignment-row--completed' : ''}${isDragging ? ' assignment-row--dragging' : ''}`}
+      className={`row${isCompleted ? ' row--completed' : ''}${isDragging ? ' row--dragging' : ''}`}
       role="listitem"
       tabIndex={onClick ? 0 : undefined}
       onClick={handleClick}
@@ -141,72 +140,84 @@ export function AssignmentRow({
       aria-label={`${assignment.title}, ${assignment.courseName}, due ${dueDate}, ${statusLabels[assignment.status]}`}
       data-assignment-id={assignment.id}
     >
-      <div className="assignment-row__drag-handle">
-        <DragHandle
-          id={assignment.id}
-          isDragging={isDragging}
-          disabled={isCompleted}
-          ariaLabel={`Drag to reorder ${assignment.title}`}
-          {...listeners}
-        />
+      {/* Grip / Drag Handle */}
+      <div className="grip" {...listeners} aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="8" cy="6" r="1.4"/>
+          <circle cx="16" cy="6" r="1.4"/>
+          <circle cx="8" cy="12" r="1.4"/>
+          <circle cx="16" cy="12" r="1.4"/>
+          <circle cx="8" cy="18" r="1.4"/>
+          <circle cx="16" cy="18" r="1.4"/>
+        </svg>
       </div>
-      <div className="assignment-row__course">
-        <CourseColorBadge
-          color={assignment.courseColor}
-          variant="dot"
-          size={10}
-          ariaLabel={`${assignment.courseName} color`}
-        />
-        <span className="assignment-row__course-name">{assignment.courseName}</span>
+
+      {/* Course: colored dot + name */}
+      <div className="row-course">
+        <span className="dot-course" style={{ backgroundColor: assignment.courseColor }} aria-hidden="true"></span>
+        <span>{assignment.courseName}</span>
       </div>
-      <div className="assignment-row__title-wrapper">
-        <div className="assignment-row__title">{assignment.title}</div>
+
+      {/* Main: Title + Progress */}
+      <div className="row-main">
+        <div className="row-title">{assignment.title}</div>
         {subTaskProgress && subTaskProgress.totalCount > 0 && (
-          <div className="assignment-row__progress" role="status" aria-label={`${subTaskProgress.completedCount} of ${subTaskProgress.totalCount} sub-tasks complete`}>
-            <ProgressBar
-              value={subTaskProgress.percentage}
-              label={`${subTaskProgress.completedCount}/${subTaskProgress.totalCount}`}
-              size="sm"
-              color={assignment.courseColor}
-              showPercentage={false}
-            />
+          <div className="progress" role="status" aria-label={`${subTaskProgress.completedCount} of ${subTaskProgress.totalCount} sub-tasks complete`}>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${subTaskProgress.percentage}%`, backgroundColor: assignment.courseColor }}></div>
+            </div>
+            <span className="progress-label">{subTaskProgress.completedCount}/{subTaskProgress.totalCount}</span>
           </div>
         )}
       </div>
-      <div className="assignment-row__due" aria-label={`Due ${dueDate}`}>
-        {isOverdue && !isCompleted && (
-          <span className="assignment-row__overdue-badge" aria-label="Overdue">
-            !
+
+      {/* Due Date */}
+      <div className={`row-due${isUrgent ? ' urgent' : ''}`} aria-label={`Due ${dueDate}`}>
+        {isOverdue && !isCompleted ? (
+          <span className="row-due__icon" aria-label="Overdue">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            </svg>
           </span>
-        )}
-        <time dateTime={assignment.dueAt || undefined}>{dueDate}</time>
-      </div>
-      <div className="assignment-row__status">
-        <span
-          className="assignment-row__badge"
-          style={{ backgroundColor: statusColors[assignment.status] }}
-        >
-          {statusLabels[assignment.status]}
-        </span>
-      </div>
-      <div className="assignment-row__action">
-        {isCompleted ? (
-          <span className="assignment-row__completed-icon" aria-label="Completed">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12" />
+        ) : isUrgent ? (
+          <span className="row-due__icon" aria-label="Due soon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             </svg>
           </span>
         ) : (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18"/>
+          </svg>
+        )}
+        <time dateTime={assignment.dueAt || undefined}>{dueDate}</time>
+      </div>
+
+      {/* Status Badge */}
+      <div className="status-badge">
+        {statusLabels[assignment.status]}
+      </div>
+
+      {/* Checkbox / Complete Button */}
+      <div className="row-check-wrapper">
+        {isCompleted ? (
+          <div className="row-check-completed" aria-label="Completed">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        ) : (
           <button
-            type="button"
-            className="assignment-row__complete-btn"
+            className="row-check"
             onClick={handleMarkComplete}
             onKeyDown={handleMarkCompleteKeyDown}
-            aria-label={`Mark "${assignment.title}" as complete`}
-            aria-pressed={false}
+            aria-label={`Mark ${assignment.title} as complete`}
+            type="button"
+            tabIndex={0}
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
             </svg>
           </button>
         )}

@@ -1,325 +1,289 @@
-/**
- * AssignmentRow Styles
- */
+/* ==========================================================================
+   AssignmentRow — Individual Assignment Row
+   Matches: docs/design-inspo/courseflow-dashbar-redesign.html
+   Layout: grip | course | title+progress | due | status-badge | checkbox
+   ========================================================================== */
 
-/* Assignment row */
-.assignment-row {
-  display: grid;
-  grid-template-columns: 40px 140px 1fr 140px 100px 44px;
+/* Row container */
+.row {
+  display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--surface-color, #ffffff);
-  border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 8px;
-  cursor: default;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 14px 16px;
+  background: var(--surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.assignment-row:hover {
-  border-color: var(--border-hover, #ccc);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.row:hover {
+  border-color: var(--line-strong);
 }
 
-.assignment-row:focus-visible {
-  outline: 3px solid var(--focus-ring, rgba(0, 102, 204, 0.4));
+.row:focus-visible {
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-color: var(--focus-border, #0066cc);
 }
 
 /* Dragging state */
-.assignment-row--dragging {
+.row--dragging {
   opacity: 0.5;
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(59,110,113,0.15);
   z-index: 100;
 }
 
-/* Drag handle column */
-.assignment-row__drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Completed row styling */
-.assignment-row--completed {
+/* Completed row */
+.row--completed {
   opacity: 0.7;
 }
 
-.assignment-row--completed .assignment-row__title {
+.row--completed .row-title {
   text-decoration: line-through;
-  color: var(--text-tertiary, #999);
+  color: var(--ink-faint);
 }
 
-.assignment-row--completed .assignment-row__course-name {
-  color: var(--text-tertiary, #999);
+.row--completed .row-course {
+  color: var(--ink-faint);
 }
 
-.assignment-row--completed .assignment-row__due time {
-  color: var(--text-tertiary, #999);
+.row--completed .row-due {
+  color: var(--ink-faint);
 }
 
-.assignment-row--completed .assignment-row__overdue-badge {
-  display: none;
+/* Grip / Drag Handle */
+.grip {
+  color: var(--ink-faint);
+  cursor: grab;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.grip:active {
+  cursor: grabbing;
+}
+
+.row--dragging .grip {
+  cursor: grabbing;
 }
 
 /* Course column */
-.assignment-row__course {
+.row-course {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  width: 132px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dot-course {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Main content: Title + Progress */
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 0;
+  margin-top: 7px;
 }
 
-.assignment-row__course-name {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-secondary, #666);
-  white-space: nowrap;
+.progress-track {
+  width: 220px;
+  height: 5px;
+  border-radius: 4px;
+  background: var(--line);
   overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
-/* Title column */
-.assignment-row__title-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
 }
 
-.assignment-row__title {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--text-primary, #1a1a1a);
+.progress-label {
+  font-size: 11.5px;
+  color: var(--ink-faint);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
 }
 
-/* Compact progress indicator */
-.assignment-row__progress {
-  min-width: 0;
-  max-width: 140px; /* Limit width to leave room for due date/overdue badge */
-}
-
-.assignment-row__progress :global(.progress-bar--sm) {
-  --progress-gap: 4px;
-  --progress-height: 6px; /* Thinner for compact row */
-  --progress-label-size: 0.625rem;
-  --progress-radius: 9999px;
-}
-
-.assignment-row__progress :global(.progress-bar__label-text) {
-  font-size: 0.625rem;
-}
-
-.assignment-row__progress :global(.progress-bar__track) {
-  min-width: 60px; /* Minimum track width */
-  box-sizing: border-box;
-}
-
-.assignment-row__progress :global(.progress-bar__label) {
-  min-width: fit-content;
-}
-
-.assignment-row--completed .assignment-row__progress {
-  opacity: 0.5;
-}
-
-/* Due date column */
-.assignment-row__due {
+/* Due Date */
+.row-due {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 6px;
-  font-size: 0.8rem;
-  color: var(--text-secondary, #666);
+  font-size: 13px;
+  color: var(--ink-soft);
+  width: 190px;
+  flex-shrink: 0;
+  justify-content: flex-end;
   white-space: nowrap;
 }
 
-.assignment-row__overdue-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--overdue-bg, #fee2e2);
-  color: var(--overdue-color, #dc2626);
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
+.row-due.urgent {
+  color: var(--amber);
 }
 
-.assignment-row__due time {
+.row-due svg {
+  flex-shrink: 0;
+}
+
+.row-due time {
   font-variant-numeric: tabular-nums;
 }
 
-/* Status column */
-.assignment-row__status {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.assignment-row__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
-  font-size: 0.7rem;
+/* Status Badge */
+.status-badge {
+  font-size: 11px;
   font-weight: 600;
-  color: #fff;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--amber-soft);
+  color: var(--amber);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* Action column */
-.assignment-row__action {
-  display: flex;
-  justify-content: flex-end;
+/* Completed status gets green badge */
+.row--completed .status-badge {
+  background: #D1FADF;
+  color: #065F46;
 }
 
-/* Complete button */
-.assignment-row__complete-btn {
+/* Checkbox / Check wrapper */
+.row-check-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  background: var(--surface-color, #fff);
-  border: 1px solid var(--border-color, #e0e0e0);
+  flex-shrink: 0;
+}
+
+.row-check {
+  width: 19px;
+  height: 19px;
   border-radius: 50%;
-  color: var(--text-secondary, #666);
+  border: 1.5px solid var(--line-strong);
+  flex-shrink: 0;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--accent);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
 
-.assignment-row__complete-btn:hover {
-  background: var(--primary-light, #e8f0fe);
-  border-color: var(--primary-color, #1a73e8);
-  color: var(--primary-color, #1a73e8);
+.row-check:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
-.assignment-row__complete-btn:active {
+.row-check:active {
   transform: scale(0.95);
 }
 
-.assignment-row__complete-btn:focus-visible {
-  outline: 2px solid var(--focus-ring, rgba(0, 102, 204, 0.4));
+.row-check:focus-visible {
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-color: var(--focus-border, #0066cc);
 }
 
-/* Completed icon */
-.assignment-row__completed-icon {
+.row-check svg {
+  display: none; /* Hide checkmark until completed */
+}
+
+.row-check-completed {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  background: var(--accent);
+  color: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  color: var(--status-completed, #10b981);
+  flex-shrink: 0;
 }
 
-/* Dark mode support */
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
-  .assignment-row {
-    background: var(--surface-color-dark, #2d2d2d);
-    border-color: var(--border-color-dark, #444);
+  .row {
+    background: var(--surface);
+    border-color: var(--line);
   }
 
-  .assignment-row:hover {
-    border-color: var(--border-hover-dark, #555);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  .row:hover {
+    border-color: var(--line-strong);
   }
 
-  .assignment-row__course-name {
-    color: var(--text-secondary-dark, #aaa);
+  .row--completed .status-badge {
+    background: #064E3B;
+    color: #6EE7B7;
   }
 
-  .assignment-row__title {
-    color: var(--text-primary-dark, #f0f0f0);
+  .row-check {
+    border-color: var(--line-strong);
   }
 
-  .assignment-row__due {
-    color: var(--text-secondary-dark, #aaa);
-  }
-
-  .assignment-row__overdue-badge {
-    background: var(--overdue-bg-dark, #7f1d1d);
-    color: var(--overdue-color-dark, #fca5a5);
-  }
-
-  .assignment-row__complete-btn {
-    background: var(--surface-color-dark, #2d2d2d);
-    border-color: var(--border-color-dark, #444);
-    color: var(--text-secondary-dark, #aaa);
-  }
-
-  .assignment-row__complete-btn:hover {
-    background: var(--primary-light-dark, #1a3a5c);
-    border-color: var(--primary-color-dark, #4a9eff);
-    color: var(--primary-color-dark, #4a9eff);
-  }
-
-  .assignment-row--completed .assignment-row__title {
-    color: var(--text-tertiary-dark, #888);
-  }
-
-  .assignment-row--completed .assignment-row__course-name {
-    color: var(--text-tertiary-dark, #888);
-  }
-
-  .assignment-row--completed .assignment-row__due time {
-    color: var(--text-tertiary-dark, #888);
+  .row-check:hover {
+    background: var(--accent-soft);
   }
 }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .assignment-row {
+  .row {
     transition: none;
   }
 
-  .assignment-row__complete-btn {
+  .row-check {
+    transition: none;
+  }
+
+  .progress-fill {
     transition: none;
   }
 }
 
 /* High contrast mode */
 @media (prefers-contrast: high) {
-  .assignment-row {
+  .row {
     border-width: 2px;
   }
 
-  .assignment-row:focus-visible {
-    outline-width: 4px;
+  .row:focus-visible {
+    outline-width: 3px;
   }
 
-  .assignment-row__complete-btn {
+  .row-check {
     border-width: 2px;
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 700px) {
-  .assignment-row {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
-    gap: 8px;
-    padding: 16px;
-  }
-
-  .assignment-row__course {
-    grid-column: 1;
-  }
-
-  .assignment-row__action {
-    justify-content: flex-start;
   }
 }
