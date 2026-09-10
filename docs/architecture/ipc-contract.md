@@ -36,11 +36,17 @@ Channel names follow the convention: `<namespace>:<entity>:<action>` or `<namesp
 
 ### Database — Notes
 
+Notes use a **1:N** model — multiple timestamped log entries per assignment.
+
 | Channel           | Request                 | Response | Description                   |
 | ----------------- | ----------------------- | -------- | ----------------------------- |
-| `db:notes:list`   | `string` (assignmentId) | `Note[]` | Fetch notes for an assignment |
-| `db:notes:upsert` | `NoteInput`             | `Note`   | Create or update note         |
+| `db:notes:list`   | `string` (assignmentId) | `Note[]` | Fetch notes for an assignment (newest first) |
+| `db:notes:upsert` | `NoteInput`             | `Note`   | Create a note when no `id` is provided; update an existing note's content when `id` is set |
 | `db:notes:delete` | `string` (id)           | `void`   | Delete note by ID             |
+
+`NoteInput` is `{ id?: EntityId; assignmentId: EntityId; content: string }`. The
+`db:notes:upsert` handler emits `db:changed` with `action: 'insert'` for creates
+and `action: 'update'` for edits, so renderers can distinguish the two.
 
 ### Database — Pages (Standalone Notes Workspace)
 

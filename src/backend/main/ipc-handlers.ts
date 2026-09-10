@@ -196,10 +196,11 @@ const handlers: IpcHandlers = {
 
   'db:notes:upsert': (input: NoteInput): Promise<IpcResult<Note>> => {
     try {
+      const isUpdate = !!input.id;
       const note = repo.upsertNote(input);
       sendEventToRenderers('db:changed', {
         table: 'notes',
-        action: 'insert',
+        action: isUpdate ? 'update' : 'insert',
         id: note.id,
       });
       return Promise.resolve(ok(note));

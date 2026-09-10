@@ -12,11 +12,11 @@ import React, { useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AssignmentHeader } from '../components/assignments/AssignmentHeader';
+import { NotesList } from '../components/notes/NotesList';
 import { AllCompletePrompt } from '../components/subtasks/AllCompletePrompt';
 import { SubTaskList } from '../components/subtasks/SubTaskList';
 import { useAssignmentDetail } from '../hooks/useAssignmentDetail';
 import { isPromptDismissed, setPromptDismissed } from '../utils/localStorage';
-import type { SubTask } from '@backend/shared/types';
 
 import './AssignmentDetailPage.css';
 
@@ -199,14 +199,12 @@ export function AssignmentDetailPage(): JSX.Element {
           <SubTaskList assignmentId={assignment.id} />
         </section>
 
-        {/* Placeholder for Notes (Ticket 3.6) */}
+        {/* Notes Section */}
         <section className="assignment-detail__section" aria-labelledby="notes-heading">
           <h2 id="notes-heading" className="assignment-detail__section-title">
             Notes
           </h2>
-          <div className="assignment-detail__placeholder">
-            <p>Notes will appear here. <em>(Coming in Ticket 3.6)</em></p>
-          </div>
+          <NotesList assignmentId={assignment.id} />
         </section>
 
         {/* Assignment metadata footer */}

@@ -328,8 +328,26 @@ const mockApi = {
       },
       upsert: async (input: NoteInput): Promise<IpcResult<Note>> => {
         await new Promise((r) => setTimeout(r, 50));
-        const id = generateId() as EntityId;
         const now = new Date().toISOString() as IsoDateTime;
+
+        // Update existing note when an id is provided (1:N model).
+        if (input.id) {
+          let updated: Note | null = null;
+          mockNotes.forEach((list) => {
+            const idx = list.findIndex((n) => n.id === input.id);
+            if (idx !== -1) {
+              const existing = list[idx]!;
+              const next: Note = { ...existing, content: input.content, updatedAt: now };
+              list[idx] = next;
+              updated = next;
+            }
+          });
+          if (!updated) return createMockError('Note not found', 'NOT_FOUND');
+          emitEvent('db:changed', { table: 'notes', action: 'update', id: input.id });
+          return createMockResult(updated);
+        }
+
+        const id = generateId() as EntityId;
         const note: Note = {
           id,
           assignmentId: input.assignmentId,

@@ -743,10 +743,17 @@ export const repo = {
   },
 
   /**
-   * Insert a new note for an assignment (1:N model - multiple log entries).
+   * Insert a new note for an assignment or update existing note (1:N model - multiple log entries).
    */
   upsertNote(input: NoteInput): Note {
     const now = Date.now();
+
+    // If id provided, update existing note
+    if (input.id) {
+      return this.updateNote(input.id, input.content, now);
+    }
+
+    // Otherwise insert new note
     const dbInput = mapNoteInputToDb(input, now);
     const id = randomUUID();
 
@@ -772,14 +779,18 @@ export const repo = {
 
   /**
    * Update a note's content by ID.
+   * Returns the updated note, or throws if not found.
    */
-  updateNote(id: string, content: string): Note | null {
-    const now = Date.now();
+  updateNote(id: string, content: string, now?: number): Note {
+    const timestamp = now ?? Date.now();
     run(
       'UPDATE notes SET content = ?, updated_at = ? WHERE id = ?',
-      [content, now, id],
+      [content, timestamp, id],
     );
-    return this.getNote(id);
+
+    const row = get<DbNote>('SELECT * FROM notes WHERE id = ?', [id]);
+    if (!row) throw new Error(`Note not found: ${id}`);
+    return mapDbNoteToNote(row);
   },
 
   // --- Settings ---

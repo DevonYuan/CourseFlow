@@ -478,6 +478,9 @@ export const useAssignmentDetailActions = () =>
     useShallow((state) => ({
       fetch: state.fetch,
       refetch: state.refetch,
+      refetchAssignment: state.refetchAssignment,
+      refetchSubTasks: state.refetchSubTasks,
+      refetchNotes: state.refetchNotes,
       subscribeToChanges: state.subscribeToChanges,
       unsubscribe: state.unsubscribe,
       clearError: state.clearError,

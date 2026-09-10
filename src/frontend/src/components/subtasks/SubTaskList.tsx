@@ -13,8 +13,8 @@ import React, { useEffect, useCallback, useMemo } from 'react';
 
 import { useToast } from '../../context/ToastContext';
 import { useSubTasks } from '../../hooks/useSubTasks';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
-import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SubTaskAddInput } from './SubTaskAddInput';
 import { SubTaskRow } from './SubTaskRow';
 import { SubTaskSkeleton } from './SubTaskSkeleton';
@@ -195,14 +195,20 @@ export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
       <SubTaskAddInput onAdd={(title) => void handleAdd(title)} disabled={isLoading} />
 
       {/* Delete Confirmation Modal */}
-      {deleteTargetId && (
-        <DeleteConfirmModal
-          open={true}
-          subTaskTitle={deleteTargetTitle}
-          onConfirm={() => void handleDeleteConfirm()}
-          onCancel={handleDeleteCancel}
-        />
-      )}
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="Delete sub-task?"
+        message={
+          deleteTargetTitle
+            ? `Are you sure you want to delete \u201C${deleteTargetTitle}\u201D? This cannot be undone.`
+            : 'Are you sure you want to delete this sub-task? This cannot be undone.'
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="destructive"
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={handleDeleteCancel}
+      />
     </div>
   );
 }

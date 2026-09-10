@@ -109,6 +109,7 @@ export interface Note {
 }
 
 export interface NoteInput {
+  id?: EntityId; // Optional: if provided, updates existing note; otherwise creates new
   assignmentId: EntityId;
   content: string;
 }

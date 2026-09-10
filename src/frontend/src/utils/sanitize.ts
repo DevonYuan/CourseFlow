@@ -91,3 +91,21 @@ export function createSafeHtml(html: string): { __html: string } {
   if (!html || html.trim() === '') return { __html: '' };
   return { __html: sanitizeHtml(html) };
 }
+
+/**
+ * Escapes HTML special characters in a plain text string for safe rendering.
+ * Use this when rendering user-provided plain text content to prevent XSS.
+ * Does NOT sanitize HTML - it escapes it so it displays literally.
+ *
+ * @param text - Plain text string that may contain HTML special characters
+ * @returns Escaped string safe for use in textContent or as text in JSX
+ */
+export function escapeHtml(text: string): string {
+  if (!text) return '';
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}

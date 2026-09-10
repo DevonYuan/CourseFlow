@@ -304,110 +304,6 @@
 }
 
 /* ============================================================================
-   DeleteConfirmModal
-   ============================================================================ */
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: var(--spacing-4, 16px);
-  animation: fadeIn var(--transition-fast, 150ms) ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.modal {
-  background: var(--color-surface, #fff);
-  border-radius: var(--radius-lg, 12px);
-  padding: var(--spacing-6, 24px);
-  max-width: 400px;
-  width: 100%;
-  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04));
-  animation: slideUp var(--transition-normal, 200ms) ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.modal--confirm {
-  text-align: left;
-}
-
-.modal__title {
-  margin: 0 0 var(--spacing-3, 12px);
-  font-size: var(--font-size-lg, 18px);
-  font-weight: 600;
-  color: var(--color-text-primary, #1a1a1a);
-}
-
-.modal__message {
-  margin: 0 0 var(--spacing-6, 24px);
-  font-size: var(--font-size-base, 16px);
-  color: var(--color-text-secondary, #666);
-  line-height: 1.5;
-}
-
-.modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-3, 12px);
-}
-
-.modal__button {
-  padding: var(--spacing-2, 8px) var(--spacing-5, 20px);
-  font-size: var(--font-size-base, 16px);
-  font-weight: 500;
-  font-family: inherit;
-  border: none;
-  border-radius: var(--radius-md, 8px);
-  cursor: pointer;
-  transition: all var(--transition-fast, 150ms);
-}
-
-.modal__button:focus-visible {
-  outline: 2px solid var(--color-primary, #6366f1);
-  outline-offset: 2px;
-}
-
-.modal__button--cancel {
-  background: var(--color-surface-variant, #f5f5f5);
-  color: var(--color-text-primary, #1a1a1a);
-}
-
-.modal__button--cancel:hover {
-  background: var(--color-border, #e0e0e0);
-}
-
-.modal__button--delete {
-  background: var(--color-error, #ef4444);
-  color: white;
-}
-
-.modal__button--delete:hover {
-  background: var(--color-error-dark, #dc2626);
-}
-
-/* ============================================================================
    Responsive
    ============================================================================ */
 
@@ -425,19 +321,6 @@
   .subtask-row__delete {
     width: 28px;
     height: 28px;
-  }
-
-  .modal {
-    margin: var(--spacing-4, 16px);
-    padding: var(--spacing-5, 20px);
-  }
-
-  .modal__actions {
-    flex-direction: column-reverse;
-  }
-
-  .modal__button {
-    width: 100%;
   }
 }
 
@@ -494,26 +377,5 @@
 
   .subtask-list__empty-message {
     color: var(--color-text-secondary-dark, #aaa);
-  }
-
-  .modal {
-    background: var(--color-surface-dark, #1e1e1e);
-  }
-
-  .modal__title {
-    color: var(--color-text-primary-dark, #fff);
-  }
-
-  .modal__message {
-    color: var(--color-text-secondary-dark, #aaa);
-  }
-
-  .modal__button--cancel {
-    background: var(--color-surface-variant-dark, #2a2a2a);
-    color: var(--color-text-primary-dark, #fff);
-  }
-
-  .modal__button--cancel:hover {
-    background: var(--color-border-dark, #444);
   }
 }
