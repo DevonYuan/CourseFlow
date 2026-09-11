@@ -51,17 +51,16 @@ function createTempNoteId(): EntityId {
  * @param assignmentId - The assignment ID to load notes for
  */
 export function useNotes(assignmentId: EntityId): UseNotesReturn {
-  const { notes, isLoading, error, addNote, updateNote, removeNote } =
-    useAssignmentDetailStore(
-      useShallow((state) => ({
-        notes: state.notes,
-        isLoading: state.isLoading,
-        error: state.error,
-        addNote: state.addNote,
-        updateNote: state.updateNote,
-        removeNote: state.removeNote,
-      })),
-    );
+  const { notes, isLoading, error, addNote, updateNote, removeNote } = useAssignmentDetailStore(
+    useShallow((state) => ({
+      notes: state.notes,
+      isLoading: state.isLoading,
+      error: state.error,
+      addNote: state.addNote,
+      updateNote: state.updateNote,
+      removeNote: state.removeNote,
+    })),
+  );
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -72,8 +71,11 @@ export function useNotes(assignmentId: EntityId): UseNotesReturn {
    */
   const fetchNotes = useCallback(
     async (id: EntityId = assignmentId) => {
-      const { currentAssignmentId, fetch: storeFetch, refetchNotes: storeRefetch } =
-        useAssignmentDetailStore.getState();
+      const {
+        currentAssignmentId,
+        fetch: storeFetch,
+        refetchNotes: storeRefetch,
+      } = useAssignmentDetailStore.getState();
       await (currentAssignmentId === id ? storeRefetch() : storeFetch(id));
     },
     [assignmentId],
@@ -194,7 +196,9 @@ export function useNotes(assignmentId: EntityId): UseNotesReturn {
   );
 
   return {
-    notes: [...notes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+    notes: [...notes].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    ),
     isLoading,
     error,
     isSaving,

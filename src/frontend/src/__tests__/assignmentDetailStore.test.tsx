@@ -174,7 +174,11 @@ describe('assignmentDetailStore', () => {
   });
 
   it('sets error when assignment fetch fails', async () => {
-    mockApi.db.assignments.get.mockResolvedValue({ ok: false, error: 'DB down', code: 'INTERNAL_ERROR' });
+    mockApi.db.assignments.get.mockResolvedValue({
+      ok: false,
+      error: 'DB down',
+      code: 'INTERNAL_ERROR',
+    });
 
     const store = useAssignmentDetailStore;
     await act(async () => {

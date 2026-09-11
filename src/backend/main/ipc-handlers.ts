@@ -243,10 +243,14 @@ const handlers: IpcHandlers = {
     try {
       // Input validation: non-empty array of strings
       if (!Array.isArray(ids) || ids.length === 0) {
-        return Promise.resolve(err('Expected non-empty array of assignment IDs', 'VALIDATION_ERROR'));
+        return Promise.resolve(
+          err('Expected non-empty array of assignment IDs', 'VALIDATION_ERROR'),
+        );
       }
       if (!ids.every((id) => typeof id === 'string' && id.length > 0)) {
-        return Promise.resolve(err('All assignment IDs must be non-empty strings', 'VALIDATION_ERROR'));
+        return Promise.resolve(
+          err('All assignment IDs must be non-empty strings', 'VALIDATION_ERROR'),
+        );
       }
 
       repo.reorderPriority(ids);
@@ -275,10 +279,18 @@ const handlers: IpcHandlers = {
     try {
       // Input validation: valid assignment_id and position >= 0
       if (!input || typeof input !== 'object') {
-        return Promise.resolve(err('Invalid input: expected PriorityOrderInput object', 'VALIDATION_ERROR'));
+        return Promise.resolve(
+          err('Invalid input: expected PriorityOrderInput object', 'VALIDATION_ERROR'),
+        );
       }
-      if (!input.assignmentId || typeof input.assignmentId !== 'string' || input.assignmentId.length === 0) {
-        return Promise.resolve(err('assignmentId is required and must be a non-empty string', 'VALIDATION_ERROR'));
+      if (
+        !input.assignmentId ||
+        typeof input.assignmentId !== 'string' ||
+        input.assignmentId.length === 0
+      ) {
+        return Promise.resolve(
+          err('assignmentId is required and must be a non-empty string', 'VALIDATION_ERROR'),
+        );
       }
       if (typeof input.order !== 'number' || !Number.isInteger(input.order) || input.order < 0) {
         return Promise.resolve(err('order must be a non-negative integer', 'VALIDATION_ERROR'));
@@ -320,19 +332,31 @@ const handlers: IpcHandlers = {
       }
 
       // Emit fetch progress
-      sendEventToRenderers('ical:progress', { stage: 'fetching', progress: 10, message: 'Fetching calendar...' });
+      sendEventToRenderers('ical:progress', {
+        stage: 'fetching',
+        progress: 10,
+        message: 'Fetching calendar...',
+      });
 
       // Fetch iCal feed with 30s timeout
       const icalText = await fetchICalFeed(input.url, { timeoutMs: 30_000 });
 
       // Emit parse progress
-      sendEventToRenderers('ical:progress', { stage: 'parsing', progress: 30, message: 'Parsing events...' });
+      sendEventToRenderers('ical:progress', {
+        stage: 'parsing',
+        progress: 30,
+        message: 'Parsing events...',
+      });
 
       // Parse iCal feed
       const events = parseICalFeed(icalText);
 
       // Emit completion progress
-      sendEventToRenderers('ical:progress', { stage: 'complete', progress: 100, message: `Fetched ${events.length} events` });
+      sendEventToRenderers('ical:progress', {
+        stage: 'complete',
+        progress: 100,
+        message: `Fetched ${events.length} events`,
+      });
 
       return ok(events);
     } catch (error) {
@@ -352,10 +376,7 @@ const handlers: IpcHandlers = {
       if (error instanceof ICalParseError) {
         return err(`Failed to parse iCal feed: ${error.message}`, 'PARSE_ERROR');
       }
-      return err(
-        `Failed to fetch iCal feed: ${message}`,
-        'INTERNAL_ERROR',
-      );
+      return err(`Failed to fetch iCal feed: ${message}`, 'INTERNAL_ERROR');
     }
   },
 
@@ -373,7 +394,11 @@ const handlers: IpcHandlers = {
       }
 
       // Emit importing progress
-      sendEventToRenderers('ical:progress', { stage: 'importing', progress: 10, message: 'Importing assignments...' });
+      sendEventToRenderers('ical:progress', {
+        stage: 'importing',
+        progress: 10,
+        message: 'Importing assignments...',
+      });
 
       // Map iCal events to assignments
       const assignments = mapICalToAssignments(input.events, input.sourceUrl);
@@ -403,10 +428,7 @@ const handlers: IpcHandlers = {
       console.error('[ical:import] Error:', error);
       sendEventToRenderers('ical:progress', { stage: 'error', progress: 100, message });
 
-      return err(
-        `Failed to import assignments: ${message}`,
-        'INTERNAL_ERROR',
-      );
+      return err(`Failed to import assignments: ${message}`, 'INTERNAL_ERROR');
     }
   },
 
@@ -417,7 +439,9 @@ const handlers: IpcHandlers = {
       const settings = await repo.getAllSettings();
       return ok(settings);
     } catch (error) {
-      return err(`Failed to get settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to get settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 
@@ -428,7 +452,9 @@ const handlers: IpcHandlers = {
       updateScheduler(settings);
       return ok(settings);
     } catch (error) {
-      return err(`Failed to set settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to set settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 
@@ -452,7 +478,9 @@ const handlers: IpcHandlers = {
   },
 
   // ── Scheduler ──────────────────────────────────────────────────────────
-  'scheduler:start': async (input: { intervalMinutes: number }): Promise<IpcResult<SchedulerStatus>> => {
+  'scheduler:start': async (input: {
+    intervalMinutes: number;
+  }): Promise<IpcResult<SchedulerStatus>> => {
     try {
       // Input validation: intervalMinutes must be > 0
       if (!input || typeof input.intervalMinutes !== 'number' || input.intervalMinutes <= 0) {
@@ -465,7 +493,9 @@ const handlers: IpcHandlers = {
       const status = scheduler.getStatus();
       return ok(status);
     } catch (error) {
-      return err(`Failed to start scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to start scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 
@@ -477,7 +507,9 @@ const handlers: IpcHandlers = {
       const status = scheduler.getStatus();
       return ok(status);
     } catch (error) {
-      return err(`Failed to stop scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to stop scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 
@@ -488,7 +520,9 @@ const handlers: IpcHandlers = {
       const status = scheduler.getStatus();
       return ok(status);
     } catch (error) {
-      return err(`Failed to get scheduler status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to get scheduler status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 
@@ -499,7 +533,9 @@ const handlers: IpcHandlers = {
       await scheduler.triggerManual();
       return ok(undefined);
     } catch (error) {
-      return err(`Failed to trigger scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to trigger scheduler: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 
@@ -515,11 +551,15 @@ const handlers: IpcHandlers = {
         nextRun: status.nextRun,
       });
     } catch (error) {
-      return err(`Failed to get scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to get scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 
-  'scheduler:config:set': async (partial: Partial<SchedulerConfig>): Promise<IpcResult<SchedulerConfig>> => {
+  'scheduler:config:set': async (
+    partial: Partial<SchedulerConfig>,
+  ): Promise<IpcResult<SchedulerConfig>> => {
     try {
       const { getScheduler } = await import('./scheduler.js');
       const scheduler = getScheduler();
@@ -536,7 +576,11 @@ const handlers: IpcHandlers = {
         newEnabled = partial.enabled;
       }
 
-      const updatedSettings = { ...settings, syncIntervalMinutes: newInterval, autoFetchIcal: newEnabled };
+      const updatedSettings = {
+        ...settings,
+        syncIntervalMinutes: newInterval,
+        autoFetchIcal: newEnabled,
+      };
       scheduler.updateSettings(updatedSettings);
 
       const status = scheduler.getStatus();
@@ -547,7 +591,9 @@ const handlers: IpcHandlers = {
         nextRun: status.nextRun,
       });
     } catch (error) {
-      return err(`Failed to set scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return err(
+        `Failed to set scheduler config: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   },
 };

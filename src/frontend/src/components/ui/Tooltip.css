@@ -82,7 +82,9 @@
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
+  transition:
+    opacity 0.15s ease-out,
+    visibility 0.15s ease-out;
 }
 
 .tooltip-wrapper__tooltip--show {

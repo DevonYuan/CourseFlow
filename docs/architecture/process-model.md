@@ -60,14 +60,14 @@ We adopt a **three-process model** with strict boundaries:
 
 ## IPC Channel Convention
 
-| Category | Namespace   | Pattern                | Example                                      |
-| -------- | ----------- | ---------------------- | -------------------------------------------- |
-| Database | `db:`       | `db:<entity>:<action>` | `db:assignments:list`, `db:priority:reorder` |
-| iCal     | `ical:`     | `ical:<action>`        | `ical:fetch`, `ical:import`                  |
-| Settings | `settings:` | `settings:<action>`    | `settings:get`, `settings:set`               |
-| Scheduler | `scheduler:` | `scheduler:<action>`  | `scheduler:status`, `scheduler:trigger`      |
-| App      | `app:`      | `app:<action>`         | `app:version`                                |
-| Events   | (same)      | `<namespace>:<event>`  | `db:changed`, `ical:progress`, `scheduler:tick` |
+| Category  | Namespace    | Pattern                | Example                                         |
+| --------- | ------------ | ---------------------- | ----------------------------------------------- |
+| Database  | `db:`        | `db:<entity>:<action>` | `db:assignments:list`, `db:priority:reorder`    |
+| iCal      | `ical:`      | `ical:<action>`        | `ical:fetch`, `ical:import`                     |
+| Settings  | `settings:`  | `settings:<action>`    | `settings:get`, `settings:set`                  |
+| Scheduler | `scheduler:` | `scheduler:<action>`   | `scheduler:status`, `scheduler:trigger`         |
+| App       | `app:`       | `app:<action>`         | `app:version`                                   |
+| Events    | (same)       | `<namespace>:<event>`  | `db:changed`, `ical:progress`, `scheduler:tick` |
 
 **All channels defined in** `src/backend/shared/ipc.ts` **as `IpcChannels` and `IpcEvents`**.
 

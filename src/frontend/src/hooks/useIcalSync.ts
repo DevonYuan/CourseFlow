@@ -43,7 +43,9 @@ export function useIcalSync(): UseIcalSyncReturn {
   const progressUnsubscribeRef = useRef<(() => void) | null>(null);
 
   // Map IPC progress stages to hook stages
-  function mapIpcStageToHookStage(ipcStage: IpcEvents['ical:progress']['stage']): UseIcalSyncState['stage'] {
+  function mapIpcStageToHookStage(
+    ipcStage: IpcEvents['ical:progress']['stage'],
+  ): UseIcalSyncState['stage'] {
     switch (ipcStage) {
       case 'fetching': {
         return 'fetch';

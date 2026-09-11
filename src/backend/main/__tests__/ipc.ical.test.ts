@@ -70,7 +70,15 @@ vi.mock('../events.js', () => ({
 import type { ICalEvent, ImportResult, Settings } from '../../shared/types.js';
 import { repo } from '../db/repository.js';
 import { sendEventToRenderers } from '../events.js';
-import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError, TimeoutError, ICalParseError } from '../ical/index.js';
+import {
+  fetchICalFeed,
+  parseICalFeed,
+  mapICalToAssignments,
+  NetworkError,
+  HttpError,
+  TimeoutError,
+  ICalParseError,
+} from '../ical/index.js';
 import { registerIpcHandlers } from '../ipc-handlers.js';
 
 // Helper to create test ICalEvent
@@ -141,10 +149,12 @@ describe('iCal IPC Handlers', () => {
       vi.mocked(fetchICalFeed).mockResolvedValueOnce(mockIcalText);
       vi.mocked(parseICalFeed).mockReturnValueOnce(mockEvents);
 
-      const result = await invokeHandler<{ ok: boolean; data?: ICalEvent[]; error?: string; code?: string }>(
-        'ical:fetch',
-        { url: testUrl }
-      );
+      const result = await invokeHandler<{
+        ok: boolean;
+        data?: ICalEvent[];
+        error?: string;
+        code?: string;
+      }>('ical:fetch', { url: testUrl });
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -152,15 +162,27 @@ describe('iCal IPC Handlers', () => {
       }
 
       // Verify progress events emitted
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'fetching', progress: 10, message: 'Fetching calendar...' });
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'parsing', progress: 30, message: 'Parsing events...' });
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'complete', progress: 100, message: `Fetched ${mockEvents.length} events` });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {
+        stage: 'fetching',
+        progress: 10,
+        message: 'Fetching calendar...',
+      });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {
+        stage: 'parsing',
+        progress: 30,
+        message: 'Parsing events...',
+      });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {
+        stage: 'complete',
+        progress: 100,
+        message: `Fetched ${mockEvents.length} events`,
+      });
     });
 
     it('rejects empty URL', async () => {
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:fetch',
-        { url: '' }
+        { url: '' },
       );
 
       expect(result.ok).toBe(false);
@@ -173,7 +195,7 @@ describe('iCal IPC Handlers', () => {
     it('rejects invalid URL format', async () => {
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:fetch',
-        { url: 'not-a-valid-url' }
+        { url: 'not-a-valid-url' },
       );
 
       expect(result.ok).toBe(false);
@@ -189,7 +211,7 @@ describe('iCal IPC Handlers', () => {
 
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:fetch',
-        { url: testUrl }
+        { url: testUrl },
       );
 
       expect(result.ok).toBe(false);
@@ -205,7 +227,7 @@ describe('iCal IPC Handlers', () => {
 
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:fetch',
-        { url: testUrl }
+        { url: testUrl },
       );
 
       expect(result.ok).toBe(false);
@@ -221,7 +243,7 @@ describe('iCal IPC Handlers', () => {
 
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:fetch',
-        { url: testUrl }
+        { url: testUrl },
       );
 
       expect(result.ok).toBe(false);
@@ -234,11 +256,13 @@ describe('iCal IPC Handlers', () => {
     it('returns PARSE_ERROR for parse failures', async () => {
       vi.mocked(fetchICalFeed).mockResolvedValueOnce(mockIcalText);
       const parseError = new ICalParseError('Failed to parse iCal feed');
-      vi.mocked(parseICalFeed).mockImplementationOnce(() => { throw parseError; });
+      vi.mocked(parseICalFeed).mockImplementationOnce(() => {
+        throw parseError;
+      });
 
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:fetch',
-        { url: testUrl }
+        { url: testUrl },
       );
 
       expect(result.ok).toBe(false);
@@ -272,10 +296,12 @@ describe('iCal IPC Handlers', () => {
       vi.mocked(repo.importAssignments).mockReturnValueOnce(mockImportResult);
       vi.mocked(repo.setSettings).mockResolvedValueOnce({} as Settings);
 
-      const result = await invokeHandler<{ ok: boolean; data?: ImportResult; error?: string; code?: string }>(
-        'ical:import',
-        { events: testEvents, sourceUrl: testSourceUrl }
-      );
+      const result = await invokeHandler<{
+        ok: boolean;
+        data?: ImportResult;
+        error?: string;
+        code?: string;
+      }>('ical:import', { events: testEvents, sourceUrl: testSourceUrl });
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -289,8 +315,16 @@ describe('iCal IPC Handlers', () => {
       expect(repo.importAssignments).toHaveBeenCalledWith(mockAssignments);
 
       // Verify progress events emitted
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'importing', progress: 10, message: 'Importing assignments...' });
-      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', { stage: 'complete', progress: 100, message: `Imported ${mockImportResult.imported}, updated ${mockImportResult.updated}, skipped ${mockImportResult.skipped}` });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {
+        stage: 'importing',
+        progress: 10,
+        message: 'Importing assignments...',
+      });
+      expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {
+        stage: 'complete',
+        progress: 100,
+        message: `Imported ${mockImportResult.imported}, updated ${mockImportResult.updated}, skipped ${mockImportResult.skipped}`,
+      });
 
       // Verify setSettings called to update lastSyncAt
       expect(repo.setSettings).toHaveBeenCalled();
@@ -305,7 +339,7 @@ describe('iCal IPC Handlers', () => {
     it('rejects empty events array', async () => {
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:import',
-        { events: [], sourceUrl: testSourceUrl }
+        { events: [], sourceUrl: testSourceUrl },
       );
 
       expect(result.ok).toBe(false);
@@ -318,7 +352,7 @@ describe('iCal IPC Handlers', () => {
     it('rejects missing sourceUrl', async () => {
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:import',
-        { events: testEvents, sourceUrl: '' }
+        { events: testEvents, sourceUrl: '' },
       );
 
       expect(result.ok).toBe(false);
@@ -331,7 +365,7 @@ describe('iCal IPC Handlers', () => {
     it('rejects non-array events', async () => {
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:import',
-        { events: 'not-an-array' as any, sourceUrl: testSourceUrl }
+        { events: 'not-an-array' as any, sourceUrl: testSourceUrl },
       );
 
       expect(result.ok).toBe(false);
@@ -349,7 +383,7 @@ describe('iCal IPC Handlers', () => {
 
       const result = await invokeHandler<{ ok: boolean; error?: string; code?: string }>(
         'ical:import',
-        { events: testEvents, sourceUrl: testSourceUrl }
+        { events: testEvents, sourceUrl: testSourceUrl },
       );
 
       expect(result.ok).toBe(false);
@@ -369,7 +403,7 @@ describe('iCal IPC Handlers', () => {
       expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {
         stage: 'error',
         progress: 100,
-        message: 'Mapping error'
+        message: 'Mapping error',
       });
     });
   });

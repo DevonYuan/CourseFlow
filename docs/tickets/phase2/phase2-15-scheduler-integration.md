@@ -81,13 +81,13 @@ ical:fetch(url)
 
 ### Error Codes
 
-| Code | Cause | Retry? | UI Message |
-|------|-------|--------|------------|
-| `network` | Timeout, DNS, connection refused | Yes (3x) | "Network error — retrying..." |
-| `auth` | 401, 403 | **No** | "iCal URL invalid or expired — check Settings" |
-| `parse` | Invalid iCal format | **No** | "Failed to parse calendar feed" |
-| `server` | 5xx | Yes (3x) | "Server error — retrying..." |
-| `unknown` | Other | Yes (3x) | "Sync failed — retrying..." |
+| Code      | Cause                            | Retry?   | UI Message                                     |
+| --------- | -------------------------------- | -------- | ---------------------------------------------- |
+| `network` | Timeout, DNS, connection refused | Yes (3x) | "Network error — retrying..."                  |
+| `auth`    | 401, 403                         | **No**   | "iCal URL invalid or expired — check Settings" |
+| `parse`   | Invalid iCal format              | **No**   | "Failed to parse calendar feed"                |
+| `server`  | 5xx                              | Yes (3x) | "Server error — retrying..."                   |
+| `unknown` | Other                            | Yes (3x) | "Sync failed — retrying..."                    |
 
 ---
 
@@ -108,17 +108,17 @@ ical:fetch(url)
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Background sync runs at interval, imports assignments | Manual test (interval=1min) |
-| 2 | Network error → retries 3x with backoff | Unit test (mock fetch fail) |
-| 3 | 401/403 → pauses scheduler, shows error toast | Manual test (bad URL) |
-| 4 | Parse error → pauses scheduler, shows error toast | Manual test (bad .ics) |
-| 5 | Manual "Sync Now" during background sync → ignored with toast | Manual test |
-| 6 | Interval change at runtime → scheduler restarts | Manual test |
-| 7 | `ical:progress` events emitted during background fetch | Event test |
-| 8 | Priority/notes preserved on background re-import | Integration test |
-| 9 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                     | Verification                |
+| --- | ------------------------------------------------------------- | --------------------------- |
+| 1   | Background sync runs at interval, imports assignments         | Manual test (interval=1min) |
+| 2   | Network error → retries 3x with backoff                       | Unit test (mock fetch fail) |
+| 3   | 401/403 → pauses scheduler, shows error toast                 | Manual test (bad URL)       |
+| 4   | Parse error → pauses scheduler, shows error toast             | Manual test (bad .ics)      |
+| 5   | Manual "Sync Now" during background sync → ignored with toast | Manual test                 |
+| 6   | Interval change at runtime → scheduler restarts               | Manual test                 |
+| 7   | `ical:progress` events emitted during background fetch        | Event test                  |
+| 8   | Priority/notes preserved on background re-import              | Integration test            |
+| 9   | All tests pass (`pnpm test`)                                  | CI run                      |
 
 ---
 

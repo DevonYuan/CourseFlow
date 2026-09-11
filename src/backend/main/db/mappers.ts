@@ -87,7 +87,8 @@ export function mapAssignmentInputToDb(input: AssignmentInput, now: number): Par
   if (input.unlockAt !== undefined) dbRow.unlock_at = toUnixMs(input.unlockAt);
   if (input.lockAt !== undefined) dbRow.lock_at = toUnixMs(input.lockAt);
   if (input.pointsPossible !== undefined) dbRow.points_possible = input.pointsPossible;
-  if (input.submissionTypes !== undefined) dbRow.submission_types = JSON.stringify(input.submissionTypes);
+  if (input.submissionTypes !== undefined)
+    dbRow.submission_types = JSON.stringify(input.submissionTypes);
   if (input.workflowState !== undefined) dbRow.workflow_state = input.workflowState;
   if (input.htmlUrl !== undefined) dbRow.html_url = input.htmlUrl;
   if (input.icalUid !== undefined) dbRow.ical_uid = input.icalUid;
@@ -179,7 +180,10 @@ export function mapPriorityOrderRow(row: DbPriorityOrder): PriorityOrder {
  * Validate and map PriorityOrderInput to database row format for upsert.
  * Generates timestamps for new records.
  */
-export function mapPriorityOrderInputToDb(input: PriorityOrderInput, now: number = Date.now()): DbPriorityOrder {
+export function mapPriorityOrderInputToDb(
+  input: PriorityOrderInput,
+  now: number = Date.now(),
+): DbPriorityOrder {
   return {
     assignment_id: input.assignmentId,
     position: input.order,

@@ -104,10 +104,12 @@ describe('Settings Repository', () => {
     it('should merge stored settings with defaults', async () => {
       // Insert only theme and autoFetchIcal
       const db = getDatabase();
-      db.run(
-        'INSERT INTO settings (key, value) VALUES (?, ?), (?, ?)',
-        ['theme', JSON.stringify('dark'), 'autoFetchIcal', JSON.stringify(true)],
-      );
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?), (?, ?)', [
+        'theme',
+        JSON.stringify('dark'),
+        'autoFetchIcal',
+        JSON.stringify(true),
+      ]);
       saveDatabase();
 
       const settings = await repo.getAllSettings();
@@ -122,10 +124,10 @@ describe('Settings Repository', () => {
 
     it('should compute autoFetchIntervalMs from icalFetchIntervalMinutes', async () => {
       const db = getDatabase();
-      db.run(
-        'INSERT INTO settings (key, value) VALUES (?, ?)',
-        ['icalFetchIntervalMinutes', JSON.stringify(30)],
-      );
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [
+        'icalFetchIntervalMinutes',
+        JSON.stringify(30),
+      ]);
       saveDatabase();
 
       const settings = await repo.getAllSettings();
@@ -138,10 +140,7 @@ describe('Settings Repository', () => {
     it('should persist partial settings and merge with existing', async () => {
       // Set initial settings
       const db = getDatabase();
-      db.run(
-        'INSERT INTO settings (key, value) VALUES (?, ?)',
-        ['theme', JSON.stringify('light')],
-      );
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?)', ['theme', JSON.stringify('light')]);
       saveDatabase();
 
       // Update only autoFetchIcal
@@ -220,14 +219,14 @@ describe('Settings Repository', () => {
     it('should restore all defaults', async () => {
       // Set custom values
       const db = getDatabase();
-      db.run(
-        'INSERT INTO settings (key, value) VALUES (?, ?), (?, ?), (?, ?)',
-        [
-          'theme', JSON.stringify('dark'),
-          'autoFetchIcal', JSON.stringify(true),
-          'icalUrl', JSON.stringify('https://example.com/feed.ics'),
-        ],
-      );
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?), (?, ?), (?, ?)', [
+        'theme',
+        JSON.stringify('dark'),
+        'autoFetchIcal',
+        JSON.stringify(true),
+        'icalUrl',
+        JSON.stringify('https://example.com/feed.ics'),
+      ]);
       saveDatabase();
 
       const reset = await repo.resetSettings();
@@ -247,10 +246,7 @@ describe('Settings Repository', () => {
     it('should clear all settings from database and re-insert defaults', async () => {
       // Set custom values
       const db = getDatabase();
-      db.run(
-        'INSERT INTO settings (key, value) VALUES (?, ?)',
-        ['theme', JSON.stringify('dark')],
-      );
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?)', ['theme', JSON.stringify('dark')]);
       saveDatabase();
 
       await repo.resetSettings();
@@ -263,19 +259,21 @@ describe('Settings Repository', () => {
       }
       rows.free();
 
-      expect(keys.sort()).toEqual([
-        'autoFetchIcal',
-        'autoFetchIntervalMs',
-        'defaultPriority',
-        'dueSoonThresholdHours',
-        'icalFetchIntervalMinutes',
-        'icalUrl',
-        'lastSyncAt',
-        'notifyDueSoon',
-        'showCompletedAssignments',
-        'syncIntervalMinutes',
-        'theme',
-      ].sort());
+      expect(keys.sort()).toEqual(
+        [
+          'autoFetchIcal',
+          'autoFetchIntervalMs',
+          'defaultPriority',
+          'dueSoonThresholdHours',
+          'icalFetchIntervalMinutes',
+          'icalUrl',
+          'lastSyncAt',
+          'notifyDueSoon',
+          'showCompletedAssignments',
+          'syncIntervalMinutes',
+          'theme',
+        ].sort(),
+      );
     });
   });
 
@@ -292,10 +290,10 @@ describe('Settings Repository', () => {
     it('should handle corrupted encrypted data gracefully', async () => {
       // Manually insert corrupted encrypted data
       const db = getDatabase();
-      db.run(
-        'INSERT INTO settings (key, value) VALUES (?, ?)',
-        ['icalUrl', JSON.stringify({ v: 1, ciphertext: 'bad', iv: 'bad', salt: 'bad' })],
-      );
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [
+        'icalUrl',
+        JSON.stringify({ v: 1, ciphertext: 'bad', iv: 'bad', salt: 'bad' }),
+      ]);
       saveDatabase();
 
       // Should not throw, should return default empty string

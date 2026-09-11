@@ -1,7 +1,8 @@
 ---
-description: "Use when implementing features, running tests, or executing commands that spawn backend, frontend, or Node.js processes. Ensures proper cleanup to prevent memory/CPU leaks from orphaned processes."
-applyTo: "**"
+description: 'Use when implementing features, running tests, or executing commands that spawn backend, frontend, or Node.js processes. Ensures proper cleanup to prevent memory/CPU leaks from orphaned processes.'
+applyTo: '**'
 ---
+
 # Process Cleanup Guidelines
 
 ## ALWAYS Clean Up After Implementation
@@ -9,22 +10,26 @@ applyTo: "**"
 After completing any task that spawns processes, you MUST verify and clean up:
 
 ### Backend Processes (Electron Main Process)
+
 - Kill any `electron` or `node` processes running the main entry point (`src/backend/main/index.ts`)
 - Check for processes on IPC ports (default: 9999 or configured port)
 - Use `pkill -f "electron.*main"` or `pkill -f "node.*main/index"`
 
 ### Frontend Processes (Vite/React Dev Server)
+
 - Kill any `vite` dev server processes
 - Kill any `node` processes running the frontend entry (`src/frontend/src/main.tsx`)
 - Check ports 5173 (Vite default) and 3000 (common alternative)
 - Use `pkill -f "vite"` or `lsof -ti:5173 | xargs kill -9`
 
 ### Test Processes (Vitest)
+
 - Kill any `vitest` processes after test runs complete
 - Check for orphaned test workers
 - Use `pkill -f "vitest"` or `npx vitest --run` (run mode exits cleanly)
 
 ### Additional Node Processes
+
 - Kill any `tsc --watch` TypeScript compilation watchers
 - Kill any `eslint --watch` or linting watchers
 - Kill any custom scripts spawned via `run_in_terminal` with `mode: async`
@@ -64,6 +69,7 @@ ps aux | grep -E "(electron|vite|vitest|tsc.*watch)" | grep -v grep
 ## Verification
 
 Always run verification after cleanup:
+
 ```bash
 # Should return empty or only grep process
 ps aux | grep -E "(electron|vite|vitest|tsc.*watch)" | grep -v grep

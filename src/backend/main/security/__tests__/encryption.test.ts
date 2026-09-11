@@ -15,7 +15,13 @@ vi.mock('electron', () => ({
 }));
 
 // Import after mocking
-import { encryptIcalUrl, decryptIcalUrl, type EncryptedSetting, DecryptionError, isEncryptedSetting } from '../encryption.js';
+import {
+  encryptIcalUrl,
+  decryptIcalUrl,
+  type EncryptedSetting,
+  DecryptionError,
+  isEncryptedSetting,
+} from '../encryption.js';
 
 describe('iCal URL Encryption', () => {
   beforeEach(() => {
@@ -93,7 +99,8 @@ describe('iCal URL Encryption', () => {
       // Tamper with ciphertext
       const tampered: EncryptedSetting = {
         ...encrypted,
-        ciphertext: encrypted.ciphertext.slice(0, -1) + (encrypted.ciphertext.endsWith('a') ? 'b' : 'a'),
+        ciphertext:
+          encrypted.ciphertext.slice(0, -1) + (encrypted.ciphertext.endsWith('a') ? 'b' : 'a'),
       };
 
       await expect(decryptIcalUrl(tampered)).rejects.toThrow(DecryptionError);

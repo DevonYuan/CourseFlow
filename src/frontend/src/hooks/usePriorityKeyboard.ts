@@ -27,7 +27,10 @@ interface UsePriorityKeyboardOptions {
  * Custom hook for priority keyboard shortcuts.
  * Registers global keydown listener but only acts when list/row is focused.
  */
-export function usePriorityKeyboard({ onAnnounce, enabled = true }: UsePriorityKeyboardOptions): void {
+export function usePriorityKeyboard({
+  onAnnounce,
+  enabled = true,
+}: UsePriorityKeyboardOptions): void {
   const moveAssignment = useMoveAssignment();
   const assignments = useAssignmentsSelector();
 
@@ -91,7 +94,7 @@ export function usePriorityKeyboard({ onAnnounce, enabled = true }: UsePriorityK
       // Focus stays on the moved row (handled by AssignmentRow's data-assignment-id)
       // The row element remains the same, just reordered in DOM
     },
-    [enabled, isInListContext, moveAssignment, assignments, onAnnounce]
+    [enabled, isInListContext, moveAssignment, assignments, onAnnounce],
   );
 
   useEffect(() => {

@@ -25,16 +25,16 @@ The goal of this phase:
 
 ### New entity: `CalendarSource`
 
-| Field         | Type        | Notes                                                        |
-| ------------- | ----------- | ------------------------------------------------------------ |
-| `id`          | UUID PK     |                                                              |
-| `name`        | TEXT        | User label, e.g. “School”, “Birthdays”                       |
-| `feed_url`    | TEXT        | Encrypted (reuse AES-GCM path from `icalUrl`)                |
-| `enabled`     | INTEGER     | 0/1 — disabled sources are not fetched                       |
-| `color`       | TEXT        | Optional accent color for badges / grouping                  |
-| `position`    | INTEGER     | Display order (0 = top)                                      |
-| `last_sync_at`, `next_sync_at`, `last_error` | | Per-source sync state, surfaced in the UI            |
-| `created_at`, `updated_at` | INTEGER | Timestamps (ms)                                    |
+| Field                                        | Type    | Notes                                         |
+| -------------------------------------------- | ------- | --------------------------------------------- |
+| `id`                                         | UUID PK |                                               |
+| `name`                                       | TEXT    | User label, e.g. “School”, “Birthdays”        |
+| `feed_url`                                   | TEXT    | Encrypted (reuse AES-GCM path from `icalUrl`) |
+| `enabled`                                    | INTEGER | 0/1 — disabled sources are not fetched        |
+| `color`                                      | TEXT    | Optional accent color for badges / grouping   |
+| `position`                                   | INTEGER | Display order (0 = top)                       |
+| `last_sync_at`, `next_sync_at`, `last_error` |         | Per-source sync state, surfaced in the UI     |
+| `created_at`, `updated_at`                   | INTEGER | Timestamps (ms)                               |
 
 ### Assignment linkage
 

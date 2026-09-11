@@ -70,11 +70,7 @@ export function AssignmentListDragDrop({
   subTaskProgressMap,
 }: AssignmentListDragDropProps): JSX.Element {
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={onDragEnd}
-    >
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <div className="assignment-list" role="list" aria-label="Assignments">
         {sortedAssignments.length === 0 ? (
           <EmptyState onOpenSettings={onOpenSettings} />

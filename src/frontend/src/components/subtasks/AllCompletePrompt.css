@@ -75,7 +75,9 @@
   border-radius: 6px;
   border: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .all-complete-prompt__btn:focus-visible {

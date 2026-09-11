@@ -72,10 +72,12 @@ export function ProgressBar({
       tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
       onKeyDown={onClick ? handleKeyDown : undefined}
-      style={{
-        '--progress-color': color || 'var(--color-accent, #3b82f6)',
-        '--progress-value': `${clampedValue}%`,
-      } as React.CSSProperties}
+      style={
+        {
+          '--progress-color': color || 'var(--color-accent, #3b82f6)',
+          '--progress-value': `${clampedValue}%`,
+        } as React.CSSProperties
+      }
     >
       <div className="progress-bar__track" aria-hidden="true">
         <div className="progress-bar__fill" />
@@ -83,9 +85,7 @@ export function ProgressBar({
       {(label || showPercentage) && (
         <div className="progress-bar__label" aria-hidden="true">
           {label && <span className="progress-bar__label-text">{label}</span>}
-          {showPercentage && (
-            <span className="progress-bar__percentage">{clampedValue}%</span>
-          )}
+          {showPercentage && <span className="progress-bar__percentage">{clampedValue}%</span>}
         </div>
       )}
     </div>

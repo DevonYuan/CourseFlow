@@ -4,7 +4,16 @@
 // as `window.api` in the renderer process.
 
 import type { IpcResult, IpcChannels, IpcEvents } from '@backend/shared/ipc';
-import type { Assignment, PriorityOrder, Settings, SubTask, Note, SubTaskInput, NoteInput, PriorityOrderInput } from '@backend/shared/types';
+import type {
+  Assignment,
+  PriorityOrder,
+  Settings,
+  SubTask,
+  Note,
+  SubTaskInput,
+  NoteInput,
+  PriorityOrderInput,
+} from '@backend/shared/types';
 
 declare global {
   interface Window {
@@ -35,7 +44,10 @@ declare global {
       };
       ical: {
         fetch: (url: string) => Promise<IpcResult<ICalEvent[]>>;
-        import: (input: { events: ICalEvent[]; sourceUrl: string }) => Promise<IpcResult<{ imported: number; updated: number; skipped: number }>>;
+        import: (input: {
+          events: ICalEvent[];
+          sourceUrl: string;
+        }) => Promise<IpcResult<{ imported: number; updated: number; skipped: number }>>;
       };
       settings: {
         get: () => Promise<IpcResult<Settings>>;

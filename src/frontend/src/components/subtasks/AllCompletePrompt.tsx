@@ -8,10 +8,14 @@
  * @module @frontend/components/subtasks/AllCompletePrompt
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import type { EntityId } from '@backend/shared/types';
 
-import { isPromptDismissed, setPromptDismissed, clearPromptDismissed } from '../../utils/localStorage';
+import {
+  isPromptDismissed,
+  setPromptDismissed,
+  clearPromptDismissed,
+} from '../../utils/localStorage';
 
 import './AllCompletePrompt.css';
 
@@ -52,13 +56,21 @@ export function AllCompletePrompt({
     onDismissChange(true);
   }, [assignmentId, onDismissChange]);
 
+  // Handle Escape key to dismiss
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleDismiss();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleDismiss]);
+
   return (
-    <div
-      className="all-complete-prompt"
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-    >
+    <div className="all-complete-prompt" role="status" aria-live="polite" aria-atomic="true">
       <div className="all-complete-prompt__content">
         <svg
           className="all-complete-prompt__icon"

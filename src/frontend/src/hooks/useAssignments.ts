@@ -52,11 +52,10 @@ export function useAssignments(): UseAssignmentsReturn {
   const { success: toastSuccess, error: toastError } = useToast();
 
   // Compute isEmpty from other states (matches original hook behavior)
-  const isEmpty = useMemo(() => !isLoading && assignments.length === 0 && error === null, [
-    isLoading,
-    assignments,
-    error,
-  ]);
+  const isEmpty = useMemo(
+    () => !isLoading && assignments.length === 0 && error === null,
+    [isLoading, assignments, error],
+  );
 
   const refetch = useCallback(() => useAssignmentsStore.getState().fetchAssignments(), []);
   const clearError = useCallback(() => useAssignmentsStore.getState().clearError(), []);
@@ -111,7 +110,7 @@ export function useAssignments(): UseAssignmentsReturn {
         toastError('Failed to update. Try again.');
       }
     },
-    [assignments, setAssignmentStatus, toastSuccess, toastError]
+    [assignments, setAssignmentStatus, toastSuccess, toastError],
   );
 
   return {

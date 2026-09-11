@@ -30,7 +30,12 @@ export interface TooltipProps {
  * - Dismisses on Escape key or mouse leave
  * - Renders as portal to body
  */
-export function Tooltip({ content, children, position = 'top', delay = 0 }: TooltipProps): JSX.Element {
+export function Tooltip({
+  content,
+  children,
+  position = 'top',
+  delay = 0,
+}: TooltipProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -245,7 +250,11 @@ export function TooltipWrap({ content, children }: TooltipWrapProps): JSX.Elemen
       >
         {children}
       </span>
-      <span id="tooltip-content" className="tooltip-wrapper__tooltip" style={{ top: '100%', left: '0' }}>
+      <span
+        id="tooltip-content"
+        className="tooltip-wrapper__tooltip"
+        style={{ top: '100%', left: '0' }}
+      >
         {content}
       </span>
     </span>

@@ -50,21 +50,21 @@ Implement **full-text search** across all standalone pages using SQLite FTS5. Us
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/components/notes/SearchPalette.tsx` | **New file**. Command palette modal: input, results list, keyboard nav, focus trap, recent pages fallback. |
-| `src/frontend/src/pages/NotesSearchResults.tsx` | **New file** (optional). Dedicated search results page at `/notes/search?q=...` for long result sets. |
-| `src/frontend/src/hooks/usePageSearch.ts` | **New file**. Hook for debounced search, AbortController management, recent pages cache, keyboard shortcut registration. |
-| `src/frontend/src/components/notes/NotesSidebar.tsx` | Add "Search" button in sidebar header that opens palette. |
-| `src/frontend/src/hooks/useGlobalShortcuts.ts` | **New file** (or extend). Register `Cmd+K` / `Ctrl+K` globally (when not in text input) to open palette. |
-| `src/frontend/src/stores/notesStore.ts` | Add search state: `query`, `results`, `isSearching`, `recentPages`. |
+| File                                                  | Change                                                                                                                   |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `src/frontend/src/components/notes/SearchPalette.tsx` | **New file**. Command palette modal: input, results list, keyboard nav, focus trap, recent pages fallback.               |
+| `src/frontend/src/pages/NotesSearchResults.tsx`       | **New file** (optional). Dedicated search results page at `/notes/search?q=...` for long result sets.                    |
+| `src/frontend/src/hooks/usePageSearch.ts`             | **New file**. Hook for debounced search, AbortController management, recent pages cache, keyboard shortcut registration. |
+| `src/frontend/src/components/notes/NotesSidebar.tsx`  | Add "Search" button in sidebar header that opens palette.                                                                |
+| `src/frontend/src/hooks/useGlobalShortcuts.ts`        | **New file** (or extend). Register `Cmd+K` / `Ctrl+K` globally (when not in text input) to open palette.                 |
+| `src/frontend/src/stores/notesStore.ts`               | Add search state: `query`, `results`, `isSearching`, `recentPages`.                                                      |
 
 ### Backend (verify IPC)
 
-| File | Change |
-|------|--------|
+| File                                | Change                                                                                                                                                                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/db/repository.ts` | Verify `searchPages(query, limit)` uses FTS5: `SELECT p.*, bm25(pages_fts) as rank, snippet(pages_fts, ...) as snippet FROM pages_fts JOIN pages p ON pages_fts.id = p.id WHERE pages_fts MATCH ? ORDER BY rank LIMIT ?`. |
-| `src/backend/main/ipc-handlers.ts` | Verify `db:pages:search` handler calls repository and returns `PageSearchResult[]`. |
+| `src/backend/main/ipc-handlers.ts`  | Verify `db:pages:search` handler calls repository and returns `PageSearchResult[]`.                                                                                                                                       |
 
 ## Acceptance Criteria
 
@@ -91,13 +91,16 @@ Implement **full-text search** across all standalone pages using SQLite FTS5. Us
 > Any additional context, risks, or considerations.
 
 - **FTS5 query syntax**: User input passed to `MATCH` should be sanitized. Escape FTS5 special characters (`"`, `*`, `-`, `+`, `(`, `)`) or wrap in quotes for phrase search. For MVP: simple prefix matching — append `*` to each term: `"hello world" → "hello* world*"`.
-- **AbortController pattern**: 
+- **AbortController pattern**:
   ```ts
   const abortRef = useRef<AbortController>();
   const search = async (query) => {
     abortRef.current?.abort();
     abortRef.current = new AbortController();
-    const results = await api.db.pages.search({ query, limit: 20 }, { signal: abortRef.current.signal });
+    const results = await api.db.pages.search(
+      { query, limit: 20 },
+      { signal: abortRef.current.signal },
+    );
   };
   ```
 - **Recent pages cache**: Fetch once on palette open via `db:pages:list({ parentId: null })` with limit 10 ordered by `updated_at DESC`, or maintain in store from `db:changed` events.

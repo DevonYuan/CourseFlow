@@ -25,12 +25,12 @@ Add `FilterState` slice to Zustand store for managing filter, sort, and grouping
 - [ ] `FilterState` interface in store:
   ```typescript
   interface FilterState {
-    courseFilter: string[]  // course names to include (empty = all)
-    statusFilter: 'all' | 'pending' | 'completed'
-    dueDateRange: { start: Date; end: Date } | null
-    searchQuery: string
-    sortOption: 'priority' | 'dueDateAsc' | 'dueDateDesc' | 'course' | 'createdDesc'
-    groupingType: 'none' | 'week' | 'status' | 'course'
+    courseFilter: string[]; // course names to include (empty = all)
+    statusFilter: 'all' | 'pending' | 'completed';
+    dueDateRange: { start: Date; end: Date } | null;
+    searchQuery: string;
+    sortOption: 'priority' | 'dueDateAsc' | 'dueDateDesc' | 'course' | 'createdDesc';
+    groupingType: 'none' | 'week' | 'status' | 'course';
   }
   ```
 - [ ] Actions: `setCourseFilter`, `toggleCourseFilter`, `setStatusFilter`, `setDueDateRange`, `setSearchQuery`, `setSortOption`, `setGroupingType`, `resetFilters`
@@ -89,15 +89,15 @@ Add `FilterState` slice to Zustand store for managing filter, sort, and grouping
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | All filter actions update state correctly | Unit test |
-| 2 | State persists to localStorage on change | Manual test + devtools |
-| 3 | State hydrates from localStorage on reload | Manual test |
-| 4 | Debounced searchQuery doesn't write on every keystroke | Manual test |
-| 5 | Course filter options derived from assignments | Unit test |
-| 6 | Invalid localStorage (corrupt JSON) handled gracefully | Unit test |
-| 7 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                              | Verification           |
+| --- | ------------------------------------------------------ | ---------------------- |
+| 1   | All filter actions update state correctly              | Unit test              |
+| 2   | State persists to localStorage on change               | Manual test + devtools |
+| 3   | State hydrates from localStorage on reload             | Manual test            |
+| 4   | Debounced searchQuery doesn't write on every keystroke | Manual test            |
+| 5   | Course filter options derived from assignments         | Unit test              |
+| 6   | Invalid localStorage (corrupt JSON) handled gracefully | Unit test              |
+| 7   | All tests pass (`pnpm test`)                           | CI run                 |
 
 ---
 

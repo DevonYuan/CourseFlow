@@ -28,7 +28,9 @@
   border: 1px solid var(--primary-color, #3b82f6);
   border-radius: 999px;
   cursor: pointer;
-  transition: background-color var(--transition-fast, 150ms), border-color var(--transition-fast, 150ms);
+  transition:
+    background-color var(--transition-fast, 150ms),
+    border-color var(--transition-fast, 150ms);
   box-sizing: border-box;
 }
 
@@ -56,7 +58,9 @@
   height: 16px;
   color: var(--primary-color, #3b82f6);
   border-radius: 50%;
-  transition: background-color var(--transition-fast, 150ms), color var(--transition-fast, 150ms);
+  transition:
+    background-color var(--transition-fast, 150ms),
+    color var(--transition-fast, 150ms);
 }
 
 .filter-summary__chip:hover .filter-summary__chip-remove {
@@ -73,7 +77,9 @@
   border: none;
   border-radius: var(--radius-sm, 4px);
   cursor: pointer;
-  transition: color var(--transition-fast, 150ms), background-color var(--transition-fast, 150ms);
+  transition:
+    color var(--transition-fast, 150ms),
+    background-color var(--transition-fast, 150ms);
 }
 
 .filter-summary__clear-all:hover {

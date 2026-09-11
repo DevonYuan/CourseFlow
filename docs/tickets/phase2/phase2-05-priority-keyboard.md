@@ -42,7 +42,7 @@ Add keyboard shortcuts for priority reordering: `Alt+Up/Down` to move assignment
 
 ## Designs & Constraints
 
-- **Library**: `@dnd-kit` `KeyboardSensor` handles drag via keyboard; this ticket adds *direct* shortcuts without entering drag mode
+- **Library**: `@dnd-kit` `KeyboardSensor` handles drag via keyboard; this ticket adds _direct_ shortcuts without entering drag mode
 - **Implementation**: Use `useHotkeys` from `react-hotkeys-hook` or custom `useEffect` with `keydown` listener
 - **Live region**: `<div aria-live="polite" aria-atomic="true" className="sr-only" />` in `AssignmentList`
 - **Focus**: Each `AssignmentRow` has `tabIndex={0}` and `onFocus` to track current index
@@ -50,11 +50,11 @@ Add keyboard shortcuts for priority reordering: `Alt+Up/Down` to move assignment
 
 ### Keyboard Mapping
 
-| Shortcut | Action |
-|----------|--------|
-| `Alt+Up` | Move up 1 (swap with previous) |
-| `Alt+Down` | Move down 1 (swap with next) |
-| `Alt+Shift+Up` | Move to top (position 0) |
+| Shortcut         | Action                         |
+| ---------------- | ------------------------------ |
+| `Alt+Up`         | Move up 1 (swap with previous) |
+| `Alt+Down`       | Move down 1 (swap with next)   |
+| `Alt+Shift+Up`   | Move to top (position 0)       |
 | `Alt+Shift+Down` | Move to bottom (last position) |
 
 ### Zustand Action
@@ -82,22 +82,22 @@ moveAssignment: (assignmentId: string, direction: 'up' | 'down' | 'top' | 'botto
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | `Alt+Up` moves assignment up one position | Manual test |
-| 2 | `Alt+Down` moves assignment down one position | Manual test |
-| 3 | `Alt+Shift+Up` moves to top | Manual test |
-| 4 | `Alt+Shift+Down` moves to bottom | Manual test |
-| 5 | Screen reader announces "Moved X to position Y" | Manual test (NVDA/VoiceOver) |
-| 6 | Focus stays on moved assignment | Manual test |
-| 7 | Completed assignments skipped | Manual test |
-| 8 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                       | Verification                 |
+| --- | ----------------------------------------------- | ---------------------------- |
+| 1   | `Alt+Up` moves assignment up one position       | Manual test                  |
+| 2   | `Alt+Down` moves assignment down one position   | Manual test                  |
+| 3   | `Alt+Shift+Up` moves to top                     | Manual test                  |
+| 4   | `Alt+Shift+Down` moves to bottom                | Manual test                  |
+| 5   | Screen reader announces "Moved X to position Y" | Manual test (NVDA/VoiceOver) |
+| 6   | Focus stays on moved assignment                 | Manual test                  |
+| 7   | Completed assignments skipped                   | Manual test                  |
+| 8   | All tests pass (`pnpm test`)                    | CI run                       |
 
 ---
 
 ## Notes
 
-- `@dnd-kit` `KeyboardSensor` uses Space/Enter/Arrows for drag — our shortcuts are *alternative* direct manipulation
+- `@dnd-kit` `KeyboardSensor` uses Space/Enter/Arrows for drag — our shortcuts are _alternative_ direct manipulation
 - Test on macOS (Option key) and Windows/Linux (Alt key) — both map to `event.altKey`
 - Live region: use `polite` not `assertive` to avoid interrupting user
 - Position announced is 1-based (user-friendly), internal is 0-based

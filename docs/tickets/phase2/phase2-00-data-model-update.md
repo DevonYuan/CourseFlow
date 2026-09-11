@@ -54,21 +54,21 @@ Extend shared types, IPC contracts, database schema, and repository mappers to s
 
 ### New IPC Channels (to define in ipc.ts)
 
-| Channel | Request | Response | Description |
-|---------|---------|----------|-------------|
-| `db:priority:list` | `void` | `PriorityOrder[]` | Fetch all priority orders |
-| `db:priority:reorder` | `string[]` (ordered assignment IDs) | `void` | Bulk reorder priority |
-| `db:priority:upsert` | `PriorityOrderInput` | `PriorityOrder` | Create or update priority entry |
-| `scheduler:start` | `void` | `void` | Start background scheduler (for testing) |
-| `scheduler:stop` | `void` | `void` | Stop background scheduler (for testing) |
-| `scheduler:status` | `void` | `SchedulerStatus` | Get scheduler status |
+| Channel               | Request                             | Response          | Description                              |
+| --------------------- | ----------------------------------- | ----------------- | ---------------------------------------- |
+| `db:priority:list`    | `void`                              | `PriorityOrder[]` | Fetch all priority orders                |
+| `db:priority:reorder` | `string[]` (ordered assignment IDs) | `void`            | Bulk reorder priority                    |
+| `db:priority:upsert`  | `PriorityOrderInput`                | `PriorityOrder`   | Create or update priority entry          |
+| `scheduler:start`     | `void`                              | `void`            | Start background scheduler (for testing) |
+| `scheduler:stop`      | `void`                              | `void`            | Stop background scheduler (for testing)  |
+| `scheduler:status`    | `void`                              | `SchedulerStatus` | Get scheduler status                     |
 
 ### New Events (Main → Renderer)
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `scheduler:tick` | `{ nextRun: string }` | Emitted on each scheduler interval (for UI countdown) |
-| `scheduler:error` | `{ message: string }` | Scheduler error (network, auth, parse) |
+| Event             | Payload               | Description                                           |
+| ----------------- | --------------------- | ----------------------------------------------------- |
+| `scheduler:tick`  | `{ nextRun: string }` | Emitted on each scheduler interval (for UI countdown) |
+| `scheduler:error` | `{ message: string }` | Scheduler error (network, auth, parse)                |
 
 ---
 
@@ -91,13 +91,13 @@ Extend shared types, IPC contracts, database schema, and repository mappers to s
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | All new types compile without errors in shared, main, preload, renderer | `pnpm typecheck` |
-| 2 | IPC channel names follow convention and are typed end-to-end | Code review |
-| 3 | `priority_order` table defined in schema.sql with correct FK | Schema review |
-| 4 | Repository mappers handle null/undefined correctly | Unit tests |
-| 5 | No circular dependencies introduced | `pnpm typecheck` |
+| #   | Criterion                                                               | Verification     |
+| --- | ----------------------------------------------------------------------- | ---------------- |
+| 1   | All new types compile without errors in shared, main, preload, renderer | `pnpm typecheck` |
+| 2   | IPC channel names follow convention and are typed end-to-end            | Code review      |
+| 3   | `priority_order` table defined in schema.sql with correct FK            | Schema review    |
+| 4   | Repository mappers handle null/undefined correctly                      | Unit tests       |
+| 5   | No circular dependencies introduced                                     | `pnpm typecheck` |
 
 ---
 

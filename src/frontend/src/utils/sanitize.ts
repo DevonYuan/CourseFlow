@@ -16,19 +16,55 @@ import DOMPurify from 'dompurify';
 const SANITIZE_CONFIG = {
   // Allow common text formatting tags
   ALLOWED_TAGS: [
-    'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
-    'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'a', 'img', 'span', 'div',
-    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+    'p',
+    'br',
+    'strong',
+    'b',
+    'em',
+    'i',
+    'u',
+    's',
+    'strike',
+    'del',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'pre',
+    'code',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'a',
+    'img',
+    'span',
+    'div',
+    'table',
+    'thead',
+    'tbody',
+    'tr',
+    'th',
+    'td',
     'hr',
   ],
   // Allow safe attributes
   ALLOWED_ATTR: [
-    'href', 'target', 'rel', 'title',
-    'src', 'alt', 'width', 'height',
-    'style', 'class', 'id',
-    'colspan', 'rowspan',
+    'href',
+    'target',
+    'rel',
+    'title',
+    'src',
+    'alt',
+    'width',
+    'height',
+    'style',
+    'class',
+    'id',
+    'colspan',
+    'rowspan',
   ],
   // Allow specific URI schemes in href/src
   ALLOWED_URI_REGEXP: /^(?:https?|mailto|tel):/i,
@@ -69,15 +105,16 @@ export function sanitizeHtml(html: string): string {
  * Handles common Canvas-specific patterns and quirks.
  */
 function normalizeCanvasHtml(html: string): string {
-  return html
-    // Convert Canvas-specific classes to generic ones
-    .replace(/\s+class="[^"]*"/g, '')
-    // Ensure links open in new tab for security
-    .replace(/<a\s+/gi, '<a target="_blank" rel="noopener noreferrer" ')
-    // Remove inline styles that could be problematic (keep simple ones)
-    // Note: We allow style attribute in ALLOWED_ATTR so simple styles pass through
-    // but DOMPurify will strip dangerous CSS properties
-    ;
+  return (
+    html
+      // Convert Canvas-specific classes to generic ones
+      .replace(/\s+class="[^"]*"/g, '')
+      // Ensure links open in new tab for security
+      .replace(/<a\s+/gi, '<a target="_blank" rel="noopener noreferrer" ')
+  );
+  // Remove inline styles that could be problematic (keep simple ones)
+  // Note: We allow style attribute in ALLOWED_ATTR so simple styles pass through
+  // but DOMPurify will strip dangerous CSS properties
 }
 
 /**

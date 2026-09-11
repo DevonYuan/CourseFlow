@@ -17,10 +17,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useState, useCallback, useMemo } from 'react';
 
 import type { GroupedAssignments } from '../../store/grouping';
@@ -68,7 +65,7 @@ interface GroupedAssignmentListProps {
 function sortAssignmentsWithinGroup(
   assignments: Assignment[],
   sortOption: SortOption,
-  priorityOrder: string[]
+  priorityOrder: string[],
 ): Assignment[] {
   if (assignments.length <= 1) return [...assignments];
 
@@ -209,7 +206,7 @@ function GroupItem({
   // Sort assignments within this group - useMemo at component level
   const sortedAssignments = useMemo(
     () => sortAssignmentsWithinGroup(group.assignments, sortOption, priorityOrder),
-    [group.assignments, sortOption, priorityOrder]
+    [group.assignments, sortOption, priorityOrder],
   );
 
   const handleDragEnd = useCallback(
@@ -218,30 +215,28 @@ function GroupItem({
         onDragEnd(event);
       }
     },
-    [onDragEnd]
+    [onDragEnd],
   );
 
   if (!isExpanded) {
     return (
-      <div key={group.groupKey} className="grouped-assignment-list__group" data-group-key={group.groupKey}>
-        <GroupHeader
-          group={group}
-          isExpanded={false}
-          onToggle={onToggle}
-          groupId={groupId}
-        />
+      <div
+        key={group.groupKey}
+        className="grouped-assignment-list__group"
+        data-group-key={group.groupKey}
+      >
+        <GroupHeader group={group} isExpanded={false} onToggle={onToggle} groupId={groupId} />
       </div>
     );
   }
 
   return (
-    <div key={group.groupKey} className="grouped-assignment-list__group" data-group-key={group.groupKey}>
-      <GroupHeader
-        group={group}
-        isExpanded={true}
-        onToggle={onToggle}
-        groupId={groupId}
-      />
+    <div
+      key={group.groupKey}
+      className="grouped-assignment-list__group"
+      data-group-key={group.groupKey}
+    >
+      <GroupHeader group={group} isExpanded={true} onToggle={onToggle} groupId={groupId} />
       <div
         id={controlsId}
         role="list"
@@ -274,17 +269,25 @@ function GroupItem({
               })}
             </SortableContext>
             <DragOverlay>
-              {(({
-                isDragging,
-                transform,
-                activatorEvent,
-                transition,
-              }: {
-                isDragging: boolean;
-                transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
-                activatorEvent: { active: { id: string } | null } | null;
-                transition: string | undefined;
-              }) => renderDragOverlay({ isDragging, transform, activatorEvent, transition })) as unknown as React.ReactNode}
+              {
+                (({
+                  isDragging,
+                  transform,
+                  activatorEvent,
+                  transition,
+                }: {
+                  isDragging: boolean;
+                  transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
+                  activatorEvent: { active: { id: string } | null } | null;
+                  transition: string | undefined;
+                }) =>
+                  renderDragOverlay({
+                    isDragging,
+                    transform,
+                    activatorEvent,
+                    transition,
+                  })) as unknown as React.ReactNode
+              }
             </DragOverlay>
           </DndContext>
         ) : (
@@ -324,7 +327,7 @@ export function GroupedAssignmentList({
 }: GroupedAssignmentListProps): JSX.Element {
   // Per-group expanded state (session only, not persisted)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(groupedAssignments.map((g) => g.groupKey))
+    new Set(groupedAssignments.map((g) => g.groupKey)),
   );
 
   const toggleGroup = useCallback((groupKey: string) => {
@@ -348,13 +351,13 @@ export function GroupedAssignmentList({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: () => ({ x: 0, y: 0 }),
-    })
+    }),
   );
 
   // All assignments flattened for drag overlay lookup
   const allAssignments = useMemo(
     () => groupedAssignments.flatMap((g) => g.assignments),
-    [groupedAssignments]
+    [groupedAssignments],
   );
 
   // Render drag overlay callback for @dnd-kit DragOverlay
@@ -388,11 +391,12 @@ export function GroupedAssignmentList({
         />
       );
     },
-    [allAssignments, onAssignmentClick, onMarkComplete]
+    [allAssignments, onAssignmentClick, onMarkComplete],
   );
 
   // Drag-and-drop is only enabled for 'priority' sort when grouping is 'none' or 'week'
-  const isDragEnabled = sortOption === 'priority' && (groupingType === 'none' || groupingType === 'week');
+  const isDragEnabled =
+    sortOption === 'priority' && (groupingType === 'none' || groupingType === 'week');
 
   return (
     <div className="grouped-assignment-list" role="list" aria-label="Assignments grouped">

@@ -164,42 +164,153 @@ initialAssignments.forEach((a) => mockAssignments.set(a.id, a));
 
 // Mock sub-tasks
 mockSubTasks.set('1', [
-  { id: 'st-1-1' as EntityId, assignmentId: '1' as EntityId, title: 'Read Chapter 2', completed: true, order: 0, createdAt: new Date(MOCK_NOW - 4 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'st-1-2' as EntityId, assignmentId: '1' as EntityId, title: 'Complete exercises 1-5', completed: false, order: 1, createdAt: new Date(MOCK_NOW - 4 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'st-1-3' as EntityId, assignmentId: '1' as EntityId, title: 'Complete exercises 6-10', completed: false, order: 2, createdAt: new Date(MOCK_NOW - 4 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime },
+  {
+    id: 'st-1-1' as EntityId,
+    assignmentId: '1' as EntityId,
+    title: 'Read Chapter 2',
+    completed: true,
+    order: 0,
+    createdAt: new Date(MOCK_NOW - 4 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'st-1-2' as EntityId,
+    assignmentId: '1' as EntityId,
+    title: 'Complete exercises 1-5',
+    completed: false,
+    order: 1,
+    createdAt: new Date(MOCK_NOW - 4 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'st-1-3' as EntityId,
+    assignmentId: '1' as EntityId,
+    title: 'Complete exercises 6-10',
+    completed: false,
+    order: 2,
+    createdAt: new Date(MOCK_NOW - 4 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
 ]);
 
 mockSubTasks.set('2', [
-  { id: 'st-2-1' as EntityId, assignmentId: '2' as EntityId, title: 'Review derivative rules', completed: true, order: 0, createdAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'st-2-2' as EntityId, assignmentId: '2' as EntityId, title: 'Solve practice problems', completed: false, order: 1, createdAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime },
+  {
+    id: 'st-2-1' as EntityId,
+    assignmentId: '2' as EntityId,
+    title: 'Review derivative rules',
+    completed: true,
+    order: 0,
+    createdAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'st-2-2' as EntityId,
+    assignmentId: '2' as EntityId,
+    title: 'Solve practice problems',
+    completed: false,
+    order: 1,
+    createdAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
 ]);
 
 mockSubTasks.set('3', [
-  { id: 'st-3-1' as EntityId, assignmentId: '3' as EntityId, title: 'Outline essay structure', completed: true, order: 0, createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'st-3-2' as EntityId, assignmentId: '3' as EntityId, title: 'Write introduction', completed: true, order: 1, createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'st-3-3' as EntityId, assignmentId: '3' as EntityId, title: 'Write body paragraphs', completed: true, order: 2, createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'st-3-4' as EntityId, assignmentId: '3' as EntityId, title: 'Write conclusion', completed: true, order: 3, createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'st-3-5' as EntityId, assignmentId: '3' as EntityId, title: 'Proofread and cite sources', completed: true, order: 4, createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime },
+  {
+    id: 'st-3-1' as EntityId,
+    assignmentId: '3' as EntityId,
+    title: 'Outline essay structure',
+    completed: true,
+    order: 0,
+    createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'st-3-2' as EntityId,
+    assignmentId: '3' as EntityId,
+    title: 'Write introduction',
+    completed: true,
+    order: 1,
+    createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'st-3-3' as EntityId,
+    assignmentId: '3' as EntityId,
+    title: 'Write body paragraphs',
+    completed: true,
+    order: 2,
+    createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'st-3-4' as EntityId,
+    assignmentId: '3' as EntityId,
+    title: 'Write conclusion',
+    completed: true,
+    order: 3,
+    createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'st-3-5' as EntityId,
+    assignmentId: '3' as EntityId,
+    title: 'Proofread and cite sources',
+    completed: true,
+    order: 4,
+    createdAt: new Date(MOCK_NOW - 6 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
 ]);
 
 // Mock notes
 mockNotes.set('1', [
-  { id: 'note-1-1' as EntityId, assignmentId: '1' as EntityId, content: 'Started reading Chapter 2. Variables section is straightforward.', createdAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'note-1-2' as EntityId, assignmentId: '1' as EntityId, content: 'Finished exercises 1-5. Struggling with exercise 7 (loops).', createdAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime },
+  {
+    id: 'note-1-1' as EntityId,
+    assignmentId: '1' as EntityId,
+    content: 'Started reading Chapter 2. Variables section is straightforward.',
+    createdAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 3 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'note-1-2' as EntityId,
+    assignmentId: '1' as EntityId,
+    content: 'Finished exercises 1-5. Struggling with exercise 7 (loops).',
+    createdAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 2 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
 ]);
 
 mockNotes.set('2', [
-  { id: 'note-2-1' as EntityId, assignmentId: '2' as EntityId, content: 'Need to review chain rule before starting problem set.', createdAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime },
+  {
+    id: 'note-2-1' as EntityId,
+    assignmentId: '2' as EntityId,
+    content: 'Need to review chain rule before starting problem set.',
+    createdAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
 ]);
 
 mockNotes.set('3', [
-  { id: 'note-3-1' as EntityId, assignmentId: '3' as EntityId, content: 'Thesis: The green light represents Gatsby\'s unattainable dreams.', createdAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime },
-  { id: 'note-3-2' as EntityId, assignmentId: '3' as EntityId, content: 'Added quotes from Chapter 5 and 7. Essay complete.', createdAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime, updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime },
+  {
+    id: 'note-3-1' as EntityId,
+    assignmentId: '3' as EntityId,
+    content: "Thesis: The green light represents Gatsby's unattainable dreams.",
+    createdAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 5 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
+  {
+    id: 'note-3-2' as EntityId,
+    assignmentId: '3' as EntityId,
+    content: 'Added quotes from Chapter 5 and 7. Essay complete.',
+    createdAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime,
+    updatedAt: new Date(MOCK_NOW - 1 * MOCK_DAY).toISOString() as IsoDateTime,
+  },
 ]);
 
 // Generate UUID
 function generateId(): EntityId {
-  return (Math.random().toString(36).slice(2, 15) + Math.random().toString(36).slice(2, 15)) as EntityId;
+  return (Math.random().toString(36).slice(2, 15) +
+    Math.random().toString(36).slice(2, 15)) as EntityId;
 }
 
 // Build mock API
@@ -208,11 +319,13 @@ const mockApi = {
     assignments: {
       list: async (): Promise<IpcResult<Assignment[]>> => {
         await new Promise((r) => setTimeout(r, 100)); // Simulate network delay
-        return createMockResult([...mockAssignments.values()].sort((a, b) => {
-          const pa = mockPriorityOrders.get(a.id)?.order ?? 999;
-          const pb = mockPriorityOrders.get(b.id)?.order ?? 999;
-          return pa - pb;
-        }));
+        return createMockResult(
+          [...mockAssignments.values()].sort((a, b) => {
+            const pa = mockPriorityOrders.get(a.id)?.order ?? 999;
+            const pb = mockPriorityOrders.get(b.id)?.order ?? 999;
+            return pa - pb;
+          }),
+        );
       },
       get: async (id: string): Promise<IpcResult<Assignment | null>> => {
         await new Promise((r) => setTimeout(r, 50));
@@ -247,7 +360,11 @@ const mockApi = {
           updatedAt: now,
         };
         mockAssignments.set(id, assignment);
-        emitEvent('db:changed', { table: 'assignments', action: existing ? 'update' : 'insert', id: id as string });
+        emitEvent('db:changed', {
+          table: 'assignments',
+          action: existing ? 'update' : 'insert',
+          id: id as string,
+        });
         return createMockResult(assignment);
       },
       delete: async (id: string): Promise<IpcResult<void>> => {
@@ -384,10 +501,16 @@ const mockApi = {
         ids.forEach((id, index) => {
           const existing = mockPriorityOrders.get(id);
           if (existing) {
-            mockPriorityOrders.set(id, { ...existing, order: index, updatedAt: new Date().toISOString() as IsoDateTime });
+            mockPriorityOrders.set(id, {
+              ...existing,
+              order: index,
+              updatedAt: new Date().toISOString() as IsoDateTime,
+            });
           }
         });
-        ids.forEach((id) => emitEvent('db:changed', { table: 'priority_order', action: 'update', id }));
+        ids.forEach((id) =>
+          emitEvent('db:changed', { table: 'priority_order', action: 'update', id }),
+        );
         return createMockResult(undefined);
       },
       upsert: async (input: PriorityOrderInput): Promise<IpcResult<PriorityOrder>> => {
@@ -401,7 +524,11 @@ const mockApi = {
           updatedAt: now,
         };
         mockPriorityOrders.set(input.assignmentId, order);
-        emitEvent('db:changed', { table: 'priority_order', action: existing ? 'update' : 'insert', id: input.assignmentId });
+        emitEvent('db:changed', {
+          table: 'priority_order',
+          action: existing ? 'update' : 'insert',
+          id: input.assignmentId,
+        });
         return createMockResult(order);
       },
     },
@@ -411,7 +538,10 @@ const mockApi = {
       await new Promise((r) => setTimeout(r, 500));
       return createMockResult([]);
     },
-    import: async (_input: { events: ICalEvent[]; sourceUrl: string }): Promise<IpcResult<{ imported: number; updated: number; skipped: number }>> => {
+    import: async (_input: {
+      events: ICalEvent[];
+      sourceUrl: string;
+    }): Promise<IpcResult<{ imported: number; updated: number; skipped: number }>> => {
       await new Promise((r) => setTimeout(r, 300));
       return createMockResult({ imported: 0, updated: 0, skipped: 0 });
     },
@@ -462,7 +592,9 @@ const mockApi = {
         running: true,
         intervalMinutes: mockSettings.syncIntervalMinutes,
         lastRun: mockSettings.lastSyncAt,
-        nextRun: new Date(Date.now() + mockSettings.syncIntervalMinutes * 60 * 1000).toISOString() as IsoDateTime,
+        nextRun: new Date(
+          Date.now() + mockSettings.syncIntervalMinutes * 60 * 1000,
+        ).toISOString() as IsoDateTime,
         lastError: null,
       });
     },
@@ -482,7 +614,11 @@ const mockApi = {
         running: mockSettings.autoFetchIcal && !!mockSettings.icalUrl,
         intervalMinutes: mockSettings.syncIntervalMinutes,
         lastRun: mockSettings.lastSyncAt,
-        nextRun: mockSettings.autoFetchIcal ? new Date(Date.now() + mockSettings.syncIntervalMinutes * 60 * 1000).toISOString() as IsoDateTime : null,
+        nextRun: mockSettings.autoFetchIcal
+          ? (new Date(
+              Date.now() + mockSettings.syncIntervalMinutes * 60 * 1000,
+            ).toISOString() as IsoDateTime)
+          : null,
         lastError: null,
       });
     },
@@ -515,7 +651,9 @@ const mockApi = {
     eventListeners.get(key)!.add(callback as AnyCallback);
     return () => eventListeners.get(key)?.delete(callback as AnyCallback);
   },
-  onIcalProgress: (callback: (payload: { stage: string; progress: number; message?: string }) => void) => {
+  onIcalProgress: (
+    callback: (payload: { stage: string; progress: number; message?: string }) => void,
+  ) => {
     const key = 'ical:progress';
     if (!eventListeners.has(key)) eventListeners.set(key, new Set());
     eventListeners.get(key)!.add(callback as AnyCallback);

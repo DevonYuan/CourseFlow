@@ -18,7 +18,9 @@
   background-color: var(--surface-color, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: var(--radius-md, 8px);
-  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms);
+  transition:
+    border-color var(--transition-fast, 150ms),
+    box-shadow var(--transition-fast, 150ms);
   box-sizing: border-box;
 }
 
@@ -57,7 +59,9 @@
   border-radius: var(--radius-sm, 4px);
   color: var(--text-muted, #999);
   cursor: pointer;
-  transition: color var(--transition-fast, 150ms), background-color var(--transition-fast, 150ms);
+  transition:
+    color var(--transition-fast, 150ms),
+    background-color var(--transition-fast, 150ms);
 }
 
 .search-input__clear:hover {

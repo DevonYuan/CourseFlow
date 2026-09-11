@@ -24,7 +24,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SettingsModal } from '../components/SettingsModal';
 import { ToastProvider } from '../context/ToastContext';
 
-
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
 
@@ -68,11 +67,13 @@ const defaultSettings: Settings = {
 let progressCallback: ((payload: IpcEvents['ical:progress']) => void) | null = null;
 let settingsUnsubscribe: (() => void) | null = null;
 
-function renderSettingsModal(props: { isOpen: boolean; onClose: () => void } = { isOpen: true, onClose: vi.fn() }) {
+function renderSettingsModal(
+  props: { isOpen: boolean; onClose: () => void } = { isOpen: true, onClose: vi.fn() },
+) {
   return render(
     <ToastProvider>
       <SettingsModal {...props} />
-    </ToastProvider>
+    </ToastProvider>,
   );
 }
 
@@ -96,12 +97,12 @@ async function waitForFormReady() {
 // Setup mocks that simulate the fetch/import flow with progress events
 function setupFetchMocks() {
   let progressCb: ((payload: IpcEvents['ical:progress']) => void) | null = null;
-  
+
   mockApi.onIcalProgress.mockImplementation((cb) => {
     progressCb = cb;
     return vi.fn();
   });
-  
+
   mockApi.ical.fetch.mockImplementation(async (url: string) => {
     // Simulate fetch progress
     if (progressCb) {
@@ -112,7 +113,7 @@ function setupFetchMocks() {
     }
     return { ok: true, data: [] as any };
   });
-  
+
   mockApi.ical.import.mockImplementation(async () => {
     if (progressCb) {
       act(() => {
@@ -121,7 +122,7 @@ function setupFetchMocks() {
     }
     return { ok: true, data: { imported: 5, updated: 2, skipped: 1 } };
   });
-  
+
   return { getProgressCallback: () => progressCb };
 }
 
@@ -131,20 +132,23 @@ describe('SettingsModal', () => {
     progressCallback = null;
     settingsUnsubscribe = null;
     document.documentElement.classList.remove('light', 'dark');
-    
+
     // Default mock implementations
     mockApi.settings.get.mockResolvedValue({ ok: true, data: defaultSettings });
     mockApi.settings.set.mockResolvedValue({ ok: true, data: defaultSettings });
     mockApi.settings.reset.mockResolvedValue({ ok: true, data: defaultSettings });
     mockApi.ical.fetch.mockResolvedValue({ ok: true, data: [] });
-    mockApi.ical.import.mockResolvedValue({ ok: true, data: { imported: 0, updated: 0, skipped: 0 } });
-    
+    mockApi.ical.import.mockResolvedValue({
+      ok: true,
+      data: { imported: 0, updated: 0, skipped: 0 },
+    });
+
     mockApi.onSettingsChanged.mockImplementation((cb) => {
       settingsUnsubscribe = vi.fn();
       cb(defaultSettings);
       return settingsUnsubscribe;
     });
-    
+
     mockApi.onIcalProgress.mockImplementation((cb) => {
       progressCallback = cb;
       return vi.fn();
@@ -217,7 +221,9 @@ describe('SettingsModal', () => {
       await waitForFormReady();
       const themeSelect = screen.getByLabelText('Theme');
       expect(themeSelect).toHaveValue('system');
-      expect(screen.getByDisplayValue('https://canvas.example.edu/feeds/calendars/...')).toBeInTheDocument();
+      expect(
+        screen.getByDisplayValue('https://canvas.example.edu/feeds/calendars/...'),
+      ).toBeInTheDocument();
     });
 
     it('applies theme immediately on load', async () => {
@@ -256,7 +262,7 @@ describe('SettingsModal', () => {
       rerender(
         <ToastProvider>
           <SettingsModal isOpen={false} onClose={vi.fn()} />
-        </ToastProvider>
+        </ToastProvider>,
       );
       expect(settingsUnsubscribe).toHaveBeenCalled();
     });
@@ -293,7 +299,7 @@ describe('SettingsModal', () => {
     });
 
     // TODO: Component disables Fetch Now button when URL is empty, so error handler never runs
-// it('shows error when fetching without URL', async () => {
+    // it('shows error when fetching without URL', async () => {
 
     it('clears error when URL is corrected', async () => {
       renderSettingsModal();
@@ -352,7 +358,7 @@ describe('SettingsModal', () => {
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       }));
-      
+
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
@@ -361,7 +367,7 @@ describe('SettingsModal', () => {
       await waitFor(() => {
         expect(document.documentElement.classList.contains('light')).toBe(true);
       });
-      
+
       window.matchMedia = originalMatchMedia;
     });
   });
@@ -448,7 +454,10 @@ describe('SettingsModal', () => {
     });
 
     it('disables Fetch Now when no URL', async () => {
-      mockApi.settings.get.mockResolvedValue({ ok: true, data: { ...defaultSettings, icalUrl: '' } });
+      mockApi.settings.get.mockResolvedValue({
+        ok: true,
+        data: { ...defaultSettings, icalUrl: '' },
+      });
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
@@ -456,13 +465,13 @@ describe('SettingsModal', () => {
     });
 
     // TODO: Async click handler needs test infrastructure fixes
-// it('calls ical.fetch and ical.import on Fetch Now', async () => { ... });
+    // it('calls ical.fetch and ical.import on Fetch Now', async () => { ... });
 
     // TODO: Progress event simulation needs test infrastructure fixes
-// it('shows progress during fetch', async () => { ... });
-// it('shows spinner during fetch', async () => { ... });
-// it('disables Fetch Now during operation', async () => { ... });
-// it('shows success message after import', async () => { ... });
+    // it('shows progress during fetch', async () => { ... });
+    // it('shows spinner during fetch', async () => { ... });
+    // it('disables Fetch Now during operation', async () => { ... });
+    // it('shows success message after import', async () => { ... });
 
     it('shows error message on fetch failure', async () => {
       mockApi.ical.fetch.mockResolvedValue({ ok: false, error: 'Network error' });
@@ -470,7 +479,7 @@ describe('SettingsModal', () => {
         progressCallback = cb;
         return vi.fn();
       });
-      
+
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
@@ -517,9 +526,12 @@ describe('SettingsModal', () => {
 
     it('shows saving state', async () => {
       let resolveSave: (value: unknown) => void;
-      mockApi.settings.set.mockImplementation(() => new Promise((resolve) => {
-        resolveSave = resolve;
-      }));
+      mockApi.settings.set.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveSave = resolve;
+          }),
+      );
 
       renderSettingsModal();
       await waitForModalReady();
@@ -528,7 +540,7 @@ describe('SettingsModal', () => {
       await waitFor(() => {
         expect(screen.getByText('Saving...')).toBeInTheDocument();
       });
-      
+
       act(() => {
         resolveSave!({ ok: true, data: defaultSettings });
       });
@@ -605,6 +617,6 @@ describe('SettingsModal', () => {
     });
 
     // TODO: Progress event simulation needs test infrastructure fixes
-// it('has proper role for status messages', async () => { ... });
+    // it('has proper role for status messages', async () => { ... });
   });
 });

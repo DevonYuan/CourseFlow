@@ -13,7 +13,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { ToastProvider, useToast, type ToastContextValue } from '../context/ToastContext';
 
-
 // Extend expect with jest-dom matchers for this test file
 expect.extend(matchers);
 
@@ -58,7 +57,7 @@ describe('useToast', () => {
     render(
       <Wrapper>
         <ToastTestComponent />
-      </Wrapper>
+      </Wrapper>,
     );
 
     fireEvent.click(screen.getByText('Show Success'));
@@ -72,7 +71,7 @@ describe('useToast', () => {
     render(
       <Wrapper>
         <ToastTestComponent />
-      </Wrapper>
+      </Wrapper>,
     );
 
     fireEvent.click(screen.getByText('Show Error'));
@@ -85,7 +84,7 @@ describe('useToast', () => {
     render(
       <Wrapper>
         <ToastTestComponent />
-      </Wrapper>
+      </Wrapper>,
     );
 
     fireEvent.click(screen.getByText('Show Info'));
@@ -98,7 +97,7 @@ describe('useToast', () => {
     render(
       <Wrapper>
         <ToastTestComponent />
-      </Wrapper>
+      </Wrapper>,
     );
 
     fireEvent.click(screen.getByText('Show Warning'));
@@ -119,7 +118,11 @@ describe('useToast', () => {
       );
     };
 
-    render(<Wrapper><TestComp /></Wrapper>);
+    render(
+      <Wrapper>
+        <TestComp />
+      </Wrapper>,
+    );
     fireEvent.click(screen.getByText('Show'));
     const toastId = screen.getByTestId('toast-id').textContent;
     expect(toastId).toMatch(/^\d+-[a-z0-9]+$/);
@@ -129,7 +132,7 @@ describe('useToast', () => {
     render(
       <Wrapper>
         <ToastTestComponent />
-      </Wrapper>
+      </Wrapper>,
     );
 
     fireEvent.click(screen.getByText('Show Success'));
@@ -148,7 +151,11 @@ describe('useToast', () => {
       return <button onClick={() => success('Custom duration', { duration: 1000 })}>Show</button>;
     };
 
-    render(<Wrapper><TestComp /></Wrapper>);
+    render(
+      <Wrapper>
+        <TestComp />
+      </Wrapper>,
+    );
     fireEvent.click(screen.getByText('Show'));
     expect(screen.getByText('Custom duration')).toBeInTheDocument();
 
@@ -171,7 +178,11 @@ describe('useToast', () => {
       );
     };
 
-    render(<Wrapper><TestComp /></Wrapper>);
+    render(
+      <Wrapper>
+        <TestComp />
+      </Wrapper>,
+    );
     fireEvent.click(screen.getByText('Show'));
     expect(screen.getByText('To dismiss')).toBeInTheDocument();
 
@@ -184,18 +195,26 @@ describe('useToast', () => {
       const { success } = useToast();
       return (
         <div>
-          <button onClick={() => {
-            success('Toast 1');
-            success('Toast 2');
-            success('Toast 3');
-            success('Toast 4');
-            success('Toast 5');
-          }}>Show 5</button>
+          <button
+            onClick={() => {
+              success('Toast 1');
+              success('Toast 2');
+              success('Toast 3');
+              success('Toast 4');
+              success('Toast 5');
+            }}
+          >
+            Show 5
+          </button>
         </div>
       );
     };
 
-    render(<Wrapper><TestComp /></Wrapper>);
+    render(
+      <Wrapper>
+        <TestComp />
+      </Wrapper>,
+    );
     fireEvent.click(screen.getByText('Show 5'));
 
     // Should only show last 3 (toast 3, 4, 5)
@@ -214,7 +233,11 @@ describe('useToast', () => {
       return <button onClick={() => success('Test', { onDismiss, duration: 100 })}>Show</button>;
     };
 
-    render(<Wrapper><TestComp /></Wrapper>);
+    render(
+      <Wrapper>
+        <TestComp />
+      </Wrapper>,
+    );
     fireEvent.click(screen.getByText('Show'));
     expect(screen.getByText('Test')).toBeInTheDocument();
 
@@ -230,7 +253,7 @@ describe('useToast', () => {
     render(
       <Wrapper>
         <ToastTestComponent />
-      </Wrapper>
+      </Wrapper>,
     );
 
     fireEvent.click(screen.getByText('Show Error'));
@@ -243,14 +266,14 @@ describe('useToast', () => {
 
   it('throws error when used outside ToastProvider', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     const BadComponent = () => {
       useToast(); // Should throw
       return <div>Bad</div>;
     };
 
     expect(() => render(<BadComponent />)).toThrow('useToast must be used within a ToastProvider');
-    
+
     consoleErrorSpy.mockRestore();
   });
 
@@ -258,11 +281,11 @@ describe('useToast', () => {
     render(
       <Wrapper>
         <ToastTestComponent />
-      </Wrapper>
+      </Wrapper>,
     );
 
     fireEvent.click(screen.getByText('Show Success'));
-    
+
     // The toast should be in a portal at document.body level
     const toast = screen.getByText('Success message').closest('.toast');
     expect(document.body.contains(toast)).toBe(true);

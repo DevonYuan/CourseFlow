@@ -25,10 +25,7 @@ import type {
   IsoDateTime,
   AssignmentStatus,
 } from '../../../shared/types.js';
-import {
-  mapDbAssignmentToAssignment,
-  mapAssignmentInputToDb,
-} from '../mappers.js';
+import { mapDbAssignmentToAssignment, mapAssignmentInputToDb } from '../mappers.js';
 
 // Test database instance
 let testDb: Database | null = null;
@@ -40,7 +37,18 @@ async function initTestDb(): Promise<Database> {
   if (SQL === null) {
     const fs = await import('node:fs');
     const path = await import('node:path');
-    const wasmPath = path.resolve(__dirname, '..', '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+    const wasmPath = path.resolve(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      '..',
+      'node_modules',
+      'sql.js',
+      'dist',
+      'sql-wasm.wasm',
+    );
     const wasmBuffer = fs.readFileSync(wasmPath);
     SQL = await initSqlJs({ wasmBinary: new Uint8Array(wasmBuffer).buffer });
   }
@@ -109,13 +117,13 @@ function createAssignment(input: Partial<AssignmentInput> & { icalUid: string })
   const now = Date.now();
   assignmentCounter++;
   return {
-    id: input.id ?? `assignment-${assignmentCounter}` as EntityId,
+    id: input.id ?? (`assignment-${assignmentCounter}` as EntityId),
     title: input.title ?? 'Test Assignment',
     description: input.description ?? '',
-    courseId: input.courseId ?? `course-${assignmentCounter}` as EntityId,
+    courseId: input.courseId ?? (`course-${assignmentCounter}` as EntityId),
     courseName: input.courseName ?? 'CS 101',
     courseColor: input.courseColor ?? '#6366f1',
-    dueAt: input.dueAt ?? new Date(now + 86_400_000).toISOString() as IsoDateTime,
+    dueAt: input.dueAt ?? (new Date(now + 86_400_000).toISOString() as IsoDateTime),
     unlockAt: input.unlockAt ?? null,
     lockAt: input.lockAt ?? null,
     pointsPossible: input.pointsPossible ?? 100,
@@ -128,8 +136,8 @@ function createAssignment(input: Partial<AssignmentInput> & { icalUid: string })
     source: input.source ?? 'ical',
     sourceUrl: input.sourceUrl ?? 'https://example.com/feed.ics',
     rrule: input.rrule ?? undefined,
-    createdAt: input.createdAt ?? new Date(now - 86_400_000).toISOString() as IsoDateTime,
-    updatedAt: input.updatedAt ?? new Date(now).toISOString() as IsoDateTime,
+    createdAt: input.createdAt ?? (new Date(now - 86_400_000).toISOString() as IsoDateTime),
+    updatedAt: input.updatedAt ?? (new Date(now).toISOString() as IsoDateTime),
   };
 }
 
@@ -141,7 +149,9 @@ async function importAssignments(inputs: AssignmentInput[]): Promise<ImportResul
   const result: ImportResult = { imported: 0, skipped: 0, updated: 0 };
 
   // Prepared statements
-  const selectStmt = testDb.prepare('SELECT id, description, status, updated_at FROM assignments WHERE ical_uid = ?');
+  const selectStmt = testDb.prepare(
+    'SELECT id, description, status, updated_at FROM assignments WHERE ical_uid = ?',
+  );
   const insertStmt = testDb.prepare(`
     INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at, unlock_at, lock_at,
       points_possible, submission_types, workflow_state, html_url, ical_uid, status, source, source_url, rrule, created_at, updated_at)
@@ -183,7 +193,8 @@ async function importAssignments(inputs: AssignmentInput[]): Promise<ImportResul
           const existingStatus = (existing['status'] as string) ?? 'pending';
 
           // Helper to convert undefined to null for SQL binding
-          const toNullable = (v: unknown): string | number | null => (v === undefined ? null : v as string | number | null);
+          const toNullable = (v: unknown): string | number | null =>
+            v === undefined ? null : (v as string | number | null);
 
           updateStmt.bind([
             input.title ?? existing['title'] ?? '',
@@ -192,7 +203,9 @@ async function importAssignments(inputs: AssignmentInput[]): Promise<ImportResul
             input.htmlUrl ?? existing['html_url'] ?? '',
             input.courseColor ?? existing['course_color'] ?? '#6366f1',
             input.pointsPossible ?? toNullable(existing['points_possible']),
-            input.submissionTypes ? JSON.stringify(input.submissionTypes) : toNullable(existing['submission_types']),
+            input.submissionTypes
+              ? JSON.stringify(input.submissionTypes)
+              : toNullable(existing['submission_types']),
             input.unlockAt ? new Date(input.unlockAt).getTime() : toNullable(existing['unlock_at']),
             input.lockAt ? new Date(input.lockAt).getTime() : toNullable(existing['lock_at']),
             input.rrule ?? toNullable(existing['rrule']),
@@ -206,11 +219,22 @@ async function importAssignments(inputs: AssignmentInput[]): Promise<ImportResul
           updateStmt.reset();
 
           // Preserve protected fields
-          if (existingDescription && input.description !== undefined && input.description !== existingDescription) {
-            run('UPDATE assignments SET description = ? WHERE id = ?', [existingDescription, existingId]);
+          if (
+            existingDescription &&
+            input.description !== undefined &&
+            input.description !== existingDescription
+          ) {
+            run('UPDATE assignments SET description = ? WHERE id = ?', [
+              existingDescription,
+              existingId,
+            ]);
           }
           // Restore status if it was 'completed' (user's completion state)
-          if (existingStatus === 'completed' && input.status !== undefined && input.status !== 'completed') {
+          if (
+            existingStatus === 'completed' &&
+            input.status !== undefined &&
+            input.status !== 'completed'
+          ) {
             run('UPDATE assignments SET status = ? WHERE id = ?', ['completed', existingId]);
           }
 
@@ -220,7 +244,7 @@ async function importAssignments(inputs: AssignmentInput[]): Promise<ImportResul
         }
       } else {
         // INSERT
-        const id = input.id ?? `new-${Math.random().toString(36).slice(2)}` as EntityId;
+        const id = input.id ?? (`new-${Math.random().toString(36).slice(2)}` as EntityId);
         const dbRow = mapAssignmentInputToDb(input, now);
 
         insertStmt.bind([
@@ -309,8 +333,8 @@ describe('importAssignments', () => {
     it('should count imported correctly for mixed batch', async () => {
       const baseTime = Date.now();
       // Pre-insert one assignment with a specific updatedAt
-      const existing = createAssignment({ 
-        icalUid: 'existing@example.com', 
+      const existing = createAssignment({
+        icalUid: 'existing@example.com',
         title: 'Existing',
         updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
       });
@@ -318,8 +342,8 @@ describe('importAssignments', () => {
 
       // Import mix of new and existing - use same updatedAt for existing to trigger SKIP
       const inputs = [
-        createAssignment({ 
-          icalUid: 'existing@example.com', 
+        createAssignment({
+          icalUid: 'existing@example.com',
           title: 'Existing (should skip)',
           updatedAt: new Date(baseTime).toISOString() as IsoDateTime, // same updatedAt = skip
         }),
@@ -361,7 +385,9 @@ describe('importAssignments', () => {
       expect(result.skipped).toBe(0);
 
       // Verify dueAt was updated
-      const rows = testDb!.exec('SELECT due_at FROM assignments WHERE ical_uid = "update-test@example.com"');
+      const rows = testDb!.exec(
+        'SELECT due_at FROM assignments WHERE ical_uid = "update-test@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe(new Date(baseTime + 172_800_000).getTime());
     });
 
@@ -388,7 +414,9 @@ describe('importAssignments', () => {
 
       expect(result.updated).toBe(1);
 
-      const rows = testDb!.exec('SELECT title, course_color, points_possible FROM assignments WHERE ical_uid = "multi-update@example.com"');
+      const rows = testDb!.exec(
+        'SELECT title, course_color, points_possible FROM assignments WHERE ical_uid = "multi-update@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe('New Title');
       expect(rows[0]?.values?.[0]?.[1]).toBe('#00ff00');
       expect(rows[0]?.values?.[0]?.[2]).toBe(100);
@@ -419,7 +447,9 @@ describe('importAssignments', () => {
       expect(result.updated).toBe(0);
 
       // Verify title was not changed
-      const rows = testDb!.exec('SELECT title FROM assignments WHERE ical_uid = "skip-equal@example.com"');
+      const rows = testDb!.exec(
+        'SELECT title FROM assignments WHERE ical_uid = "skip-equal@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe('Original');
     });
 
@@ -443,7 +473,9 @@ describe('importAssignments', () => {
 
       expect(result.skipped).toBe(1);
 
-      const rows = testDb!.exec('SELECT title FROM assignments WHERE ical_uid = "skip-older@example.com"');
+      const rows = testDb!.exec(
+        'SELECT title FROM assignments WHERE ical_uid = "skip-older@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe('Original');
     });
   });
@@ -469,7 +501,9 @@ describe('importAssignments', () => {
 
       expect(result.updated).toBe(1);
 
-      const rows = testDb!.exec('SELECT description FROM assignments WHERE ical_uid = "protect-desc@example.com"');
+      const rows = testDb!.exec(
+        'SELECT description FROM assignments WHERE ical_uid = "protect-desc@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe('User edited description');
     });
 
@@ -493,7 +527,9 @@ describe('importAssignments', () => {
 
       expect(result.updated).toBe(1);
 
-      const rows = testDb!.exec('SELECT status FROM assignments WHERE ical_uid = "protect-status@example.com"');
+      const rows = testDb!.exec(
+        'SELECT status FROM assignments WHERE ical_uid = "protect-status@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe('completed');
     });
 
@@ -517,7 +553,9 @@ describe('importAssignments', () => {
 
       expect(result.updated).toBe(1);
 
-      const rows = testDb!.exec('SELECT status FROM assignments WHERE ical_uid = "allow-status-change@example.com"');
+      const rows = testDb!.exec(
+        'SELECT status FROM assignments WHERE ical_uid = "allow-status-change@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe('completed');
     });
 
@@ -541,7 +579,9 @@ describe('importAssignments', () => {
 
       expect(result.updated).toBe(1);
 
-      const rows = testDb!.exec('SELECT status FROM assignments WHERE ical_uid = "status-pending-to-progress@example.com"');
+      const rows = testDb!.exec(
+        'SELECT status FROM assignments WHERE ical_uid = "status-pending-to-progress@example.com"',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe('in_progress');
     });
 
@@ -555,9 +595,14 @@ describe('importAssignments', () => {
       await importAssignments([existing]);
 
       // Set user priority via priority_order table
-      const rows1 = testDb!.exec('SELECT id FROM assignments WHERE ical_uid = "protect-priority@example.com"');
+      const rows1 = testDb!.exec(
+        'SELECT id FROM assignments WHERE ical_uid = "protect-priority@example.com"',
+      );
       const assignmentId = rows1[0]?.values?.[0]?.[0] as string;
-      testDb!.run('INSERT INTO priority_order (assignment_id, position) VALUES (?, ?)', [assignmentId, 0]);
+      testDb!.run('INSERT INTO priority_order (assignment_id, position) VALUES (?, ?)', [
+        assignmentId,
+        0,
+      ]);
 
       // Re-import with newer updatedAt
       const updated = createAssignment({
@@ -571,7 +616,9 @@ describe('importAssignments', () => {
       expect(result.updated).toBe(1);
 
       // Priority order should still exist
-      const rows2 = testDb!.exec('SELECT position FROM priority_order WHERE assignment_id = ?', [assignmentId]);
+      const rows2 = testDb!.exec('SELECT position FROM priority_order WHERE assignment_id = ?', [
+        assignmentId,
+      ]);
       expect(rows2[0]?.values?.[0]?.[0]).toBe(0);
     });
   });
@@ -582,19 +629,55 @@ describe('importAssignments', () => {
 
       // Pre-insert 3 existing assignments
       await importAssignments([
-        createAssignment({ icalUid: 'existing-1@example.com', title: 'Old 1', updatedAt: new Date(baseTime).toISOString() as IsoDateTime }),
-        createAssignment({ icalUid: 'existing-2@example.com', title: 'Old 2', updatedAt: new Date(baseTime).toISOString() as IsoDateTime }),
-        createAssignment({ icalUid: 'existing-3@example.com', title: 'Old 3', updatedAt: new Date(baseTime).toISOString() as IsoDateTime }),
+        createAssignment({
+          icalUid: 'existing-1@example.com',
+          title: 'Old 1',
+          updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
+        }),
+        createAssignment({
+          icalUid: 'existing-2@example.com',
+          title: 'Old 2',
+          updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
+        }),
+        createAssignment({
+          icalUid: 'existing-3@example.com',
+          title: 'Old 3',
+          updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
+        }),
       ]);
 
       // Import batch: 3 new, 2 updated (newer), 1 skipped (older)
       const inputs = [
-        createAssignment({ icalUid: 'new-1@example.com', title: 'New 1', updatedAt: new Date(baseTime + 1000).toISOString() as IsoDateTime }),
-        createAssignment({ icalUid: 'new-2@example.com', title: 'New 2', updatedAt: new Date(baseTime + 2000).toISOString() as IsoDateTime }),
-        createAssignment({ icalUid: 'new-3@example.com', title: 'New 3', updatedAt: new Date(baseTime + 3000).toISOString() as IsoDateTime }),
-        createAssignment({ icalUid: 'existing-1@example.com', title: 'Updated 1', updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime }), // newer
-        createAssignment({ icalUid: 'existing-2@example.com', title: 'Updated 2', updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime }), // newer
-        createAssignment({ icalUid: 'existing-3@example.com', title: 'Skipped 3', updatedAt: new Date(baseTime - 3_600_000).toISOString() as IsoDateTime }), // older
+        createAssignment({
+          icalUid: 'new-1@example.com',
+          title: 'New 1',
+          updatedAt: new Date(baseTime + 1000).toISOString() as IsoDateTime,
+        }),
+        createAssignment({
+          icalUid: 'new-2@example.com',
+          title: 'New 2',
+          updatedAt: new Date(baseTime + 2000).toISOString() as IsoDateTime,
+        }),
+        createAssignment({
+          icalUid: 'new-3@example.com',
+          title: 'New 3',
+          updatedAt: new Date(baseTime + 3000).toISOString() as IsoDateTime,
+        }),
+        createAssignment({
+          icalUid: 'existing-1@example.com',
+          title: 'Updated 1',
+          updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
+        }), // newer
+        createAssignment({
+          icalUid: 'existing-2@example.com',
+          title: 'Updated 2',
+          updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
+        }), // newer
+        createAssignment({
+          icalUid: 'existing-3@example.com',
+          title: 'Skipped 3',
+          updatedAt: new Date(baseTime - 3_600_000).toISOString() as IsoDateTime,
+        }), // older
       ];
 
       const result = await importAssignments(inputs);
@@ -611,19 +694,33 @@ describe('importAssignments', () => {
 
       // Pre-insert one assignment
       await importAssignments([
-        createAssignment({ icalUid: 'unique-1@example.com', courseId: 'canvas-1' as EntityId, updatedAt: new Date(baseTime).toISOString() as IsoDateTime }),
+        createAssignment({
+          icalUid: 'unique-1@example.com',
+          courseId: 'canvas-1' as EntityId,
+          updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
+        }),
       ]);
 
       // Try to import batch with duplicate canvas_id (unique constraint)
       const inputs = [
-        createAssignment({ icalUid: 'new-1@example.com', courseId: 'canvas-1' as EntityId, updatedAt: new Date(baseTime + 1000).toISOString() as IsoDateTime }), // duplicate canvas_id
-        createAssignment({ icalUid: 'new-2@example.com', courseId: 'canvas-2' as EntityId, updatedAt: new Date(baseTime + 2000).toISOString() as IsoDateTime }),
+        createAssignment({
+          icalUid: 'new-1@example.com',
+          courseId: 'canvas-1' as EntityId,
+          updatedAt: new Date(baseTime + 1000).toISOString() as IsoDateTime,
+        }), // duplicate canvas_id
+        createAssignment({
+          icalUid: 'new-2@example.com',
+          courseId: 'canvas-2' as EntityId,
+          updatedAt: new Date(baseTime + 2000).toISOString() as IsoDateTime,
+        }),
       ];
 
       await expect(importAssignments(inputs)).rejects.toThrow();
 
       // Verify nothing was inserted (transaction rolled back)
-      const rows = testDb!.exec('SELECT COUNT(*) as count FROM assignments WHERE ical_uid IN ("new-1@example.com", "new-2@example.com")');
+      const rows = testDb!.exec(
+        'SELECT COUNT(*) as count FROM assignments WHERE ical_uid IN ("new-1@example.com", "new-2@example.com")',
+      );
       expect(rows[0]?.values?.[0]?.[0]).toBe(0);
     });
   });
@@ -660,31 +757,38 @@ describe('importAssignments', () => {
       await importAssignments([assignment]);
 
       // Get the assignment ID
-      const rows1 = testDb!.exec('SELECT id FROM assignments WHERE ical_uid = "cascade-test@example.com"');
+      const rows1 = testDb!.exec(
+        'SELECT id FROM assignments WHERE ical_uid = "cascade-test@example.com"',
+      );
       const assignmentId = rows1[0]?.values?.[0]?.[0] as string;
 
       // Add sub-tasks
       testDb!.run(
         'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        ['subtask-1', assignmentId, 'Sub-task 1', 0, 0, baseTime, baseTime]
+        ['subtask-1', assignmentId, 'Sub-task 1', 0, 0, baseTime, baseTime],
       );
       testDb!.run(
         'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        ['subtask-2', assignmentId, 'Sub-task 2', 1, 1, baseTime, baseTime]
+        ['subtask-2', assignmentId, 'Sub-task 2', 1, 1, baseTime, baseTime],
       );
 
       // Verify sub-tasks exist
-      let subTaskRows = testDb!.exec('SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?', [assignmentId]);
+      let subTaskRows = testDb!.exec(
+        'SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?',
+        [assignmentId],
+      );
       expect(subTaskRows[0]?.values?.[0]?.[0]).toBe(2);
 
       // Add notes
       testDb!.run(
         'INSERT INTO notes (id, assignment_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-        ['note-1', assignmentId, 'Test note', baseTime, baseTime]
+        ['note-1', assignmentId, 'Test note', baseTime, baseTime],
       );
 
       // Verify notes exist
-      let noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [assignmentId]);
+      let noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [
+        assignmentId,
+      ]);
       expect(noteRows[0]?.values?.[0]?.[0]).toBe(1);
 
       // Delete the assignment (simulating repo.deleteAssignment)
@@ -695,15 +799,23 @@ describe('importAssignments', () => {
       testDb!.exec('COMMIT');
 
       // Verify assignment is deleted
-      const assignmentRows = testDb!.exec('SELECT COUNT(*) as count FROM assignments WHERE id = ?', [assignmentId]);
+      const assignmentRows = testDb!.exec(
+        'SELECT COUNT(*) as count FROM assignments WHERE id = ?',
+        [assignmentId],
+      );
       expect(assignmentRows[0]?.values?.[0]?.[0]).toBe(0);
 
       // Verify sub-tasks are cascade deleted (via explicit delete in repo)
-      subTaskRows = testDb!.exec('SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?', [assignmentId]);
+      subTaskRows = testDb!.exec(
+        'SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?',
+        [assignmentId],
+      );
       expect(subTaskRows[0]?.values?.[0]?.[0]).toBe(0);
 
       // Verify notes are cascade deleted (via explicit delete in repo)
-      noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [assignmentId]);
+      noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [
+        assignmentId,
+      ]);
       expect(noteRows[0]?.values?.[0]?.[0]).toBe(0);
     });
 
@@ -719,23 +831,25 @@ describe('importAssignments', () => {
       await importAssignments([assignment]);
 
       // Get the assignment ID
-      const rows1 = testDb!.exec('SELECT id FROM assignments WHERE ical_uid = "preserve-test@example.com"');
+      const rows1 = testDb!.exec(
+        'SELECT id FROM assignments WHERE ical_uid = "preserve-test@example.com"',
+      );
       const assignmentId = rows1[0]?.values?.[0]?.[0] as string;
 
       // Add sub-tasks (user-created)
       testDb!.run(
         'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        ['subtask-1', assignmentId, 'User sub-task 1', 0, 0, baseTime, baseTime]
+        ['subtask-1', assignmentId, 'User sub-task 1', 0, 0, baseTime, baseTime],
       );
       testDb!.run(
         'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        ['subtask-2', assignmentId, 'User sub-task 2', 1, 1, baseTime, baseTime]
+        ['subtask-2', assignmentId, 'User sub-task 2', 1, 1, baseTime, baseTime],
       );
 
       // Add notes (user-created)
       testDb!.run(
         'INSERT INTO notes (id, assignment_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-        ['note-1', assignmentId, 'User note content', baseTime, baseTime]
+        ['note-1', assignmentId, 'User note content', baseTime, baseTime],
       );
 
       // Re-import with newer updatedAt (simulating iCal sync)
@@ -750,26 +864,38 @@ describe('importAssignments', () => {
       expect(result.updated).toBe(1);
 
       // Verify assignment title was updated
-      const assignmentRows = testDb!.exec('SELECT title FROM assignments WHERE id = ?', [assignmentId]);
+      const assignmentRows = testDb!.exec('SELECT title FROM assignments WHERE id = ?', [
+        assignmentId,
+      ]);
       expect(assignmentRows[0]?.values?.[0]?.[0]).toBe('Updated Title from Canvas');
 
       // Verify sub-tasks are preserved
-      const subTaskRows = testDb!.exec('SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?', [assignmentId]);
+      const subTaskRows = testDb!.exec(
+        'SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?',
+        [assignmentId],
+      );
       expect(subTaskRows[0]?.values?.[0]?.[0]).toBe(2);
 
       // Verify sub-task content is preserved
-      const subTaskContent = testDb!.exec('SELECT title, completed FROM sub_tasks WHERE assignment_id = ? ORDER BY position', [assignmentId]);
+      const subTaskContent = testDb!.exec(
+        'SELECT title, completed FROM sub_tasks WHERE assignment_id = ? ORDER BY position',
+        [assignmentId],
+      );
       expect(subTaskContent[0]?.values?.[0]?.[0]).toBe('User sub-task 1');
       expect(subTaskContent[0]?.values?.[0]?.[1]).toBe(0);
       expect(subTaskContent[0]?.values?.[1]?.[0]).toBe('User sub-task 2');
       expect(subTaskContent[0]?.values?.[1]?.[1]).toBe(1);
 
       // Verify notes are preserved
-      const noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [assignmentId]);
+      const noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [
+        assignmentId,
+      ]);
       expect(noteRows[0]?.values?.[0]?.[0]).toBe(1);
 
       // Verify note content is preserved
-      const noteContent = testDb!.exec('SELECT content FROM notes WHERE assignment_id = ?', [assignmentId]);
+      const noteContent = testDb!.exec('SELECT content FROM notes WHERE assignment_id = ?', [
+        assignmentId,
+      ]);
       expect(noteContent[0]?.values?.[0]?.[0]).toBe('User note content');
     });
 
@@ -798,7 +924,9 @@ describe('importAssignments', () => {
         unlock_at: manualAssignment.unlockAt ? new Date(manualAssignment.unlockAt).getTime() : null,
         lock_at: manualAssignment.lockAt ? new Date(manualAssignment.lockAt).getTime() : null,
         points_possible: manualAssignment.pointsPossible ?? null,
-        submission_types: manualAssignment.submissionTypes ? JSON.stringify(manualAssignment.submissionTypes) : '[]',
+        submission_types: manualAssignment.submissionTypes
+          ? JSON.stringify(manualAssignment.submissionTypes)
+          : '[]',
         workflow_state: manualAssignment.workflowState ?? 'published',
         html_url: manualAssignment.htmlUrl ?? '',
         ical_uid: manualAssignment.icalUid ?? '',
@@ -806,8 +934,12 @@ describe('importAssignments', () => {
         source: manualAssignment.source ?? 'manual',
         source_url: manualAssignment.sourceUrl ?? null,
         rrule: manualAssignment.rrule ?? null,
-        created_at: manualAssignment.createdAt ? new Date(manualAssignment.createdAt).getTime() : baseTime,
-        updated_at: manualAssignment.updatedAt ? new Date(manualAssignment.updatedAt).getTime() : baseTime,
+        created_at: manualAssignment.createdAt
+          ? new Date(manualAssignment.createdAt).getTime()
+          : baseTime,
+        updated_at: manualAssignment.updatedAt
+          ? new Date(manualAssignment.updatedAt).getTime()
+          : baseTime,
       };
       testDb!.run(
         'INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at, unlock_at, lock_at, points_possible, submission_types, workflow_state, html_url, ical_uid, status, source, source_url, rrule, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -832,7 +964,7 @@ describe('importAssignments', () => {
           dbRow.rrule,
           dbRow.created_at,
           dbRow.updated_at,
-        ]
+        ],
       );
 
       // Import iCal assignment with same title
@@ -850,11 +982,15 @@ describe('importAssignments', () => {
       expect(result.updated).toBe(0);
 
       // Both assignments should exist
-      const allAssignments = testDb!.exec('SELECT COUNT(*) as count FROM assignments WHERE title = "Manual Assignment"');
+      const allAssignments = testDb!.exec(
+        'SELECT COUNT(*) as count FROM assignments WHERE title = "Manual Assignment"',
+      );
       expect(allAssignments[0]?.values?.[0]?.[0]).toBe(2);
 
       // Manual assignment should be unchanged
-      const manualCheck = testDb!.exec('SELECT source, ical_uid FROM assignments WHERE id = ?', [manualId]);
+      const manualCheck = testDb!.exec('SELECT source, ical_uid FROM assignments WHERE id = ?', [
+        manualId,
+      ]);
       expect(manualCheck[0]?.values?.[0]?.[0]).toBe('manual');
       expect(manualCheck[0]?.values?.[0]?.[1]).toBe('');
     });

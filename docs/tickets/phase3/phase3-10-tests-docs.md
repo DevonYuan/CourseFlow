@@ -73,7 +73,7 @@ Add comprehensive test coverage for all Phase 3 features and update documentatio
 - [ ] **Test data factories**: Create factory functions for `createMockAssignment()`, `createMockSubTask()`, `createMockNote()` with sensible defaults and override options.
 - [ ] **Coverage thresholds**: Aim for >80% line coverage on new Phase 3 backend code; >70% on frontend components. Configure in `vitest.config.ts`.
 - [ ] **No flaky tests**: Avoid timing-dependent assertions. Use `waitFor` / `expect.poll` for async state. Mock timers where needed.
-- [ ] **Documentation as code**: Architecture docs reflect the *actual* implemented schema/IPC. If implementation deviated from design, update docs to match reality.
+- [ ] **Documentation as code**: Architecture docs reflect the _actual_ implemented schema/IPC. If implementation deviated from design, update docs to match reality.
 - [ ] **Versioned docs**: If IPC contracts changed, note version in `ipc-contract.md` (additive only per versioning strategy).
 
 ## Code Changes
@@ -82,51 +82,51 @@ Add comprehensive test coverage for all Phase 3 features and update documentatio
 
 ### Backend Tests
 
-| File | Change |
-|------|--------|
+| File                                              | Change                                                               |
+| ------------------------------------------------- | -------------------------------------------------------------------- |
 | `src/backend/shared/__tests__/repository.test.ts` | Add tests for sub-task/note CRUD, cascade delete, import protection. |
-| `src/backend/main/__tests__/ipc-handlers.test.ts` | Add tests for `db:subtasks:*` and `db:notes:*` channels. |
-| `src/backend/main/__tests__/import.test.ts` | Add regression test: import preserves sub-tasks/notes. |
-| `src/backend/main/__tests__/scheduler.test.ts` | Verify scheduler doesn't touch sub-tasks/notes (if not already). |
+| `src/backend/main/__tests__/ipc-handlers.test.ts` | Add tests for `db:subtasks:*` and `db:notes:*` channels.             |
+| `src/backend/main/__tests__/import.test.ts`       | Add regression test: import preserves sub-tasks/notes.               |
+| `src/backend/main/__tests__/scheduler.test.ts`    | Verify scheduler doesn't touch sub-tasks/notes (if not already).     |
 
 ### Frontend Tests
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/components/subtasks/__tests__/SubTaskList.test.tsx` | Component tests for list, empty, loading. |
-| `src/frontend/src/components/subtasks/__tests__/SubTaskRow.test.tsx` | Checkbox, delete, keyboard. |
-| `src/frontend/src/components/subtasks/__tests__/SubTaskAddInput.test.tsx` | Validation, Enter/Escape, focus. |
-| `src/frontend/src/components/subtasks/__tests__/DeleteConfirmModal.test.tsx` | Focus trap, confirm/cancel, restoration. |
-| `src/frontend/src/components/subtasks/__tests__/AllCompletePrompt.test.tsx` | Appear, mark complete, dismiss, reappear. |
-| `src/frontend/src/components/ui/__tests__/ProgressBar.test.tsx` | Sizes, labels, ARIA, reduced motion. |
-| `src/frontend/src/components/notes/__tests__/NotesEditor.test.tsx` | Save/cancel, keyboard, validation. |
-| `src/frontend/src/components/notes/__tests__/NoteEntry.test.tsx` | Display, delete. |
-| `src/frontend/src/pages/__tests__/AssignmentDetailPage.test.tsx` | Full page integration, error states, deep link. |
-| `src/frontend/src/hooks/__tests__/useSubTasks.test.ts` | Hook logic, optimistic, rollback, live updates. |
-| `src/frontend/src/hooks/__tests__/useSubTaskProgress.test.ts` | Calculations, reactivity. |
-| `src/frontend/src/hooks/__tests__/useFocusRestoration.test.ts` | Save/restore focus. |
-| `src/frontend/test/subtasks.spec.ts` | E2E: add, toggle, delete, persist, progress. |
-| `src/frontend/test/notes.spec.ts` | E2E: add, edit, delete, timestamps, persist. |
-| `src/frontend/test/detail-view.spec.ts` | E2E: navigation, back focus, deep link, manual assignment. |
-| `src/frontend/test/cascade-safety.spec.ts` | E2E: cascade delete, re-import protection, manual assignment. |
-| `src/frontend/test/accessibility.spec.ts` | E2E: axe scan, keyboard nav, focus management. |
-| `src/frontend/test/test-utils.ts` | **New**. Factories, mock helpers, test DB setup. |
+| File                                                                         | Change                                                        |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `src/frontend/src/components/subtasks/__tests__/SubTaskList.test.tsx`        | Component tests for list, empty, loading.                     |
+| `src/frontend/src/components/subtasks/__tests__/SubTaskRow.test.tsx`         | Checkbox, delete, keyboard.                                   |
+| `src/frontend/src/components/subtasks/__tests__/SubTaskAddInput.test.tsx`    | Validation, Enter/Escape, focus.                              |
+| `src/frontend/src/components/subtasks/__tests__/DeleteConfirmModal.test.tsx` | Focus trap, confirm/cancel, restoration.                      |
+| `src/frontend/src/components/subtasks/__tests__/AllCompletePrompt.test.tsx`  | Appear, mark complete, dismiss, reappear.                     |
+| `src/frontend/src/components/ui/__tests__/ProgressBar.test.tsx`              | Sizes, labels, ARIA, reduced motion.                          |
+| `src/frontend/src/components/notes/__tests__/NotesEditor.test.tsx`           | Save/cancel, keyboard, validation.                            |
+| `src/frontend/src/components/notes/__tests__/NoteEntry.test.tsx`             | Display, delete.                                              |
+| `src/frontend/src/pages/__tests__/AssignmentDetailPage.test.tsx`             | Full page integration, error states, deep link.               |
+| `src/frontend/src/hooks/__tests__/useSubTasks.test.ts`                       | Hook logic, optimistic, rollback, live updates.               |
+| `src/frontend/src/hooks/__tests__/useSubTaskProgress.test.ts`                | Calculations, reactivity.                                     |
+| `src/frontend/src/hooks/__tests__/useFocusRestoration.test.ts`               | Save/restore focus.                                           |
+| `src/frontend/test/subtasks.spec.ts`                                         | E2E: add, toggle, delete, persist, progress.                  |
+| `src/frontend/test/notes.spec.ts`                                            | E2E: add, edit, delete, timestamps, persist.                  |
+| `src/frontend/test/detail-view.spec.ts`                                      | E2E: navigation, back focus, deep link, manual assignment.    |
+| `src/frontend/test/cascade-safety.spec.ts`                                   | E2E: cascade delete, re-import protection, manual assignment. |
+| `src/frontend/test/accessibility.spec.ts`                                    | E2E: axe scan, keyboard nav, focus management.                |
+| `src/frontend/test/test-utils.ts`                                            | **New**. Factories, mock helpers, test DB setup.              |
 
 ### Configuration
 
-| File | Change |
-|------|--------|
-| `config/vitest/vitest.shared.ts` (or relevant) | Add coverage thresholds, test timeout, mock setup. |
-| `playwright.config.ts` | Ensure E2E test config includes Phase 3 test files. |
+| File                                           | Change                                              |
+| ---------------------------------------------- | --------------------------------------------------- |
+| `config/vitest/vitest.shared.ts` (or relevant) | Add coverage thresholds, test timeout, mock setup.  |
+| `playwright.config.ts`                         | Ensure E2E test config includes Phase 3 test files. |
 
 ### Documentation
 
-| File | Change |
-|------|--------|
-| `docs/architecture/data-model.md` | Update SubTask/Note entities, protected fields, source semantics. |
-| `docs/architecture/ipc-contract.md` | Verify/update sub-task/note channels, events. |
-| `README.md` (root) | Phase 3 badge, feature list, roadmap update. |
-| `docs/architecture/accessibility.md` | Keyboard shortcuts reference (from 3.9). |
+| File                                 | Change                                                            |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `docs/architecture/data-model.md`    | Update SubTask/Note entities, protected fields, source semantics. |
+| `docs/architecture/ipc-contract.md`  | Verify/update sub-task/note channels, events.                     |
+| `README.md` (root)                   | Phase 3 badge, feature list, roadmap update.                      |
+| `docs/architecture/accessibility.md` | Keyboard shortcuts reference (from 3.9).                          |
 
 ## Acceptance Criteria
 

@@ -75,47 +75,47 @@ describe('Grouping Functions', () => {
   });
 
   const assignments = [
-    createMockAssignment({ 
-      id: '1' as any, 
-      status: 'pending', 
-      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime, 
-      courseName: 'CS101' 
+    createMockAssignment({
+      id: '1' as any,
+      status: 'pending',
+      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'CS101',
     }), // Overdue (before Monday Jan 13)
-    createMockAssignment({ 
-      id: '2' as any, 
-      status: 'pending', 
-      dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime, 
-      courseName: 'CS101' 
+    createMockAssignment({
+      id: '2' as any,
+      status: 'pending',
+      dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'CS101',
     }), // This week (Tuesday Jan 14)
-    createMockAssignment({ 
-      id: '3' as any, 
-      status: 'pending', 
-      dueAt: new Date('2025-01-25T12:00:00.000Z').toISOString() as IsoDateTime, 
-      courseName: 'MATH101' 
+    createMockAssignment({
+      id: '3' as any,
+      status: 'pending',
+      dueAt: new Date('2025-01-25T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'MATH101',
     }), // Upcoming (after Sunday Jan 19)
-    createMockAssignment({ 
-      id: '4' as any, 
-      status: 'completed', 
-      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime, 
-      courseName: 'CS101' 
+    createMockAssignment({
+      id: '4' as any,
+      status: 'completed',
+      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'CS101',
     }), // Completed
-    createMockAssignment({ 
-      id: '5' as any, 
-      status: 'pending', 
-      dueAt: null, 
-      courseName: 'PHYS101' 
+    createMockAssignment({
+      id: '5' as any,
+      status: 'pending',
+      dueAt: null,
+      courseName: 'PHYS101',
     }), // No due date
-    createMockAssignment({ 
-      id: '6' as any, 
-      status: 'in_progress', 
-      dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime, 
-      courseName: 'MATH101' 
+    createMockAssignment({
+      id: '6' as any,
+      status: 'in_progress',
+      dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'MATH101',
     }), // In progress this week
-    createMockAssignment({ 
-      id: '7' as any, 
-      status: 'archived', 
-      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime, 
-      courseName: 'PHYS101' 
+    createMockAssignment({
+      id: '7' as any,
+      status: 'archived',
+      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'PHYS101',
     }), // Archived
   ];
 
@@ -125,7 +125,7 @@ describe('Grouping Functions', () => {
 
       // Should have 5 groups (all non-empty)
       expect(result).toHaveLength(5);
-      
+
       // Check group order matches requirement: This Week → Overdue → Upcoming → No Due Date → Completed
       const groupKeys = result.map((g) => g.groupKey);
       expect(groupKeys).toEqual(['this-week', 'overdue', 'upcoming', 'no-due-date', 'completed']);
@@ -163,7 +163,7 @@ describe('Grouping Functions', () => {
 
     it('excludes archived assignments from week grouping', () => {
       const result = groupByWeek(assignments);
-      
+
       // Archived assignment (id: '7') should not appear in any group
       const allGroupedIds = result.flatMap((g) => g.assignments.map((a) => a.id));
       expect(allGroupedIds).not.toContain('7');
@@ -336,22 +336,30 @@ describe('Grouping Functions', () => {
       const result = applyGrouping(testAssignments, 'none');
       expect(result).toEqual(testAssignments);
       // Verify it's a flat array, not grouped
-      expect(Array.isArray(result) && result.length > 0 && !('groupKey' in (result as any)[0])).toBe(true);
+      expect(
+        Array.isArray(result) && result.length > 0 && !('groupKey' in (result as any)[0]),
+      ).toBe(true);
     });
 
     it('returns grouped array for week grouping', () => {
       const result = applyGrouping(testAssignments, 'week');
-      expect(Array.isArray(result) && result.length > 0 && 'groupKey' in (result as any)[0]).toBe(true);
+      expect(Array.isArray(result) && result.length > 0 && 'groupKey' in (result as any)[0]).toBe(
+        true,
+      );
     });
 
     it('returns grouped array for status grouping', () => {
       const result = applyGrouping(testAssignments, 'status');
-      expect(Array.isArray(result) && result.length > 0 && 'groupKey' in (result as any)[0]).toBe(true);
+      expect(Array.isArray(result) && result.length > 0 && 'groupKey' in (result as any)[0]).toBe(
+        true,
+      );
     });
 
     it('returns grouped array for course grouping', () => {
       const result = applyGrouping(testAssignments, 'course');
-      expect(Array.isArray(result) && result.length > 0 && 'groupKey' in (result as any)[0]).toBe(true);
+      expect(Array.isArray(result) && result.length > 0 && 'groupKey' in (result as any)[0]).toBe(
+        true,
+      );
     });
 
     it('returns flat array for empty assignments', () => {
@@ -362,7 +370,7 @@ describe('Grouping Functions', () => {
     it('passes sortOption and priorityOrder to grouping functions', () => {
       const priorityOrder = ['2', '1'];
       const result = applyGrouping(testAssignments, 'status', 'priority', priorityOrder);
-      
+
       const grouped = result as GroupedAssignments[];
       const pending = grouped.find((g) => g.groupKey === 'pending');
       expect(pending?.assignments.map((a) => a.id)).toEqual(['1']);
@@ -377,11 +385,11 @@ describe('Grouping with different timezones', () => {
     // We can't easily test different timezones without complex mocking,
     // but we can verify the functions don't throw
     const assignments = [
-      createMockAssignment({ 
-        id: '1' as any, 
-        status: 'pending', 
-        dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime, 
-        courseName: 'CS101' 
+      createMockAssignment({
+        id: '1' as any,
+        status: 'pending',
+        dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime,
+        courseName: 'CS101',
       }),
     ];
 

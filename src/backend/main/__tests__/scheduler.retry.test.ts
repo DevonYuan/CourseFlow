@@ -87,7 +87,13 @@ vi.mock('../events.js', () => ({
 // Import mocked modules
 import { repo } from '../db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from '../events.js';
-import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError } from '../ical/index.js';
+import {
+  fetchICalFeed,
+  parseICalFeed,
+  mapICalToAssignments,
+  NetworkError,
+  HttpError,
+} from '../ical/index.js';
 import { Scheduler, __resetScheduler } from '../scheduler.js';
 
 import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
@@ -220,10 +226,7 @@ describe('Scheduler Retry Logic Tests', () => {
     // Should be paused after max retries
     expect(scheduler.getStatus().running).toBe(false);
     // Final error emission uses the classification message
-    expect(mockEmitSchedulerError).toHaveBeenCalledWith(
-      'Network error — retrying...',
-      'network'
-    );
+    expect(mockEmitSchedulerError).toHaveBeenCalledWith('Network error — retrying...', 'network');
   });
 
   it('retries on server error (5xx)', async () => {

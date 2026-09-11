@@ -13,7 +13,6 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { AssignmentListSkeleton } from '../components/AssignmentListSkeleton';
 
-
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
 

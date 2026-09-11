@@ -36,13 +36,13 @@ Create notes and pages independently — not tied to any assignment. Organize wi
 
 ## Tech Stack
 
-| Component            | Technology     | Notes                                              |
-| -------------------- | -------------- | -------------------------------------------------- |
-| Desktop Framework    | **Electron**   | Cross-platform desktop app (Windows, macOS, Linux) |
+| Component            | Technology     | Notes                                                                                    |
+| -------------------- | -------------- | ---------------------------------------------------------------------------------------- |
+| Desktop Framework    | **Electron**   | Cross-platform desktop app (Windows, macOS, Linux)                                       |
 | Calendar Integration | **iCal**       | Generic iCal feed importer (Google Calendar, Canvas, Outlook, …); single feed in the MVP |
-| Backend              | **TypeScript** | Best support for working with iCal                 |
-| Frontend             | **React**      | Modern, responsive desktop UI                      |
-| Database             | **SQLite**     | Local data storage                                 |
+| Backend              | **TypeScript** | Best support for working with iCal                                                       |
+| Frontend             | **React**      | Modern, responsive desktop UI                                                            |
+| Database             | **SQLite**     | Local data storage                                                                       |
 
 ## Architecture
 

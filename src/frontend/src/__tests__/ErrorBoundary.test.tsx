@@ -13,7 +13,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
-
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
 
@@ -43,7 +42,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={false} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText('Child content')).toBeInTheDocument();
   });
@@ -52,7 +51,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     expect(screen.getByText('Test render error')).toBeInTheDocument();
@@ -63,9 +62,13 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
-    expect(consoleErrorSpy).toHaveBeenCalledWith('ErrorBoundary caught:', expect.any(Error), expect.any(Object));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'ErrorBoundary caught:',
+      expect.any(Error),
+      expect.any(Object),
+    );
   });
 
   it('calls custom fallback render prop when provided', () => {
@@ -79,11 +82,11 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary fallback={customFallback}>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(customFallback).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'Test render error' }),
-      expect.any(Function)
+      expect.any(Function),
     );
     expect(screen.getByText('Custom: Test render error')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /custom reset/i })).toBeInTheDocument();
@@ -99,7 +102,7 @@ describe('ErrorBoundary', () => {
     const { rerender } = render(
       <ErrorBoundary fallback={customFallback}>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByTestId('reset-btn')).toBeInTheDocument();
 
@@ -112,7 +115,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByRole('alert')).toBeInTheDocument();
   });

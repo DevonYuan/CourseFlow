@@ -13,7 +13,6 @@ import React from 'react';
 
 import { AssignmentRow } from '../AssignmentRow';
 
-
 import './DragOverlay.css';
 
 interface DragOverlayProps {
@@ -52,11 +51,7 @@ export function DragOverlay({
 
   return (
     <div className="drag-overlay" style={style}>
-      <AssignmentRow
-        assignment={assignment}
-        onClick={onClick}
-        onMarkComplete={onMarkComplete}
-      />
+      <AssignmentRow assignment={assignment} onClick={onClick} onMarkComplete={onMarkComplete} />
     </div>
   );
 }

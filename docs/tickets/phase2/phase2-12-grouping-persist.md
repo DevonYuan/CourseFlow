@@ -58,12 +58,12 @@ Persist selected grouping type to `localStorage` (or settings table). Restore on
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Select "By Course" grouping → reload app → grouping persists | Manual test |
-| 2 | Default is "Flat List" (none) on fresh install | Manual test |
-| 3 | No console errors on hydration | Manual test |
-| 4 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                    | Verification |
+| --- | ------------------------------------------------------------ | ------------ |
+| 1   | Select "By Course" grouping → reload app → grouping persists | Manual test  |
+| 2   | Default is "Flat List" (none) on fresh install               | Manual test  |
+| 3   | No console errors on hydration                               | Manual test  |
+| 4   | All tests pass (`pnpm test`)                                 | CI run       |
 
 ---
 

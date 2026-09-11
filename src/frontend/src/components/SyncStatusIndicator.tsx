@@ -54,16 +54,12 @@ function formatLastSync(isoString: string | null): string {
   });
 }
 
-export function SyncStatusIndicator({ onSync, compact = false }: SyncStatusIndicatorProps): JSX.Element {
-  const {
-    lastSyncAt,
-    nextAutoSyncAt,
-    countdown,
-    isSyncing,
-    progress,
-    syncStatus,
-    syncNow,
-  } = useSyncStatus();
+export function SyncStatusIndicator({
+  onSync,
+  compact = false,
+}: SyncStatusIndicatorProps): JSX.Element {
+  const { lastSyncAt, nextAutoSyncAt, countdown, isSyncing, progress, syncStatus, syncNow } =
+    useSyncStatus();
 
   // Determine display text for last sync
   const lastSyncDisplay = useMemo(() => formatLastSync(lastSyncAt), [lastSyncAt]);
@@ -80,10 +76,19 @@ export function SyncStatusIndicator({ onSync, compact = false }: SyncStatusIndic
   // Compact mode - Sync Pill for TopBar
   if (compact) {
     const label = isSyncing ? 'Syncing…' : `Synced ${lastSyncDisplay}`;
-    const value = isSyncing ? `${progress}%` : (nextSyncDisplay ? `Next in ${nextSyncDisplay}` : 'No auto-sync');
+    const value = isSyncing
+      ? `${progress}%`
+      : nextSyncDisplay
+        ? `Next in ${nextSyncDisplay}`
+        : 'No auto-sync';
 
     return (
-      <div className="sync-pill" aria-live="polite" aria-atomic="true" data-testid="scheduler-status-compact">
+      <div
+        className="sync-pill"
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="scheduler-status-compact"
+      >
         <div className="sync-text">
           <span className="label">{label}</span>
           <span className="value">{value}</span>
@@ -96,13 +101,34 @@ export function SyncStatusIndicator({ onSync, compact = false }: SyncStatusIndic
           aria-busy={isSyncing}
         >
           {isSyncing ? (
-            <svg className="sync-spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              className="sync-spinner"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M23 4v6h-6" />
               <path d="M1 20v-6h6" />
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
             </svg>
           ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M23 4v6h-6" />
               <path d="M1 20v-6h6" />
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -115,14 +141,25 @@ export function SyncStatusIndicator({ onSync, compact = false }: SyncStatusIndic
 
   // Full mode - for Settings page or other uses
   return (
-    <div className="sync-status" aria-live="polite" aria-atomic="true" data-testid="scheduler-status">
+    <div
+      className="sync-status"
+      aria-live="polite"
+      aria-atomic="true"
+      data-testid="scheduler-status"
+    >
       <div className="sync-status__info">
-        <span className="sync-status__last" title={lastSyncAt ? new Date(lastSyncAt).toLocaleString() : ''}>
+        <span
+          className="sync-status__last"
+          title={lastSyncAt ? new Date(lastSyncAt).toLocaleString() : ''}
+        >
           <span className="sync-status__label">Last sync:</span>
           <span className="sync-status__value">{lastSyncDisplay}</span>
         </span>
         {nextAutoSyncAt && (
-          <span className="sync-status__next" title={nextAutoSyncAt ? new Date(nextAutoSyncAt).toLocaleString() : ''}>
+          <span
+            className="sync-status__next"
+            title={nextAutoSyncAt ? new Date(nextAutoSyncAt).toLocaleString() : ''}
+          >
             <span className="sync-status__label">Next auto-sync:</span>
             <span className="sync-status__value">{nextSyncDisplay}</span>
           </span>

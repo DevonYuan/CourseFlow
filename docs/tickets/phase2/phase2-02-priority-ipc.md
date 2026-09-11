@@ -78,14 +78,14 @@ Implement IPC handlers for priority ordering in `src/backend/main/ipc-handlers.t
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | `db:priority:list` returns all priority orders sorted by position | IPC test |
-| 2 | `db:priority:reorder` updates positions and emits `db:changed` for each | IPC test + event spy |
-| 3 | `db:priority:upsert` creates/updates single entry and emits `db:changed` | IPC test |
-| 4 | Invalid input throws typed error (not generic Error) | Unit test |
-| 5 | `db:changed` payload includes correct table/action/id | Event verification |
-| 6 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                                | Verification         |
+| --- | ------------------------------------------------------------------------ | -------------------- |
+| 1   | `db:priority:list` returns all priority orders sorted by position        | IPC test             |
+| 2   | `db:priority:reorder` updates positions and emits `db:changed` for each  | IPC test + event spy |
+| 3   | `db:priority:upsert` creates/updates single entry and emits `db:changed` | IPC test             |
+| 4   | Invalid input throws typed error (not generic Error)                     | Unit test            |
+| 5   | `db:changed` payload includes correct table/action/id                    | Event verification   |
+| 6   | All tests pass (`pnpm test`)                                             | CI run               |
 
 ---
 

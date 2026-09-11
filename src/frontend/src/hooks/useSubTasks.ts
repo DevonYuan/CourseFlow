@@ -83,32 +83,29 @@ export function useSubTasks(assignmentId: EntityId): UseSubTasksReturn {
         setLoading(false);
       }
     },
-    [setSubTasks, setLoading, setError]
+    [setSubTasks, setLoading, setError],
   );
 
   // Add sub-task
-  const addSubTask = useCallback(
-    async (id: EntityId, title: string) => {
-      const result = await window.api.db.subtasks.upsert({
-        assignmentId: id,
-        title,
-        completed: false,
-        order: 0, // Backend will determine position
-      });
-      return result;
-    },
-    []
-  );
+  const addSubTask = useCallback(async (id: EntityId, title: string) => {
+    const result = await window.api.db.subtasks.upsert({
+      assignmentId: id,
+      title,
+      completed: false,
+      order: 0, // Backend will determine position
+    });
+    return result;
+  }, []);
 
   // Delete sub-task (optimistic + IPC with rollback on error)
   const deleteSubTask = useCallback(
     async (id: EntityId): Promise<IpcResult<void>> => {
       // Find the sub-task to potentially rollback
       const subTaskToRemove = subTasks.find((st) => st.id === id);
-      
+
       // Optimistic remove
       optimisticRemove(id);
-      
+
       try {
         const result = await window.api.db.subtasks.delete(id);
         if (result.ok) {
@@ -122,10 +119,13 @@ export function useSubTasks(assignmentId: EntityId): UseSubTasksReturn {
         if (subTaskToRemove) {
           rollbackRemove(id, subTaskToRemove);
         }
-        return { ok: false, error: err instanceof Error ? err.message : 'Failed to delete sub-task' };
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : 'Failed to delete sub-task',
+        };
       }
     },
-    [subTasks, optimisticRemove, confirmRemove, rollbackRemove]
+    [subTasks, optimisticRemove, confirmRemove, rollbackRemove],
   );
 
   // Toggle sub-task completion (optimistic + IPC with rollback on error)
@@ -133,10 +133,10 @@ export function useSubTasks(assignmentId: EntityId): UseSubTasksReturn {
     async (id: EntityId, completed: boolean): Promise<IpcResult<SubTask>> => {
       const { toggleSubTask: storeToggleSubTask } = useSubTaskStore.getState();
       return storeToggleSubTask(id, completed, () =>
-        window.api.db.subtasks.toggle({ id, completed })
+        window.api.db.subtasks.toggle({ id, completed }),
       );
     },
-    []
+    [],
   );
 
   // Subscribe to db:changed events for live updates

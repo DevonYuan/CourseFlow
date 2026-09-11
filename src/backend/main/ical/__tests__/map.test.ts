@@ -7,18 +7,16 @@
 import type { ICalEvent, IsoDateTime } from '@backend/shared/types';
 import { describe, it, expect, vi } from 'vitest';
 
-import {
-  mapICalToAssignments,
-  extractCourseName,
-  generateCourseColor,
-} from '../map.js';
+import { mapICalToAssignments, extractCourseName, generateCourseColor } from '../map.js';
 
 // Helper to create a minimal valid ICalEvent with a date within 30 days of now
 function createEvent(overrides: Partial<ICalEvent> = {}): ICalEvent {
   // Use a date 7 days in the future to pass the 30-day filter
   const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() as IsoDateTime;
-  const futureEndDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString() as IsoDateTime;
-  
+  const futureEndDate = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000,
+  ).toISOString() as IsoDateTime;
+
   return {
     uid: 'test-uid-123',
     summary: 'Test Assignment',
@@ -267,10 +265,7 @@ describe('iCal Mapper', () => {
     });
 
     it('generates unique IDs for each assignment', () => {
-      const events = [
-        createEvent({ uid: 'event-1' }),
-        createEvent({ uid: 'event-2' }),
-      ];
+      const events = [createEvent({ uid: 'event-1' }), createEvent({ uid: 'event-2' })];
 
       const result = mapICalToAssignments(events, sourceUrl);
       expect(result[0]!.id).not.toBe(result[1]!.id);

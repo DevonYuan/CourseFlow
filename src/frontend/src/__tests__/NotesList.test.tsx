@@ -27,9 +27,10 @@ const mockApi = {
     subtasks: { list: vi.fn() },
     notes: {
       list: vi.fn<(assignmentId: string) => Promise<Result<Note[]>>>(),
-      upsert: vi.fn<
-        (input: { id?: string; assignmentId: string; content: string }) => Promise<Result<Note>>
-      >(),
+      upsert:
+        vi.fn<
+          (input: { id?: string; assignmentId: string; content: string }) => Promise<Result<Note>>
+        >(),
       delete: vi.fn<(id: string) => Promise<Result<void>>>(),
     },
   },
@@ -148,7 +149,9 @@ describe('NotesList', () => {
     });
     // Editor closes and focus returns to the Add note button
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText('Add a note about this assignment...')).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText('Add a note about this assignment...'),
+      ).not.toBeInTheDocument();
       expect(addNoteButton()).toHaveFocus();
     });
   });
@@ -159,7 +162,11 @@ describe('NotesList', () => {
     mockApi.db.notes.list.mockResolvedValue({ ok: true, data: [note1] });
     mockApi.db.notes.upsert.mockResolvedValue({
       ok: true,
-      data: { ...note1, content: 'Updated note', updatedAt: '2026-09-05T13:00:00.000Z' as IsoDateTime },
+      data: {
+        ...note1,
+        content: 'Updated note',
+        updatedAt: '2026-09-05T13:00:00.000Z' as IsoDateTime,
+      },
     });
 
     renderNotesList();

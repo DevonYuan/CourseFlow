@@ -52,7 +52,7 @@ export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   debounced.flush = () => {
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
-      func(...[] as unknown as Parameters<T>);
+      func(...([] as unknown as Parameters<T>));
       timeoutId = null;
     }
   };

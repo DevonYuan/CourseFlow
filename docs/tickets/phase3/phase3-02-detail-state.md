@@ -47,21 +47,21 @@ Implement the data loading layer for the assignment detail view. This ticket cre
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/stores/assignmentDetailStore.ts` | **New**. Zustand store: `assignment`, `subTasks`, `notes`, `isLoading`, `error`, `notFound`, `fetch(assignmentId)`, `refetch()`, `subscribeToChanges(assignmentId)`, `unsubscribe()`. Internal: `abortController` for cancellation, `eventUnsubscribe` cleanup. |
-| `src/frontend/src/hooks/useAssignmentDetail.ts` | **New**. Hook: `const { assignment, subTasks, notes, isLoading, error, notFound, refetch } = useAssignmentDetail(assignmentId)`. Calls store `fetch` on `assignmentId` change, returns store state. Handles cleanup on unmount. |
-| `src/frontend/src/pages/AssignmentDetailPage.tsx` | Update: use `useAssignmentDetail(assignmentId)` from route params. Render loading/error/not-found states. Pass data to child components (header, sub-tasks, notes, progress). |
-| `src/frontend/src/components/assignments/AssignmentHeader.tsx` | **New or update**. Receives `assignment` prop, renders title, course badge, due date, status, description. Used by detail page. |
-| `src/frontend/src/utils/date.ts` | Ensure date formatting helpers available for due date display (overdue, today, tomorrow, all-day). |
+| File                                                           | Change                                                                                                                                                                                                                                                          |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/stores/assignmentDetailStore.ts`             | **New**. Zustand store: `assignment`, `subTasks`, `notes`, `isLoading`, `error`, `notFound`, `fetch(assignmentId)`, `refetch()`, `subscribeToChanges(assignmentId)`, `unsubscribe()`. Internal: `abortController` for cancellation, `eventUnsubscribe` cleanup. |
+| `src/frontend/src/hooks/useAssignmentDetail.ts`                | **New**. Hook: `const { assignment, subTasks, notes, isLoading, error, notFound, refetch } = useAssignmentDetail(assignmentId)`. Calls store `fetch` on `assignmentId` change, returns store state. Handles cleanup on unmount.                                 |
+| `src/frontend/src/pages/AssignmentDetailPage.tsx`              | Update: use `useAssignmentDetail(assignmentId)` from route params. Render loading/error/not-found states. Pass data to child components (header, sub-tasks, notes, progress).                                                                                   |
+| `src/frontend/src/components/assignments/AssignmentHeader.tsx` | **New or update**. Receives `assignment` prop, renders title, course badge, due date, status, description. Used by detail page.                                                                                                                                 |
+| `src/frontend/src/utils/date.ts`                               | Ensure date formatting helpers available for due date display (overdue, today, tomorrow, all-day).                                                                                                                                                              |
 
 ### Backend — No Changes Expected
 
 > Assumes Ticket 3.0 audit confirmed all IPC channels exist and work.
 
-| File | Change |
-|------|--------|
-| *(none expected)* | Verify `db:assignments:get`, `db:subtasks:list`, `db:notes:list` return correct types. Verify `onDbChanged` emits for all three tables. |
+| File              | Change                                                                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| _(none expected)_ | Verify `db:assignments:get`, `db:subtasks:list`, `db:notes:list` return correct types. Verify `onDbChanged` emits for all three tables. |
 
 ## Acceptance Criteria
 
@@ -94,7 +94,7 @@ Implement the data loading layer for the assignment detail view. This ticket cre
   1. Refetch sub-tasks on ANY sub-task change (simple, slightly chatty).
   2. Maintain a local `subTaskId -> assignmentId` map in the store (more precise).
   3. Include `assignmentId` in the `db:changed` payload for sub-tasks/notes (backend change, cleaner).
-  
+
   **Recommendation**: Option 3 — update `ipc-handlers.ts` to emit `{ table, action, id, assignmentId? }` for sub-tasks/notes. If backend change not feasible in 3.0, use Option 1 (refetch on any sub-task change) for now.
 
 - **AbortController**: Use `AbortController` for fetch cancellation. The IPC layer (`window.api`) may not support abort natively; implement a wrapper that ignores responses if aborted.

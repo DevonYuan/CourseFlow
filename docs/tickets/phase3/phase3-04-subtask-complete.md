@@ -20,7 +20,7 @@ Implement the toggle completion interaction for sub-tasks. Each sub-task row has
 - [ ] **IPC call**: Use `db:subtasks:toggle` channel with payload `{ id: string; completed: boolean }`. Expect `IpcResult<SubTask>` response with the updated sub-task.
 - [ ] **Rollback on failure**: If the IPC returns `ok: false`, revert the optimistic update in the store and show an error toast: "Failed to update sub-task".
 - [ ] **Keyboard activation**: Checkbox is focusable and toggles on **Space** or **Enter** (standard checkbox behavior). Ensure `role="checkbox"`, `aria-checked`, `tabIndex=0` if using a custom element, or use native `<input type="checkbox">`.
-- [ ] **Visual feedback**: 
+- [ ] **Visual feedback**:
   - Completed sub-tasks show strikethrough text (or reduced opacity) and a checked checkbox.
   - Pending sub-tasks show normal text and unchecked checkbox.
   - Transition/animation for the toggle (optional but nice).
@@ -48,21 +48,21 @@ Implement the toggle completion interaction for sub-tasks. Each sub-task row has
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/components/subtasks/SubTaskRow.tsx` | Update: make checkbox interactive. Use native `<input type="checkbox" checked={completed} onChange={handleToggle} />`. Add `handleToggle` prop that calls the store's `toggleSubTask`. Apply strikethrough/opacity style when `completed`. |
-| `src/frontend/src/stores/subtaskStore.ts` | Add `toggleSubTask(id, completed)` action: optimistic flip → call `useSubTasks.toggleSubTask()` → on error, rollback + toast. |
-| `src/frontend/src/hooks/useSubTasks.ts` | Add `toggleSubTask(id, completed)` function: calls `window.api.db.subtasks.toggle({ id, completed })`, unwraps `IpcResult`, returns updated `SubTask` or throws. |
-| `src/frontend/src/components/subtasks/SubTaskList.tsx` | Pass `onToggle` handler down to `SubTaskRow` (or connect rows directly to store). |
-| `src/frontend/src/utils/toast.ts` | Use existing toast utility for error toast with "Retry" action. |
+| File                                                   | Change                                                                                                                                                                                                                                     |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/frontend/src/components/subtasks/SubTaskRow.tsx`  | Update: make checkbox interactive. Use native `<input type="checkbox" checked={completed} onChange={handleToggle} />`. Add `handleToggle` prop that calls the store's `toggleSubTask`. Apply strikethrough/opacity style when `completed`. |
+| `src/frontend/src/stores/subtaskStore.ts`              | Add `toggleSubTask(id, completed)` action: optimistic flip → call `useSubTasks.toggleSubTask()` → on error, rollback + toast.                                                                                                              |
+| `src/frontend/src/hooks/useSubTasks.ts`                | Add `toggleSubTask(id, completed)` function: calls `window.api.db.subtasks.toggle({ id, completed })`, unwraps `IpcResult`, returns updated `SubTask` or throws.                                                                           |
+| `src/frontend/src/components/subtasks/SubTaskList.tsx` | Pass `onToggle` handler down to `SubTaskRow` (or connect rows directly to store).                                                                                                                                                          |
+| `src/frontend/src/utils/toast.ts`                      | Use existing toast utility for error toast with "Retry" action.                                                                                                                                                                            |
 
 ### Backend — No Changes Expected
 
 > Assumes Ticket 3.0 audit confirmed the backend has `db:subtasks:toggle` handler, repository `toggleSubTask(id, completed)`, and `db:changed` event emission for `sub_tasks` updates.
 
-| File | Change |
-|------|--------|
-| *(none expected)* | Verify in 3.0 that `ipc-handlers.ts` has `db:subtasks:toggle` handler calling repo, returning `IpcResult<SubTask>`, emitting `db:changed`. |
+| File              | Change                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| _(none expected)_ | Verify in 3.0 that `ipc-handlers.ts` has `db:subtasks:toggle` handler calling repo, returning `IpcResult<SubTask>`, emitting `db:changed`. |
 
 ## Acceptance Criteria
 

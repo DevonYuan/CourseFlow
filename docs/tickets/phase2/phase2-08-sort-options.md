@@ -51,13 +51,13 @@ Add sort dropdown to toolbar with options: "Priority (custom)", "Due Date (asc)"
 
 ### Sort Option Labels
 
-| Value | Label |
-|-------|-------|
-| `priority` | Priority (custom) |
-| `dueDateAsc` | Due Date (soonest first) |
-| `dueDateDesc` | Due Date (latest first) |
-| `course` | Course (A–Z) |
-| `createdDesc` | Created (newest first) |
+| Value         | Label                    |
+| ------------- | ------------------------ |
+| `priority`    | Priority (custom)        |
+| `dueDateAsc`  | Due Date (soonest first) |
+| `dueDateDesc` | Due Date (latest first)  |
+| `course`      | Course (A–Z)             |
+| `createdDesc` | Created (newest first)   |
 
 ---
 
@@ -76,13 +76,13 @@ Add sort dropdown to toolbar with options: "Priority (custom)", "Due Date (asc)"
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Dropdown shows all 5 options with correct labels | Manual test |
-| 2 | Selection updates store and persists | Manual test + localStorage |
-| 3 | Default is "Priority (custom)" | Manual test (fresh install) |
-| 4 | Accessible: label, keyboard, screen reader | Manual test |
-| 5 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                        | Verification                |
+| --- | ------------------------------------------------ | --------------------------- |
+| 1   | Dropdown shows all 5 options with correct labels | Manual test                 |
+| 2   | Selection updates store and persists             | Manual test + localStorage  |
+| 3   | Default is "Priority (custom)"                   | Manual test (fresh install) |
+| 4   | Accessible: label, keyboard, screen reader       | Manual test                 |
+| 5   | All tests pass (`pnpm test`)                     | CI run                      |
 
 ---
 

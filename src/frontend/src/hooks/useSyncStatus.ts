@@ -15,7 +15,6 @@ import { useToast } from '../context/ToastContext';
 import { useIcalSync } from './useIcalSync';
 import { useSettings } from './useSettings';
 
-
 interface UseSyncStatusReturn {
   /** ISO 8601 timestamp of last successful sync, or null if never synced */
   lastSyncAt: string | null;
@@ -61,8 +60,14 @@ export function formatNextSync(isoString: string | null): string {
 
 export function useSyncStatus(): UseSyncStatusReturn {
   const { settings } = useSettings();
-  const { isLoading: isSyncing, progress, stage, lastResult, fetchAndImport, error } =
-    useIcalSync();
+  const {
+    isLoading: isSyncing,
+    progress,
+    stage,
+    lastResult,
+    fetchAndImport,
+    error,
+  } = useIcalSync();
   const { success: toastSuccess, error: toastError } = useToast();
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [nextAutoSyncAt, setNextAutoSyncAt] = useState<string | null>(null);

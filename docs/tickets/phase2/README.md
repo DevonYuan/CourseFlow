@@ -12,7 +12,7 @@ Phase 2 builds on the Phase 1 MVP (fetch/parse/store/display/mark-done) to deliv
 
 ### User Journey in Phase 2
 
-1. **Prioritize** → Drag assignments into a custom order that reflects *your* workflow, not Canvas's chronology.
+1. **Prioritize** → Drag assignments into a custom order that reflects _your_ workflow, not Canvas's chronology.
 2. **Persist** → Order survives app restarts, syncs, and re-imports (local priority never overwritten by Canvas).
 3. **Filter & Sort** → Narrow the list by course, due date range, status (pending/completed), or search text.
 4. **Group** → Switch between flat list and grouped views: "This Week", "Overdue", "Upcoming", "Completed".
@@ -24,52 +24,52 @@ Phase 2 builds on the Phase 1 MVP (fetch/parse/store/display/mark-done) to deliv
 
 ### ⚠️ BLOCKING PREREQUISITE (Do First)
 
-| #   | Ticket ID                     | Title                            | Description                                                                                                                             |
-| --- | ----------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.0 | `phase2-00-data-model-update` | **Data Model & IPC Alignment**   | Extend shared types, IPC contracts, database schema, and repository mappers for Phase 2 entities (PriorityOrder, FilterState, Grouping). **All other tickets depend on this.** |
+| #   | Ticket ID                     | Title                          | Description                                                                                                                                                                    |
+| --- | ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2.0 | `phase2-00-data-model-update` | **Data Model & IPC Alignment** | Extend shared types, IPC contracts, database schema, and repository mappers for Phase 2 entities (PriorityOrder, FilterState, Grouping). **All other tickets depend on this.** |
 
 ### A. Priority Ordering (Backend + Frontend)
 
-| #   | Ticket ID                    | Title                           | Details                                                                                                                                                                                                       |
-| --- | ---------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.1 | `phase2-01-priority-schema`  | Priority Order Schema & Repo    | Add `priority_order` table (FK → `assignments.id`, `position` INTEGER). Extend repository with `getPriorityOrder()`, `reorderPriority(ids: string[])`, `upsertPriority(assignmentId, position)`.             |
-| 2.2 | `phase2-02-priority-ipc`     | IPC Handlers for Priority       | Implement `db:priority:list`, `db:priority:reorder`, `db:priority:upsert` in `ipc-handlers.ts`. Emit `db:changed` for `priority_order` table.                                                              |
-| 2.3 | `phase2-03-drag-drop-core`   | Drag-and-Drop Core (Frontend)   | Implement drag-and-drop reordering in `AssignmentList` using `@dnd-kit/core` (or native HTML5 DnD). Optimistic UI: update local Zustand store immediately, call `db:priority:reorder` on drop.                |
-| 2.4 | `phase2-04-priority-persist` | Priority Persistence & Hydration | On app load, hydrate assignment list sorted by `priority_order.position` (fallback: due date). On iCal re-import, **never overwrite** local priority — only update `due_at`, `title`, `workflow_state` from Canvas. |
-| 2.5 | `phase2-05-priority-keyboard`| Keyboard Reordering             | Add keyboard shortcuts: `Alt+Up/Down` to move assignment up/down, `Alt+Shift+Up/Down` to move to top/bottom. Announce changes via screen reader (ARIA live region).                                        |
+| #   | Ticket ID                     | Title                            | Details                                                                                                                                                                                                             |
+| --- | ----------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.1 | `phase2-01-priority-schema`   | Priority Order Schema & Repo     | Add `priority_order` table (FK → `assignments.id`, `position` INTEGER). Extend repository with `getPriorityOrder()`, `reorderPriority(ids: string[])`, `upsertPriority(assignmentId, position)`.                    |
+| 2.2 | `phase2-02-priority-ipc`      | IPC Handlers for Priority        | Implement `db:priority:list`, `db:priority:reorder`, `db:priority:upsert` in `ipc-handlers.ts`. Emit `db:changed` for `priority_order` table.                                                                       |
+| 2.3 | `phase2-03-drag-drop-core`    | Drag-and-Drop Core (Frontend)    | Implement drag-and-drop reordering in `AssignmentList` using `@dnd-kit/core` (or native HTML5 DnD). Optimistic UI: update local Zustand store immediately, call `db:priority:reorder` on drop.                      |
+| 2.4 | `phase2-04-priority-persist`  | Priority Persistence & Hydration | On app load, hydrate assignment list sorted by `priority_order.position` (fallback: due date). On iCal re-import, **never overwrite** local priority — only update `due_at`, `title`, `workflow_state` from Canvas. |
+| 2.5 | `phase2-05-priority-keyboard` | Keyboard Reordering              | Add keyboard shortcuts: `Alt+Up/Down` to move assignment up/down, `Alt+Shift+Up/Down` to move to top/bottom. Announce changes via screen reader (ARIA live region).                                                 |
 
 ### B. Filtering, Sorting & Search (Frontend)
 
-| #   | Ticket ID                    | Title                              | Details                                                                                                                                                                                              |
-| --- | ---------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.6 | `phase2-06-filter-state`     | Filter State Management (Zustand)  | Add `FilterState` slice to Zustand store: `courseFilter: string[]`, `statusFilter: 'all' \| 'pending' \| 'completed'`, `dueDateRange: { start: Date; end: Date } \| null`, `searchQuery: string`. |
-| 2.7 | `phase2-07-filter-ui`        | Filter Bar UI                      | Build `FilterBar` component: multi-select course chips, status tabs (All/Pending/Completed), date range picker, search input with debounce. Persist filter state to `localStorage`.                    |
-| 2.8 | `phase2-08-sort-options`     | Sort Options                       | Add sort dropdown: "Priority (custom)", "Due Date (asc)", "Due Date (desc)", "Course (A–Z)", "Created (newest)". Default = Priority. Persist sort preference.                                        |
-| 2.9 | `phase2-09-filter-logic`     | Filter/Sort Application Logic      | Derive filtered/sorted list in a memoized selector. Apply: search → course filter → status filter → date range → sort. Handle large lists efficiently (virtualization not required for MVP scale).       |
+| #   | Ticket ID                | Title                             | Details                                                                                                                                                                                            |
+| --- | ------------------------ | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.6 | `phase2-06-filter-state` | Filter State Management (Zustand) | Add `FilterState` slice to Zustand store: `courseFilter: string[]`, `statusFilter: 'all' \| 'pending' \| 'completed'`, `dueDateRange: { start: Date; end: Date } \| null`, `searchQuery: string`.  |
+| 2.7 | `phase2-07-filter-ui`    | Filter Bar UI                     | Build `FilterBar` component: multi-select course chips, status tabs (All/Pending/Completed), date range picker, search input with debounce. Persist filter state to `localStorage`.                |
+| 2.8 | `phase2-08-sort-options` | Sort Options                      | Add sort dropdown: "Priority (custom)", "Due Date (asc)", "Due Date (desc)", "Course (A–Z)", "Created (newest)". Default = Priority. Persist sort preference.                                      |
+| 2.9 | `phase2-09-filter-logic` | Filter/Sort Application Logic     | Derive filtered/sorted list in a memoized selector. Apply: search → course filter → status filter → date range → sort. Handle large lists efficiently (virtualization not required for MVP scale). |
 
 ### C. Grouped Views (Frontend)
 
-| #   | Ticket ID                     | Title                      | Details                                                                                                                                                                                     |
-| --- | ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.10 | `phase2-10-grouping-types`    | Grouping Type Definitions  | Define `GroupingType`: `'none' \| 'week' \| 'status' \| 'course'`. "This Week" = due in next 7 days; "Overdue" = due < now & pending; "Upcoming" = due > 7 days; "Completed" = status done. |
-| 2.11 | `phase2-11-grouping-ui`       | Grouping Selector & Render | Add grouping selector to toolbar (icon + label). Render grouped list with collapsible section headers showing count. Within each group, respect current sort order.                            |
-| 2.12 | `phase2-12-grouping-persist`  | Grouping Persistence       | Persist selected grouping to `localStorage` (or settings table). Restore on app launch.                                                                                                     |
+| #    | Ticket ID                    | Title                      | Details                                                                                                                                                                                     |
+| ---- | ---------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.10 | `phase2-10-grouping-types`   | Grouping Type Definitions  | Define `GroupingType`: `'none' \| 'week' \| 'status' \| 'course'`. "This Week" = due in next 7 days; "Overdue" = due < now & pending; "Upcoming" = due > 7 days; "Completed" = status done. |
+| 2.11 | `phase2-11-grouping-ui`      | Grouping Selector & Render | Add grouping selector to toolbar (icon + label). Render grouped list with collapsible section headers showing count. Within each group, respect current sort order.                         |
+| 2.12 | `phase2-12-grouping-persist` | Grouping Persistence       | Persist selected grouping to `localStorage` (or settings table). Restore on app launch.                                                                                                     |
 
 ### D. Background Auto-Fetch Scheduler (Backend)
 
-| #   | Ticket ID                          | Title                              | Details                                                                                                                                                                                                 |
-| --- | ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.13 | `phase2-13-scheduler-core`         | Scheduler Infrastructure           | Implement `src/backend/main/scheduler.ts`: `setInterval`-based scheduler in Main process. Configurable interval via `settings.sync_interval_minutes` (default: 15). Start/stop on app ready/quit.       |
-| 2.14 | `phase2-14-scheduler-ipc`          | Scheduler IPC & Events             | Add `settings:syncIntervalChanged` event (emitted when interval updates). Scheduler emits `ical:progress` events during background fetch. Expose `scheduler:start`, `scheduler:stop` for testing.    |
-| 2.15 | `phase2-15-scheduler-integration`  | Scheduler Integration & Error Handling | Wire scheduler to existing `ical:fetch` → `ical:import` pipeline. Handle errors gracefully: network failures → retry with backoff (max 3); 401/403 → toast "iCal URL invalid, check Settings"; don't crash scheduler. |
+| #    | Ticket ID                         | Title                                  | Details                                                                                                                                                                                                               |
+| ---- | --------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.13 | `phase2-13-scheduler-core`        | Scheduler Infrastructure               | Implement `src/backend/main/scheduler.ts`: `setInterval`-based scheduler in Main process. Configurable interval via `settings.sync_interval_minutes` (default: 15). Start/stop on app ready/quit.                     |
+| 2.14 | `phase2-14-scheduler-ipc`         | Scheduler IPC & Events                 | Add `settings:syncIntervalChanged` event (emitted when interval updates). Scheduler emits `ical:progress` events during background fetch. Expose `scheduler:start`, `scheduler:stop` for testing.                     |
+| 2.15 | `phase2-15-scheduler-integration` | Scheduler Integration & Error Handling | Wire scheduler to existing `ical:fetch` → `ical:import` pipeline. Handle errors gracefully: network failures → retry with backoff (max 3); 401/403 → toast "iCal URL invalid, check Settings"; don't crash scheduler. |
 
 ### E. Integration & Polish
 
-| #   | Ticket ID                       | Title                              | Details                                                                                                                                                                  |
-| --- | ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 2.16 | `phase2-16-preload-bridge-v2`   | Preload Bridge Updates             | Extend `src/backend/preload/index.ts` with all new IPC channels: priority, filter/sort (if backend filtering added later), scheduler controls.                           |
-| 2.17 | `phase2-17-db-migration-v3`     | Database Migration v3              | Create and run migration to add `priority_order` table and any new indexes. Ensure migration is idempotent and runs on app startup.                                       |
-| 2.18 | `phase2-18-integration-testing` | End-to-End Integration Testing     | Verify full flow: drag-drop reorder → restart app → order persists → re-import iCal → priority preserved → filter/sort/group work → auto-sync runs in background → UI updates via `db:changed` events. |
+| #    | Ticket ID                       | Title                          | Details                                                                                                                                                                                                |
+| ---- | ------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2.16 | `phase2-16-preload-bridge-v2`   | Preload Bridge Updates         | Extend `src/backend/preload/index.ts` with all new IPC channels: priority, filter/sort (if backend filtering added later), scheduler controls.                                                         |
+| 2.17 | `phase2-17-db-migration-v3`     | Database Migration v3          | Create and run migration to add `priority_order` table and any new indexes. Ensure migration is idempotent and runs on app startup.                                                                    |
+| 2.18 | `phase2-18-integration-testing` | End-to-End Integration Testing | Verify full flow: drag-drop reorder → restart app → order persists → re-import iCal → priority preserved → filter/sort/group work → auto-sync runs in background → UI updates via `db:changed` events. |
 
 ---
 
@@ -88,7 +88,7 @@ Phase 2 builds on the Phase 1 MVP (fetch/parse/store/display/mark-done) to deliv
 - [ ] **Priority initialization for new assignments** — When a new assignment arrives via iCal import, where does it go in the priority order? **Recommendation:** Append to end (lowest priority) so user can drag it up. Document in `docs/architecture/data-model.md`.
 - [ ] **Priority conflict on re-import** — Phase 1 decided: never overwrite local `priority`, `notes`, `subtasks`, `description` on re-import. **Confirm this applies to `priority_order` table** — re-import should only upsert assignment fields, leave `priority_order` untouched.
 - [ ] **Filter/sort: client-side vs server-side** — Current scale (<500 assignments) supports client-side filtering in Zustand selector. **Decision:** Client-side for Phase 2. Revisit if scale grows.
-- [ ] **Grouping: mutually exclusive with flat sort?** — When a grouping is active (e.g., "This Week"), the "Priority" sort only applies *within* each group. "Due Date" sort applies within groups. Document this behavior.
+- [ ] **Grouping: mutually exclusive with flat sort?** — When a grouping is active (e.g., "This Week"), the "Priority" sort only applies _within_ each group. "Due Date" sort applies within groups. Document this behavior.
 - [ ] **Scheduler: run on app start?** — Yes, if `sync_interval_minutes > 0` and `ical_url` is configured. First run: wait 30s after app ready to avoid startup contention.
 - [ ] **Scheduler: coalesce rapid triggers** — If manual "Sync Now" clicked while background fetch running, either queue or ignore. **Recommendation:** Ignore manual if background in progress; show toast "Sync in progress...".
 - [ ] **Accessibility for drag-and-drop** — `@dnd-kit` provides keyboard support out of the box. Verify `Alt+Up/Down` works and screen readers announce position changes.
@@ -96,7 +96,7 @@ Phase 2 builds on the Phase 1 MVP (fetch/parse/store/display/mark-done) to deliv
 ### Product / Data
 
 - [ ] **Validate filter UX with real data** — Test with 5+ courses, 100+ assignments, mix of pending/completed. Ensure filter bar doesn't overwhelm on small screens (min-width 800px per Phase 1).
-- [ ] **Define "This Week" boundary** — Monday 00:00 to Sunday 23:59 in *user's local timezone* (not UTC). Store due dates as UTC ISO strings; convert for grouping.
+- [ ] **Define "This Week" boundary** — Monday 00:00 to Sunday 23:59 in _user's local timezone_ (not UTC). Store due dates as UTC ISO strings; convert for grouping.
 - [ ] **Confirm course color usage in grouped view** — Course color badges should show in grouped lists for quick visual scanning.
 
 ### Process & Hygiene
@@ -217,29 +217,29 @@ flowchart TD
 
 ## Estimated Effort
 
-| Category                                                     | Estimate       |
-| ------------------------------------------------------------ | -------------- |
-| Data Model & IPC Alignment (Ticket 2.0)                      | 0.5 day        |
-| Priority schema, repo, IPC, migration                        | 1 day          |
-| Drag-and-drop core + keyboard + persistence                  | 2 days         |
-| Filter state, UI, sort, grouping                             | 2 days         |
-| Scheduler infrastructure + integration + error handling      | 1.5 days       |
-| Preload bridge, integration testing, polish                  | 1 day          |
-| **Total**                                                    | **~8 days**    |
+| Category                                                | Estimate    |
+| ------------------------------------------------------- | ----------- |
+| Data Model & IPC Alignment (Ticket 2.0)                 | 0.5 day     |
+| Priority schema, repo, IPC, migration                   | 1 day       |
+| Drag-and-drop core + keyboard + persistence             | 2 days      |
+| Filter state, UI, sort, grouping                        | 2 days      |
+| Scheduler infrastructure + integration + error handling | 1.5 days    |
+| Preload bridge, integration testing, polish             | 1 day       |
+| **Total**                                               | **~8 days** |
 
 ---
 
 ## Risks & Mitigations
 
-| Risk                                                        | Likelihood | Impact   | Mitigation                                                                                      |
-| ----------------------------------------------------------- | ---------- | -------- | ----------------------------------------------------------------------------------------------- |
-| Drag-and-drop accessibility gaps                            | Medium     | High     | Use `@dnd-kit` (built-in keyboard support); test with screen reader; add `Alt+Up/Down` shortcuts. |
-| Priority order corruption on concurrent edits               | Low        | High     | Single-writer (Main process); `reorder` is atomic bulk update; no partial states.               |
-| Scheduler drift / missed runs on sleep/wake                 | Medium     | Medium   | Use `setInterval` + `power-monitor` to resync on wake; log last run timestamp for debugging.    |
-| Background sync conflicts with manual sync                  | Medium     | Medium   | Coalesce: if background running, ignore manual with toast; add `scheduler:status` IPC for UI.   |
-| Filter/sort performance with 1000+ assignments              | Low        | Low      | Memoized selectors; virtualization can be added in Phase 4 if needed.                           |
-| Grouping date boundary bugs (timezone, DST)                 | Medium     | Medium   | Use `date-fns` with `utcToZonedTime` / `startOfDay` in user TZ; write unit tests for boundaries. |
-| **Data model mismatch (Phase 1 vs Phase 2 tickets)**        | **High**   | **High** | **Ticket 2.0 addresses this explicitly — run first.**                                           |
+| Risk                                                 | Likelihood | Impact   | Mitigation                                                                                        |
+| ---------------------------------------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------- |
+| Drag-and-drop accessibility gaps                     | Medium     | High     | Use `@dnd-kit` (built-in keyboard support); test with screen reader; add `Alt+Up/Down` shortcuts. |
+| Priority order corruption on concurrent edits        | Low        | High     | Single-writer (Main process); `reorder` is atomic bulk update; no partial states.                 |
+| Scheduler drift / missed runs on sleep/wake          | Medium     | Medium   | Use `setInterval` + `power-monitor` to resync on wake; log last run timestamp for debugging.      |
+| Background sync conflicts with manual sync           | Medium     | Medium   | Coalesce: if background running, ignore manual with toast; add `scheduler:status` IPC for UI.     |
+| Filter/sort performance with 1000+ assignments       | Low        | Low      | Memoized selectors; virtualization can be added in Phase 4 if needed.                             |
+| Grouping date boundary bugs (timezone, DST)          | Medium     | Medium   | Use `date-fns` with `utcToZonedTime` / `startOfDay` in user TZ; write unit tests for boundaries.  |
+| **Data model mismatch (Phase 1 vs Phase 2 tickets)** | **High**   | **High** | **Ticket 2.0 addresses this explicitly — run first.**                                             |
 
 ---
 

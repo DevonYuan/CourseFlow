@@ -10,7 +10,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { useAssignments, useCourseFilter, useSetCourseFilter, useToggleCourseFilter } from '../../store/assignmentsStore';
+import {
+  useAssignments,
+  useCourseFilter,
+  useSetCourseFilter,
+  useToggleCourseFilter,
+} from '../../store/assignmentsStore';
 import { CourseColorBadge } from '../CourseColorBadge';
 
 import './CourseChips.css';
@@ -136,22 +141,20 @@ export function CourseChips(): JSX.Element {
       {/* "All courses" chip - always visible on desktop, part of dropdown on mobile */}
       <div className="course-chips__all-wrapper">
         <button
-              type="button"
-              className={`course-chips__chip course-chips__chip--all ${hasActiveFilters ? 'course-chips__chip--active' : ''}`}
-              onClick={handleClearAll}
-              aria-pressed={hasActiveFilters}
-              aria-label={hasActiveFilters ? 'Clear course filter' : 'All courses (no filter)'}
-              data-testid="course-chip-all"
-            >
-          <CourseColorBadge
-            color="#888"
-            variant="dot"
-            size={8}
-            aria-hidden="true"
-          />
+          type="button"
+          className={`course-chips__chip course-chips__chip--all ${hasActiveFilters ? 'course-chips__chip--active' : ''}`}
+          onClick={handleClearAll}
+          aria-pressed={hasActiveFilters}
+          aria-label={hasActiveFilters ? 'Clear course filter' : 'All courses (no filter)'}
+          data-testid="course-chip-all"
+        >
+          <CourseColorBadge color="#888" variant="dot" size={8} aria-hidden="true" />
           <span className="course-chips__chip-label">All courses</span>
           {hasActiveFilters && (
-            <span className="course-chips__chip-count" aria-label={`${selectedCount} courses selected`}>
+            <span
+              className="course-chips__chip-count"
+              aria-label={`${selectedCount} courses selected`}
+            >
               {selectedCount}
             </span>
           )}
@@ -173,14 +176,11 @@ export function CourseChips(): JSX.Element {
               onKeyDown={(e) => handleKeyDown(e, course.name)}
               data-testid={`course-chip-${course.name.replaceAll(/\s+/g, '-')}`}
             >
-              <CourseColorBadge
-                color={course.color}
-                variant="dot"
-                size={8}
-                aria-hidden="true"
-              />
+              <CourseColorBadge color={course.color} variant="dot" size={8} aria-hidden="true" />
               <span className="course-chips__chip-label">{course.name}</span>
-              <span className="course-chips__chip-count" aria-hidden="true">{course.count}</span>
+              <span className="course-chips__chip-count" aria-hidden="true">
+                {course.count}
+              </span>
             </button>
           ))}
         </div>
@@ -197,14 +197,11 @@ export function CourseChips(): JSX.Element {
           aria-expanded={isDropdownOpen}
           aria-label={hasActiveFilters ? `${selectedCount} courses selected` : 'Filter by course'}
         >
-          <CourseColorBadge
-            color="#888"
-            variant="dot"
-            size={8}
-            aria-hidden="true"
-          />
+          <CourseColorBadge color="#888" variant="dot" size={8} aria-hidden="true" />
           <span className="course-chips__dropdown-text">
-            {hasActiveFilters ? `${selectedCount} course${selectedCount === 1 ? '' : 's'} selected` : 'Filter by course'}
+            {hasActiveFilters
+              ? `${selectedCount} course${selectedCount === 1 ? '' : 's'} selected`
+              : 'Filter by course'}
           </span>
           <svg
             className={`course-chips__dropdown-chevron ${isDropdownOpen ? 'course-chips__dropdown-chevron--open' : ''}`}
@@ -221,7 +218,10 @@ export function CourseChips(): JSX.Element {
             <polyline points="6 9 12 15 18 9" />
           </svg>
           {hasActiveFilters && (
-            <span className="course-chips__dropdown-badge" aria-label={`${selectedCount} courses selected`}>
+            <span
+              className="course-chips__dropdown-badge"
+              aria-label={`${selectedCount} courses selected`}
+            >
               {selectedCount}
             </span>
           )}
@@ -258,14 +258,11 @@ export function CourseChips(): JSX.Element {
                 className={`course-chips__dropdown-item ${course.isSelected ? 'course-chips__dropdown-item--selected' : ''}`}
                 onClick={() => handleDropdownItemClick(course.name)}
               >
-                <CourseColorBadge
-                  color={course.color}
-                  variant="dot"
-                  size={8}
-                  aria-hidden="true"
-                />
+                <CourseColorBadge color={course.color} variant="dot" size={8} aria-hidden="true" />
                 <span className="course-chips__dropdown-item-label">{course.name}</span>
-                <span className="course-chips__dropdown-item-count" aria-hidden="true">{course.count}</span>
+                <span className="course-chips__dropdown-item-count" aria-hidden="true">
+                  {course.count}
+                </span>
                 {course.isSelected && (
                   <svg
                     className="course-chips__dropdown-item-check"

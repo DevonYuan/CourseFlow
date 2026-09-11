@@ -64,7 +64,7 @@ function toBase64Url(buffer: ArrayBuffer): string {
  */
 function fromBase64Url(base64url: string): ArrayBuffer {
   const base64 = base64url.replaceAll('-', '+').replaceAll('_', '/');
-  const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -127,11 +127,7 @@ export async function encryptIcalUrl(url: string): Promise<EncryptedSetting> {
     // Encrypt the URL
     const encoder = new TextEncoder();
     const plaintext = encoder.encode(url);
-    const ciphertextBuffer = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      plaintext,
-    );
+    const ciphertextBuffer = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
 
     return {
       v: 1,
@@ -168,11 +164,7 @@ export async function decryptIcalUrl(encrypted: EncryptedSetting): Promise<strin
     const key = await deriveKey(passphrase, salt);
 
     // Decrypt the ciphertext
-    const plaintextBuffer = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      ciphertext,
-    );
+    const plaintextBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
 
     const decoder = new TextDecoder();
     return decoder.decode(plaintextBuffer);

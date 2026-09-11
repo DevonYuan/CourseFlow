@@ -88,14 +88,14 @@ Render
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | App restart → assignments render in custom priority order | Manual test |
-| 2 | New iCal import → existing assignments keep custom positions | Manual test |
-| 3 | New assignments from import appear at bottom of list | Manual test |
-| 4 | Deleted assignment → priority entry removed | Manual test |
-| 5 | No priority entries → fallback to due date sort | Manual test |
-| 6 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                    | Verification |
+| --- | ------------------------------------------------------------ | ------------ |
+| 1   | App restart → assignments render in custom priority order    | Manual test  |
+| 2   | New iCal import → existing assignments keep custom positions | Manual test  |
+| 3   | New assignments from import appear at bottom of list         | Manual test  |
+| 4   | Deleted assignment → priority entry removed                  | Manual test  |
+| 5   | No priority entries → fallback to due date sort              | Manual test  |
+| 6   | All tests pass (`pnpm test`)                                 | CI run       |
 
 ---
 

@@ -69,7 +69,7 @@ revertPriorityOrder: () => void  // rollback on error
   onDragEnd={handleDragEnd}
 >
   <SortableContext items={priorityOrder} strategy={verticalListSortingStrategy}>
-    {assignments.map(assignment => (
+    {assignments.map((assignment) => (
       <SortableItem key={assignment.id} id={assignment.id}>
         {({ attributes, listeners, setNodeRef, isDragging }) => (
           <AssignmentRow
@@ -105,16 +105,16 @@ revertPriorityOrder: () => void  // rollback on error
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Drag handle initiates drag; row follows cursor | Manual test |
-| 2 | Drop reorders list visually (optimistic) | Manual test |
-| 3 | `window.api.db.priority.reorder` called with correct ordered IDs | Network tab / IPC spy |
-| 4 | Rollback on IPC error + toast shown | Manual test (mock error) |
-| 5 | Keyboard: Space → arrows → Enter reorders correctly | Manual test + screen reader |
-| 6 | Touch drag works on touchscreen | Manual test |
-| 7 | Completed assignments: drag disabled or visually distinct | Manual test |
-| 8 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                        | Verification                |
+| --- | ---------------------------------------------------------------- | --------------------------- |
+| 1   | Drag handle initiates drag; row follows cursor                   | Manual test                 |
+| 2   | Drop reorders list visually (optimistic)                         | Manual test                 |
+| 3   | `window.api.db.priority.reorder` called with correct ordered IDs | Network tab / IPC spy       |
+| 4   | Rollback on IPC error + toast shown                              | Manual test (mock error)    |
+| 5   | Keyboard: Space → arrows → Enter reorders correctly              | Manual test + screen reader |
+| 6   | Touch drag works on touchscreen                                  | Manual test                 |
+| 7   | Completed assignments: drag disabled or visually distinct        | Manual test                 |
+| 8   | All tests pass (`pnpm test`)                                     | CI run                      |
 
 ---
 
@@ -125,7 +125,7 @@ revertPriorityOrder: () => void  // rollback on error
 - Debounce: store `pendingReorder` timeout; cancel previous on new drag end
 - Rollback: store `previousPriorityOrder` before optimistic update
 - Completed assignments: add `data-draggable="false"` or conditional `SortableItem` wrapper
-- This component integrates with filter/sort/group from tickets 2.6–2.12 — `priorityOrder` reflects *filtered* view order
+- This component integrates with filter/sort/group from tickets 2.6–2.12 — `priorityOrder` reflects _filtered_ view order
 
 ---
 

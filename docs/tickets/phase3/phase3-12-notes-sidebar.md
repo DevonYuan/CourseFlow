@@ -69,24 +69,24 @@ Build the collapsible **Notes Sidebar** (left panel) for the standalone Notes wo
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/routes.tsx` | Add `/notes` and `/notes/:pageId` routes. Create a `NotesLayout` wrapper that renders Sidebar + Editor outlet. |
-| `src/frontend/src/pages/NotesWorkspace.tsx` | **New file**. Top-level page for Notes workspace. Renders `NotesSidebar` + `Outlet` for editor. |
-| `src/frontend/src/components/notes/NotesSidebar.tsx` | **New file**. Main sidebar component: fetches tree, renders `PageTree`, handles DnD, actions, keyboard nav. |
-| `src/frontend/src/components/notes/PageTree.tsx` | **New file**. Recursive tree rendering component. Renders `PageTreeNode` for each page. |
-| `src/frontend/src/components/notes/PageTreeNode.tsx` | **New file**. Single node: title, icon, chevron, drag handle, context menu, inline rename. |
-| `src/frontend/src/components/notes/PageActions.tsx` | **New file**. Context menu (right-click) or hover action bar: new child, new sibling, rename, duplicate, delete. |
-| `src/frontend/src/hooks/usePageTree.ts` | **New file**. Hook to fetch tree via IPC, subscribe to `db:changed`, manage expanded state in `localStorage`, provide DnD handlers. |
-| `src/frontend/src/hooks/usePageActions.ts` | **New file**. Hook for create/rename/duplicate/delete/move mutations with optimistic updates. |
-| `src/frontend/src/stores/notesStore.ts` | **New file** (or extend existing Zustand store). Tree data, expanded state, active page ID, drag state. |
-| `src/frontend/src/components/TopBar.tsx` | Add "Notes" view switcher button (icon + label) that navigates to `/notes`. |
-| `src/frontend/src/utils/dnd.ts` | Extend Phase 2 DnD utilities for tree-specific logic (nesting detection, position calculation). |
+| File                                                 | Change                                                                                                                              |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/routes.tsx`                        | Add `/notes` and `/notes/:pageId` routes. Create a `NotesLayout` wrapper that renders Sidebar + Editor outlet.                      |
+| `src/frontend/src/pages/NotesWorkspace.tsx`          | **New file**. Top-level page for Notes workspace. Renders `NotesSidebar` + `Outlet` for editor.                                     |
+| `src/frontend/src/components/notes/NotesSidebar.tsx` | **New file**. Main sidebar component: fetches tree, renders `PageTree`, handles DnD, actions, keyboard nav.                         |
+| `src/frontend/src/components/notes/PageTree.tsx`     | **New file**. Recursive tree rendering component. Renders `PageTreeNode` for each page.                                             |
+| `src/frontend/src/components/notes/PageTreeNode.tsx` | **New file**. Single node: title, icon, chevron, drag handle, context menu, inline rename.                                          |
+| `src/frontend/src/components/notes/PageActions.tsx`  | **New file**. Context menu (right-click) or hover action bar: new child, new sibling, rename, duplicate, delete.                    |
+| `src/frontend/src/hooks/usePageTree.ts`              | **New file**. Hook to fetch tree via IPC, subscribe to `db:changed`, manage expanded state in `localStorage`, provide DnD handlers. |
+| `src/frontend/src/hooks/usePageActions.ts`           | **New file**. Hook for create/rename/duplicate/delete/move mutations with optimistic updates.                                       |
+| `src/frontend/src/stores/notesStore.ts`              | **New file** (or extend existing Zustand store). Tree data, expanded state, active page ID, drag state.                             |
+| `src/frontend/src/components/TopBar.tsx`             | Add "Notes" view switcher button (icon + label) that navigates to `/notes`.                                                         |
+| `src/frontend/src/utils/dnd.ts`                      | Extend Phase 2 DnD utilities for tree-specific logic (nesting detection, position calculation).                                     |
 
 ### Backend (if any IPC adjustments needed)
 
-| File | Change |
-|------|--------|
+| File                               | Change                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `src/backend/main/ipc-handlers.ts` | Verify `db:pages:move` validates circular refs and returns updated page. No new channels needed. |
 
 ## Acceptance Criteria

@@ -66,22 +66,22 @@ Add a **template system** for the Notes workspace. When creating a new page (via
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/templates/builtinTemplates.ts` | **New file**. Constant array of built-in template objects (id, name, description, icon, content, isBuiltIn: true). |
-| `src/frontend/src/components/notes/TemplatePickerModal.tsx` | **New file**. Modal: template grid, search, built-in + user sections, select handler. |
-| `src/frontend/src/components/notes/ManageTemplatesModal.tsx` | **New file**. Modal for user templates: list, edit, delete, "Save current page as template". |
-| `src/frontend/src/hooks/useTemplates.ts` | **New file**. Load user templates from `settings:user_templates`, merge with built-in, provide `applyTemplate(template, variables)` function. |
-| `src/frontend/src/components/notes/NotesSidebar.tsx` | Modify "New page" / "New child page" → open TemplatePickerModal instead of direct create. |
-| `src/frontend/src/components/notes/MarkdownEditor.tsx` | Add "Save as template" button in toolbar/menu → opens ManageTemplatesModal with current page content pre-filled. |
-| `src/frontend/src/components/notes/WikiLinkAutocomplete.tsx` | On "Create page 'Title'" → open TemplatePickerModal (or use Blank directly for speed). |
-| `src/frontend/src/stores/notesStore.ts` | Add `userTemplates` state, actions for save/edit/delete template. |
-| `src/frontend/src/utils/templateVariables.ts` | **New file**. `resolveVariables(content: string, variables: Record<string, string>): string`. |
+| File                                                         | Change                                                                                                                                        |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/templates/builtinTemplates.ts`             | **New file**. Constant array of built-in template objects (id, name, description, icon, content, isBuiltIn: true).                            |
+| `src/frontend/src/components/notes/TemplatePickerModal.tsx`  | **New file**. Modal: template grid, search, built-in + user sections, select handler.                                                         |
+| `src/frontend/src/components/notes/ManageTemplatesModal.tsx` | **New file**. Modal for user templates: list, edit, delete, "Save current page as template".                                                  |
+| `src/frontend/src/hooks/useTemplates.ts`                     | **New file**. Load user templates from `settings:user_templates`, merge with built-in, provide `applyTemplate(template, variables)` function. |
+| `src/frontend/src/components/notes/NotesSidebar.tsx`         | Modify "New page" / "New child page" → open TemplatePickerModal instead of direct create.                                                     |
+| `src/frontend/src/components/notes/MarkdownEditor.tsx`       | Add "Save as template" button in toolbar/menu → opens ManageTemplatesModal with current page content pre-filled.                              |
+| `src/frontend/src/components/notes/WikiLinkAutocomplete.tsx` | On "Create page 'Title'" → open TemplatePickerModal (or use Blank directly for speed).                                                        |
+| `src/frontend/src/stores/notesStore.ts`                      | Add `userTemplates` state, actions for save/edit/delete template.                                                                             |
+| `src/frontend/src/utils/templateVariables.ts`                | **New file**. `resolveVariables(content: string, variables: Record<string, string>): string`.                                                 |
 
 ### Backend (minimal)
 
-| File | Change |
-|------|--------|
+| File                               | Change                                                                                         |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `src/backend/main/ipc-handlers.ts` | Verify `settings:get`/`set` handles `user_templates` key (already generic). No new IPC needed. |
 
 ## Acceptance Criteria
@@ -111,75 +111,91 @@ Add a **template system** for the Notes workspace. When creating a new page (via
     # {{title}} — {{date}} ({{weekday}})
 
     ## Topic
-    
+
     ## Key Points
-    - 
-    
+
+    -
+
     ## Action Items
-    - [ ] 
-    
+
+    - [ ]
+
     ## Questions
-    - 
+
+    -
     ```
   - **Meeting Notes**:
     ```markdown
     # {{title}} — {{date}} {{time}}
 
     ## Attendees
-    - 
-    
+
+    -
+
     ## Agenda
-    1. 
-    
+
+    1.
+
     ## Decisions
-    - 
-    
+
+    -
+
     ## Action Items
-    - [ ] @person: 
-    
+
+    - [ ] @person:
+
     ## Next Steps
-    - 
+
+    -
     ```
   - **Project Plan**:
     ```markdown
     # {{title}}
 
     ## Overview
-    
+
     ## Goals
-    - 
-    
+
+    -
+
     ## Milestones
+
     - [ ] Milestone 1 — {{date}}
-    
+
     ## Tasks
+
     - [ ] Task 1
     - [ ] Task 2
-    
+
     ## Resources
-    - 
-    
+
+    -
+
     ## Risks
-    - 
+
+    -
     ```
   - **Daily Journal**:
     ```markdown
     # {{date}} ({{weekday}})
 
     ## Gratitude
-    1. 
-    2. 
-    3. 
+
+    1.
+    2.
+    3.
 
     ## Today's Priorities
-    - [ ] 
-    - [ ] 
-    - [ ] 
+
+    - [ ]
+    - [ ]
+    - [ ]
 
     ## Reflection
-    
+
     ## Tomorrow's Focus
-    - 
+
+    -
     ```
 - **Variable resolution**: Provide `variables = { date: todayISO, time: nowTime, title: pageTitle, weekday: 'Monday', month: 'January', year: '2026', datetime: nowISO }`.
 - **User template storage**: `settings.value` for key `user_templates` = JSON array of template objects (without `isBuiltIn` or with `isBuiltIn: false`).

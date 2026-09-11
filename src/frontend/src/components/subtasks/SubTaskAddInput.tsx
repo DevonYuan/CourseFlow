@@ -41,11 +41,14 @@ export function SubTaskAddInput({
     inputRef.current?.focus();
   }, []);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setValue(newValue);
-    if (error) setError(null);
-  }, [error]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      setValue(newValue);
+      if (error) setError(null);
+    },
+    [error],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -69,7 +72,7 @@ export function SubTaskAddInput({
         inputRef.current?.blur();
       }
     },
-    [value, onAdd]
+    [value, onAdd],
   );
 
   const handleBlur = useCallback(() => {

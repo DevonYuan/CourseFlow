@@ -52,12 +52,12 @@ Add grouping selector to toolbar (icon + label). Render grouped list with collap
 
 ### Grouping Selector Options
 
-| Value | Label | Icon |
-|-------|-------|------|
-| `none` | Flat List | ☰ |
-| `week` | This Week / Overdue / Upcoming | 📅 |
-| `status` | Pending / Completed | ✓ |
-| `course` | By Course | 🎓 |
+| Value    | Label                          | Icon |
+| -------- | ------------------------------ | ---- |
+| `none`   | Flat List                      | ☰   |
+| `week`   | This Week / Overdue / Upcoming | 📅   |
+| `status` | Pending / Completed            | ✓    |
+| `course` | By Course                      | 🎓   |
 
 ### Group Header Structure
 
@@ -94,16 +94,16 @@ Add grouping selector to toolbar (icon + label). Render grouped list with collap
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Grouping selector changes view correctly | Manual test |
-| 2 | Groups render with correct labels and counts | Manual test |
-| 3 | Collapse/expand works per group | Manual test |
-| 4 | Drag-drop works within group (not across groups) | Manual test |
-| 5 | Sort within group respected | Manual test |
-| 6 | Empty groups hidden | Manual test |
-| 7 | Accessible: headers announce expanded/collapsed | Screen reader test |
-| 8 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                        | Verification       |
+| --- | ------------------------------------------------ | ------------------ |
+| 1   | Grouping selector changes view correctly         | Manual test        |
+| 2   | Groups render with correct labels and counts     | Manual test        |
+| 3   | Collapse/expand works per group                  | Manual test        |
+| 4   | Drag-drop works within group (not across groups) | Manual test        |
+| 5   | Sort within group respected                      | Manual test        |
+| 6   | Empty groups hidden                              | Manual test        |
+| 7   | Accessible: headers announce expanded/collapsed  | Screen reader test |
+| 8   | All tests pass (`pnpm test`)                     | CI run             |
 
 ---
 

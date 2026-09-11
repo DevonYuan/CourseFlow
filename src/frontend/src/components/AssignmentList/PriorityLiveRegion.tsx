@@ -51,9 +51,11 @@ export function PriorityLiveRegion({ className = '' }: PriorityLiveRegionProps):
   // This is a bit of a hack but works for the pattern where
   // the hook is used in a parent component that can pass the callback
   useEffect(() => {
-    (window as unknown as { __priorityAnnounce?: (msg: string) => void }).__priorityAnnounce = announce;
+    (window as unknown as { __priorityAnnounce?: (msg: string) => void }).__priorityAnnounce =
+      announce;
     return () => {
-      (window as unknown as { __priorityAnnounce?: (msg: string) => void }).__priorityAnnounce = undefined;
+      (window as unknown as { __priorityAnnounce?: (msg: string) => void }).__priorityAnnounce =
+        undefined;
     };
   }, [announce]);
 
@@ -79,7 +81,9 @@ export function usePriorityAnnounce(): (message: string) => void {
   const announceRef = useRef<(message: string) => void>();
 
   useEffect(() => {
-    announceRef.current = (window as unknown as { __priorityAnnounce?: (msg: string) => void }).__priorityAnnounce;
+    announceRef.current = (
+      window as unknown as { __priorityAnnounce?: (msg: string) => void }
+    ).__priorityAnnounce;
   }, []);
 
   return useCallback((message: string) => {

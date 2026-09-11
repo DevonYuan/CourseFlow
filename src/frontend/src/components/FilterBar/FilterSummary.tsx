@@ -10,7 +10,17 @@
 import type { IsoDateTime } from '@backend/shared/types';
 import { useMemo } from 'react';
 
-import { useCourseFilter, useDueDateRange, useResetFilters, useSearchQuery, useSetCourseFilter, useSetDueDateRange, useSetSearchQuery, useSetStatusFilter, useStatusFilter } from '../../store/assignmentsStore';
+import {
+  useCourseFilter,
+  useDueDateRange,
+  useResetFilters,
+  useSearchQuery,
+  useSetCourseFilter,
+  useSetDueDateRange,
+  useSetSearchQuery,
+  useSetStatusFilter,
+  useStatusFilter,
+} from '../../store/assignmentsStore';
 import { CourseColorBadge } from '../CourseColorBadge';
 
 import './FilterSummary.css';
@@ -92,7 +102,16 @@ export function FilterSummary(): JSX.Element | null {
     }
 
     return filters;
-  }, [courseFilter, setCourseFilter, statusFilter, setStatusFilter, dueDateRange, setDueDateRange, searchQuery, setSearchQuery]);
+  }, [
+    courseFilter,
+    setCourseFilter,
+    statusFilter,
+    setStatusFilter,
+    dueDateRange,
+    setDueDateRange,
+    searchQuery,
+    setSearchQuery,
+  ]);
 
   const hasActiveFilters = activeFilters.length > 0;
 
@@ -105,7 +124,12 @@ export function FilterSummary(): JSX.Element | null {
   };
 
   return (
-    <div className="filter-summary" role="status" aria-live="polite" aria-label={`${activeFilters.length} active filter${activeFilters.length === 1 ? '' : 's'}`}>
+    <div
+      className="filter-summary"
+      role="status"
+      aria-live="polite"
+      aria-label={`${activeFilters.length} active filter${activeFilters.length === 1 ? '' : 's'}`}
+    >
       <div className="filter-summary__chips">
         {activeFilters.map((filter) => (
           <button

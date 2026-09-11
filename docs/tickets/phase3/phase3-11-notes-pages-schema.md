@@ -26,7 +26,7 @@ This is a **blocking prerequisite** for Tickets 3.12–3.16.
   - `created_at` (INTEGER NOT NULL — Unix epoch ms UTC)
   - `updated_at` (INTEGER NOT NULL — Unix epoch ms UTC)
   - `created_by` (TEXT, nullable — future multi-user)
-- [ ] **Indexes**: 
+- [ ] **Indexes**:
   - PK on `id`
   - `idx_pages_parent` on `pages(parent_id, position)` for fast sibling ordering
   - `idx_pages_updated` on `pages(updated_at DESC)` for recent pages
@@ -75,47 +75,47 @@ This is a **blocking prerequisite** for Tickets 3.12–3.16.
 
 ### Backend — Shared Types
 
-| File | Change |
-|------|--------|
+| File                          | Change                                                                                                                                              |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/shared/types.ts` | Verify/complete `Page`, `PageInput`, `PageUpdateInput`, `PageTreeNode`, `PageSearchResult` interfaces. Add JSDoc for content format (Markdown MVP). |
 
 ### Backend — Database Schema & Migrations
 
-| File | Change |
-|------|--------|
+| File                                                                         | Change                                                                                                                        |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/db/migrations/005_create_pages_table.ts` (or next version) | **New migration file**. Create `pages` table, indexes, FTS5 virtual table `pages_fts`, and triggers. Update `schema_version`. |
-| `src/backend/main/db/schema.ts` | If a central schema file exists, add the `pages` table DDL for reference. |
+| `src/backend/main/db/schema.ts`                                              | If a central schema file exists, add the `pages` table DDL for reference.                                                     |
 
 ### Backend — Repository
 
-| File | Change |
-|------|--------|
+| File                                | Change                                                                                                                                          |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/db/repository.ts` | Add all 8 repository methods listed above. Use transactions for multi-step operations (move, delete with cascade). Handle position renumbering. |
 
 ### Backend — IPC Handlers
 
-| File | Change |
-|------|--------|
+| File                               | Change                                                                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/ipc-handlers.ts` | Add 8 handlers for `db:pages:*` channels. Wrap in `IpcResult`. Emit `db:changed` events on mutations. Validate inputs (e.g., `parentId` exists if not null, no circular reference on move). |
 
 ### Backend — Preload
 
-| File | Change |
-|------|--------|
+| File                           | Change                                                        |
+| ------------------------------ | ------------------------------------------------------------- |
 | `src/backend/preload/index.ts` | Expose `window.api.db.pages` with all 8 methods, fully typed. |
 
 ### Backend — IPC Contract (Source of Truth)
 
-| File | Change |
-|------|--------|
+| File                        | Change                                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------------------- |
 | `src/backend/shared/ipc.ts` | Verify `IpcChannels` includes all 8 `db:pages:*` channels with correct request/response types. |
 
 ### Documentation
 
-| File | Change |
-|------|--------|
-| `docs/architecture/data-model.md` | Confirm `Page` entity table matches implementation. Document protected-fields rule for iCal import. |
-| `docs/architecture/ipc-contract.md` | Add `Database — Pages` channel table (should already be there per current doc — verify). |
+| File                                | Change                                                                                              |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `docs/architecture/data-model.md`   | Confirm `Page` entity table matches implementation. Document protected-fields rule for iCal import. |
+| `docs/architecture/ipc-contract.md` | Add `Database — Pages` channel table (should already be there per current doc — verify).            |
 
 ## Acceptance Criteria
 

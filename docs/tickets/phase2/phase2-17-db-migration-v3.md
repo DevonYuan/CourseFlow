@@ -92,14 +92,14 @@ COMMIT;
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Fresh app install → priority_order table created | Manual test (delete DB, restart) |
-| 2 | Existing v2 DB → migration runs, table added | Manual test (copy v2 DB, restart) |
-| 3 | Table has correct columns, FK, index | SQLite inspector |
-| 4 | Re-running migration doesn't error | Manual test (restart twice) |
-| 5 | Schema version updated to 3 | PRAGMA user_version |
-| 6 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                        | Verification                      |
+| --- | ------------------------------------------------ | --------------------------------- |
+| 1   | Fresh app install → priority_order table created | Manual test (delete DB, restart)  |
+| 2   | Existing v2 DB → migration runs, table added     | Manual test (copy v2 DB, restart) |
+| 3   | Table has correct columns, FK, index             | SQLite inspector                  |
+| 4   | Re-running migration doesn't error               | Manual test (restart twice)       |
+| 5   | Schema version updated to 3                      | PRAGMA user_version               |
+| 6   | All tests pass (`pnpm test`)                     | CI run                            |
 
 ---
 

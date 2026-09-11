@@ -37,8 +37,16 @@ interface DragHandleProps {
  */
 export const DragHandle = forwardRef<HTMLButtonElement, DragHandleProps>(
   (
-    { id, isDragging = false, disabled = false, ariaLabel = 'Drag to reorder', className = '', onClick, onKeyDown },
-    ref
+    {
+      id,
+      isDragging = false,
+      disabled = false,
+      ariaLabel = 'Drag to reorder',
+      className = '',
+      onClick,
+      onKeyDown,
+    },
+    ref,
   ) => {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
       if (disabled) {
@@ -79,7 +87,14 @@ export const DragHandle = forwardRef<HTMLButtonElement, DragHandleProps>(
         tabIndex={disabled ? -1 : 0}
       >
         <span className="drag-handle__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="9" cy="6" r="1.5" />
             <circle cx="15" cy="6" r="1.5" />
             <circle cx="9" cy="12" r="1.5" />
@@ -93,7 +108,7 @@ export const DragHandle = forwardRef<HTMLButtonElement, DragHandleProps>(
         </span>
       </button>
     );
-  }
+  },
 );
 
 DragHandle.displayName = 'DragHandle';

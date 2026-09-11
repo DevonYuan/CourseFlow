@@ -172,7 +172,7 @@ const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciph
 1. **Auth tag included**: AES-GCM authentication tag is appended to ciphertext (standard Web Crypto behavior)
 2. **Unique IV per encryption**: Never reuse IV with same key
 3. **Salt per encryption**: Unique salt enables key rotation and prevents rainbow tables
-5. **No plaintext in renderer**: Preload exposes `settings.get`/`settings.set`/`settings.reset` only — encryption/decryption happens in the main process (the decrypted `icalUrl` is delivered to the renderer for display in Settings)
+4. **No plaintext in renderer**: Preload exposes `settings.get`/`settings.set`/`settings.reset` only — encryption/decryption happens in the main process (the decrypted `icalUrl` is delivered to the renderer for display in Settings)
 5. **Machine secret storage**: Use `keytar` (cross-platform native keychain) or `electron-store` with encryption for the master key
 
 ---

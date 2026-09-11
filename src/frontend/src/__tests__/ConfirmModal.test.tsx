@@ -20,7 +20,13 @@ describe('ConfirmModal', () => {
   });
   it('renders nothing when closed', () => {
     render(
-      <ConfirmModal open={false} title="Delete?" message="Sure?" onConfirm={vi.fn()} onCancel={vi.fn()} />,
+      <ConfirmModal
+        open={false}
+        title="Delete?"
+        message="Sure?"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -117,7 +123,14 @@ describe('ConfirmModal', () => {
 
   it('shows a loading state and disables buttons', () => {
     render(
-      <ConfirmModal open title="Delete?" message="Sure?" isLoading onConfirm={vi.fn()} onCancel={vi.fn()} />,
+      <ConfirmModal
+        open
+        title="Delete?"
+        message="Sure?"
+        isLoading
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
     );
 
     expect(screen.getByRole('button', { name: 'Please wait...' })).toBeDisabled();

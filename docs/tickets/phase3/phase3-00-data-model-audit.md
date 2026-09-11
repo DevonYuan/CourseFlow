@@ -43,47 +43,47 @@ Before building any Phase 3 UI, audit the existing backend data layer (schema, t
 
 ### Backend — Shared Types
 
-| File | Change |
-|------|--------|
+| File                          | Change                                                                                                                                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/shared/types.ts` | Audit and update `SubTask`, `SubTaskInput`, `Note`, `NoteInput`. Add missing fields (`position`, `created_at` on Note, etc.). Document the note model decision (1:1 vs 1:N) in a JSDoc comment. |
 
 ### Backend — Database Schema & Migrations
 
-| File | Change |
-|------|--------|
+| File                                                 | Change                                                                                                                                                          |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/db/schema.ts` (or migration files) | Verify `CREATE TABLE` statements for `sub_tasks` and `notes`. Add missing columns (`position`, `created_at`). Ensure FKs with `ON DELETE CASCADE`. Add indexes. |
-| `src/backend/main/db/migrations/*.ts` | Create new migration file if schema changes needed (e.g., `004_add_subtask_position_note_created_at.ts`). |
+| `src/backend/main/db/migrations/*.ts`                | Create new migration file if schema changes needed (e.g., `004_add_subtask_position_note_created_at.ts`).                                                       |
 
 ### Backend — Repository
 
-| File | Change |
-|------|--------|
+| File                                | Change                                                                                                                                  |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/db/repository.ts` | Audit all SubTask/Note methods. Add missing methods. Ensure `toggleSubTask` uses `db:subtasks:toggle` IPC pattern. Verify return types. |
 
 ### Backend — IPC Handlers
 
-| File | Change |
-|------|--------|
+| File                               | Change                                                                                                                              |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/ipc-handlers.ts` | Audit handlers for all 7 channels. Ensure they call repository methods, wrap in `IpcResult`, emit `db:changed` events on mutations. |
 
 ### Backend — Preload
 
-| File | Change |
-|------|--------|
+| File                           | Change                                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `src/backend/preload/index.ts` | Audit exposed API. Ensure `window.api.db.subtasks.*` and `window.api.db.notes.*` are fully typed and match IPC channels. |
 
 ### Backend — IPC Contract (Source of Truth)
 
-| File | Change |
-|------|--------|
+| File                        | Change                                                                                                    |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `src/backend/shared/ipc.ts` | Verify `IpcChannels` and `IpcEvents` definitions match the handlers and preload. Update if types changed. |
 
 ### Documentation
 
-| File | Change |
-|------|--------|
-| `docs/architecture/data-model.md` | Update SubTask/Note entity definitions with final columns, relationships, indexes. Record note model decision (1:1 vs 1:N). Document protected-fields rule for iCal re-import. |
-| `docs/architecture/ipc-contract.md` | Update channel table if any payloads changed. |
+| File                                | Change                                                                                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `docs/architecture/data-model.md`   | Update SubTask/Note entity definitions with final columns, relationships, indexes. Record note model decision (1:1 vs 1:N). Document protected-fields rule for iCal re-import. |
+| `docs/architecture/ipc-contract.md` | Update channel table if any payloads changed.                                                                                                                                  |
 
 ## Acceptance Criteria
 
@@ -107,7 +107,7 @@ Before building any Phase 3 UI, audit the existing backend data layer (schema, t
 > Any additional context, risks, or considerations.
 
 - **This ticket unblocks all of Phase 3**. Do not start Tickets 3.1–3.10 until this audit is complete and any migrations are merged.
-- **Existing scaffolding**: The Phase 3 README lists existing files that *should* already have this. The audit is about **verifying** and **completing** — not rebuilding from scratch. Expect most pieces to be 80-90% there.
+- **Existing scaffolding**: The Phase 3 README lists existing files that _should_ already have this. The audit is about **verifying** and **completing** — not rebuilding from scratch. Expect most pieces to be 80-90% there.
 - **Note model decision impact**: If notes are 1:N (log entries), the `notes` table needs its own `id` PK, `created_at`, and the IPC `db:notes:delete` takes a note `id` (not `assignment_id`). If 1:1, `assignment_id` is PK and delete takes `assignment_id`. Decide **before** finalizing types/IPC.
 - **Sub-task `position`**: If the column doesn't exist, add it as `INTEGER NOT NULL DEFAULT 0` and backfill with sequential values per `assignment_id`.
 - **Test approach**: Unit test the repository methods directly (Vitest in `src/backend/shared/__tests__/` or `src/backend/main/__tests__/`). Integration test the IPC handlers via the preload bridge in a renderer test context.

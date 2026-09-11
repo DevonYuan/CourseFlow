@@ -23,9 +23,10 @@ const mockApi = {
     subtasks: { list: vi.fn() },
     notes: {
       list: vi.fn<(assignmentId: string) => Promise<Result<Note[]>>>(),
-      upsert: vi.fn<
-        (input: { id?: string; assignmentId: string; content: string }) => Promise<Result<Note>>
-      >(),
+      upsert:
+        vi.fn<
+          (input: { id?: string; assignmentId: string; content: string }) => Promise<Result<Note>>
+        >(),
       delete: vi.fn<(id: string) => Promise<Result<void>>>(),
     },
   },
@@ -66,7 +67,11 @@ function resetStore(notes: Note[] = [], currentAssignmentId: EntityId | null = a
   });
 }
 
-function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (e: unknown) => void } {
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (e: unknown) => void;
+} {
   let resolveFn: ((value: T) => void) | null = null;
   let rejectFn: ((e: unknown) => void) | null = null;
   const promise = new Promise<T>((resolve, reject) => {

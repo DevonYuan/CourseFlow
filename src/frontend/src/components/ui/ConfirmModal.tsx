@@ -8,9 +8,10 @@
  * @module @frontend/components/ui/ConfirmModal
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import './ConfirmModal.css';
 
 export type ConfirmVariant = 'destructive' | 'primary' | 'secondary';
@@ -58,56 +59,16 @@ export function ConfirmModal({
   showCancel = true,
   isLoading = false,
 }: ConfirmModalProps): React.ReactPortal | null {
-  const modalRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
-  const previousActiveElement = useRef<HTMLElement | null>(null);
 
-  // Focus management and trap
-  useEffect(() => {
-    if (open) {
-      previousActiveElement.current = document.activeElement as HTMLElement;
-      // Focus Cancel button by default (safer)
-      setTimeout(() => cancelButtonRef.current?.focus(), 0);
-
-      // Trap focus
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-          return;
-        }
-
-        if (e.key === 'Tab' && modalRef.current) {
-          const focusableElements = [
-            ...modalRef.current.querySelectorAll<HTMLElement>(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-            ),
-          ];
-          const firstElement = focusableElements[0];
-          const lastElement = focusableElements.at(-1);
-
-          if (e.shiftKey && document.activeElement === firstElement) {
-            e.preventDefault();
-            lastElement?.focus();
-          } else if (!e.shiftKey && document.activeElement === lastElement) {
-            e.preventDefault();
-            firstElement?.focus();
-          }
-        }
-      };
-
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [open, onCancel]);
-
-  // Restore focus on close
-  useEffect(() => {
-    if (!open && previousActiveElement.current) {
-      previousActiveElement.current.focus();
-    }
-  }, [open]);
+  // Use the focus trap hook
+  const containerRef = useFocusTrap({
+    isActive: open,
+    onEscape: onCancel,
+    initialFocusRef: cancelButtonRef,
+    clickOutsideToClose: true,
+  });
 
   if (!open) return null;
 
@@ -126,7 +87,7 @@ export function ConfirmModal({
       role="presentation"
     >
       <div
-        ref={modalRef}
+        ref={containerRef}
         className="modal modal--confirm"
         role="dialog"
         aria-modal="true"

@@ -31,7 +31,9 @@
   background-color: var(--surface-color, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: var(--radius-md, 8px);
-  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms);
+  transition:
+    border-color var(--transition-fast, 150ms),
+    box-shadow var(--transition-fast, 150ms);
   box-sizing: border-box;
 }
 
@@ -77,7 +79,9 @@
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: var(--radius-md, 8px);
   cursor: pointer;
-  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms),
+  transition:
+    border-color var(--transition-fast, 150ms),
+    box-shadow var(--transition-fast, 150ms),
     background-color var(--transition-fast, 150ms);
   box-sizing: border-box;
   white-space: nowrap;
@@ -157,7 +161,9 @@
   border-bottom: 1px solid var(--border-color, #e0e0e0);
   cursor: pointer;
   text-align: left;
-  transition: background-color var(--transition-fast, 150ms), color var(--transition-fast, 150ms);
+  transition:
+    background-color var(--transition-fast, 150ms),
+    color var(--transition-fast, 150ms);
   box-sizing: border-box;
 }
 

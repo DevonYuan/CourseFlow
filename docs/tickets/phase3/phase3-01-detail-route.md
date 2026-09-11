@@ -44,20 +44,20 @@ This ticket establishes the **route**, **navigation**, and **page shell** — da
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/routes.tsx` (or routing config) | Add `/assignments/:id` route pointing to `AssignmentDetailPage`. |
-| `src/frontend/src/pages/AssignmentDetailPage.tsx` | **New file**. Page component: fetches assignment via `window.api.db.assignments.get(id)`, renders header + description + placeholder sections. Handles loading/error/not-found states. |
+| File                                                                          | Change                                                                                                                                                                                                                      |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/routes.tsx` (or routing config)                             | Add `/assignments/:id` route pointing to `AssignmentDetailPage`.                                                                                                                                                            |
+| `src/frontend/src/pages/AssignmentDetailPage.tsx`                             | **New file**. Page component: fetches assignment via `window.api.db.assignments.get(id)`, renders header + description + placeholder sections. Handles loading/error/not-found states.                                      |
 | `src/frontend/src/components/AssignmentRow.tsx` (or wherever the row renders) | Make row (or title cell) interactive: add `onClick` → `navigate(/assignments/${assignment.id})`. Ensure keyboard activation (Enter/Space). Add `tabIndex=0` and `role="button"` if using a `div`, or use native `<button>`. |
-| `src/frontend/src/components/AssignmentList.tsx` | Ensure list state (filters, sort, grouping) persists across navigation (already in `localStorage` per Phase 2 ticket 2.12; verify). |
-| `src/frontend/src/hooks/useAssignmentDetail.ts` (optional) | Custom hook to encapsulate `db:assignments:get` + `db:changed` subscription for live updates. Can be created here or in Ticket 3.2. |
-| `src/frontend/src/utils/date.ts` | Reuse/extend date formatting helpers for due date display (overdue, today, tomorrow, all-day). |
-| `src/frontend/src/utils/sanitize.ts` (new or existing) | Add HTML sanitization utility (DOMPurify) for rendering Canvas description safely. |
+| `src/frontend/src/components/AssignmentList.tsx`                              | Ensure list state (filters, sort, grouping) persists across navigation (already in `localStorage` per Phase 2 ticket 2.12; verify).                                                                                         |
+| `src/frontend/src/hooks/useAssignmentDetail.ts` (optional)                    | Custom hook to encapsulate `db:assignments:get` + `db:changed` subscription for live updates. Can be created here or in Ticket 3.2.                                                                                         |
+| `src/frontend/src/utils/date.ts`                                              | Reuse/extend date formatting helpers for due date display (overdue, today, tomorrow, all-day).                                                                                                                              |
+| `src/frontend/src/utils/sanitize.ts` (new or existing)                        | Add HTML sanitization utility (DOMPurify) for rendering Canvas description safely.                                                                                                                                          |
 
 ### Shared / Types (if needed)
 
-| File | Change |
-|------|--------|
+| File                          | Change                                                                                                                                                                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/shared/types.ts` | Verify `Assignment` type includes all fields needed for detail view (`description`, `html_url`, `workflow_state`, `points_possible`, `submission_types`, `unlock_at`, `lock_at`). No new types needed for this ticket. |
 
 ## Acceptance Criteria

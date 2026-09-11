@@ -98,18 +98,18 @@
   border-radius: calc(var(--progress-radius) + 2px);
 }
 
-.progress-bar[role="progressbar"]:focus-visible {
+.progress-bar[role='progressbar']:focus-visible {
   outline: none;
 }
 
-.progress-bar[role="progressbar"]:focus-visible .progress-bar__track {
+.progress-bar[role='progressbar']:focus-visible .progress-bar__track {
   outline: 2px solid var(--color-focus, #3b82f6);
   outline-offset: 2px;
   border-radius: calc(var(--progress-radius) + 2px);
 }
 
 /* Cursor for clickable progress bars */
-.progress-bar[tabindex="0"] {
+.progress-bar[tabindex='0'] {
   cursor: pointer;
 }
 

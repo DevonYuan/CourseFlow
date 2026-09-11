@@ -16,7 +16,7 @@ Implement **wiki-style page linking** (`[[page title]]`) in the Markdown editor 
 > Document WHAT is needed and WHY it is needed.
 
 - [ ] **Wiki-link syntax**: Support `[[page title]]` in Markdown content. On render (preview), convert to internal link `<a href="/notes/:pageId" data-page-link>Page Title</a>`.
-- [ ] **Link creation in editor**: 
+- [ ] **Link creation in editor**:
   - Typing `[[` triggers autocomplete dropdown showing existing page titles (fuzzy search via `db:pages:search` or local tree).
   - Selecting a page inserts `[[Page Title]]` at cursor.
   - If page doesn't exist, allow "Create page 'Title'" option → creates new page via `db:pages:create` → inserts link.
@@ -50,20 +50,20 @@ Implement **wiki-style page linking** (`[[page title]]`) in the Markdown editor 
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/components/notes/MarkdownPreview.tsx` | Extend: parse `[[title]]` in markdown → internal links. Intercept clicks. Highlight broken links. |
-| `src/frontend/src/components/notes/MarkdownEditor.tsx` | Add wiki-link autocomplete on `[[` trigger. Floating dropdown with page titles. |
-| `src/frontend/src/components/notes/BacklinksPanel.tsx` | **New file**. Panel (collapsible) in editor showing backlinks list with snippets. |
-| `src/frontend/src/hooks/useWikiLinks.ts` | **New file**. Logic for: parsing wiki-links from markdown, resolving to page IDs, generating backlinks via FTS5 search, autocomplete data. |
-| `src/frontend/src/utils/markdown.ts` | Extend `parseMarkdown` to transform `[[title]]` → internal links with `data-page-link` and `data-page-title` attributes. |
-| `src/frontend/src/stores/notesStore.ts` | Add backlinks cache: `Map<pageId, Backlink[]>`. Actions to invalidate on `db:changed`. |
-| `src/frontend/src/components/notes/WikiLinkAutocomplete.tsx` | **New file**. Floating dropdown component for `[[` trigger. Fuzzy filters page titles. |
+| File                                                         | Change                                                                                                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/frontend/src/components/notes/MarkdownPreview.tsx`      | Extend: parse `[[title]]` in markdown → internal links. Intercept clicks. Highlight broken links.                                          |
+| `src/frontend/src/components/notes/MarkdownEditor.tsx`       | Add wiki-link autocomplete on `[[` trigger. Floating dropdown with page titles.                                                            |
+| `src/frontend/src/components/notes/BacklinksPanel.tsx`       | **New file**. Panel (collapsible) in editor showing backlinks list with snippets.                                                          |
+| `src/frontend/src/hooks/useWikiLinks.ts`                     | **New file**. Logic for: parsing wiki-links from markdown, resolving to page IDs, generating backlinks via FTS5 search, autocomplete data. |
+| `src/frontend/src/utils/markdown.ts`                         | Extend `parseMarkdown` to transform `[[title]]` → internal links with `data-page-link` and `data-page-title` attributes.                   |
+| `src/frontend/src/stores/notesStore.ts`                      | Add backlinks cache: `Map<pageId, Backlink[]>`. Actions to invalidate on `db:changed`.                                                     |
+| `src/frontend/src/components/notes/WikiLinkAutocomplete.tsx` | **New file**. Floating dropdown component for `[[` trigger. Fuzzy filters page titles.                                                     |
 
 ### Backend (optional — if materialized link table later)
 
-| File | Change |
-|------|--------|
+| File                                | Change                                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `src/backend/main/db/repository.ts` | Add `searchPagesByWikiLink(title: string): Promise<Page[]>` using FTS5 for backlink computation. |
 
 ## Acceptance Criteria
@@ -93,11 +93,12 @@ Implement **wiki-style page linking** (`[[page title]]`) in the Markdown editor 
   const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
   markdown = markdown.replace(wikiLinkRegex, (_, title) => {
     const page = findPageByTitle(title.trim());
-    if (page) return `<a href="/notes/${page.id}" data-page-link data-page-title="${escapeHtml(title)}">${escapeHtml(title)}</a>`;
+    if (page)
+      return `<a href="/notes/${page.id}" data-page-link data-page-title="${escapeHtml(title)}">${escapeHtml(title)}</a>`;
     return `<a class="broken-link" data-create-page="${escapeHtml(title)}">${escapeHtml(title)}</a>`;
   });
   ```
-- **FTS5 backlink query**: 
+- **FTS5 backlink query**:
   ```sql
   SELECT p.*, snippet(pages_fts, '<mark>', '</mark>', '…', 64) as snippet
   FROM pages_fts

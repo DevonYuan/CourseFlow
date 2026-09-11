@@ -203,28 +203,103 @@ export const repo = {
       const values: (string | number | null)[] = [id];
       const updates: string[] = [];
 
-      if (dbRow.canvas_id !== undefined) { columns.push('canvas_id'); values.push(dbRow.canvas_id); updates.push('canvas_id = excluded.canvas_id'); }
-      if (dbRow.title !== undefined) { columns.push('title'); values.push(dbRow.title); updates.push('title = excluded.title'); }
-      if (dbRow.description !== undefined) { columns.push('description'); values.push(dbRow.description); updates.push('description = excluded.description'); }
-      if (dbRow.course_name !== undefined) { columns.push('course_name'); values.push(dbRow.course_name); updates.push('course_name = excluded.course_name'); }
-      if (dbRow.course_color !== undefined) { columns.push('course_color'); values.push(dbRow.course_color); updates.push('course_color = excluded.course_color'); }
-      if (dbRow.due_at !== undefined) { columns.push('due_at'); values.push(dbRow.due_at); updates.push('due_at = excluded.due_at'); }
-      if (dbRow.unlock_at !== undefined) { columns.push('unlock_at'); values.push(dbRow.unlock_at); updates.push('unlock_at = excluded.unlock_at'); }
-      if (dbRow.lock_at !== undefined) { columns.push('lock_at'); values.push(dbRow.lock_at); updates.push('lock_at = excluded.lock_at'); }
-      if (dbRow.points_possible !== undefined) { columns.push('points_possible'); values.push(dbRow.points_possible); updates.push('points_possible = excluded.points_possible'); }
-      if (dbRow.submission_types !== undefined) { columns.push('submission_types'); values.push(dbRow.submission_types); updates.push('submission_types = excluded.submission_types'); }
-      if (dbRow.workflow_state !== undefined) { columns.push('workflow_state'); values.push(dbRow.workflow_state); updates.push('workflow_state = excluded.workflow_state'); }
-      if (dbRow.html_url !== undefined) { columns.push('html_url'); values.push(dbRow.html_url); updates.push('html_url = excluded.html_url'); }
-      if (dbRow.ical_uid !== undefined) { columns.push('ical_uid'); values.push(dbRow.ical_uid); updates.push('ical_uid = excluded.ical_uid'); }
-      if (dbRow.status !== undefined) { columns.push('status'); values.push(dbRow.status); updates.push('status = excluded.status'); }
-      if (dbRow.source !== undefined) { columns.push('source'); values.push(dbRow.source); updates.push('source = excluded.source'); }
-      if (dbRow.source_url !== undefined) { columns.push('source_url'); values.push(dbRow.source_url); updates.push('source_url = excluded.source_url'); }
-      if (dbRow.rrule !== undefined) { columns.push('rrule'); values.push(dbRow.rrule); updates.push('rrule = excluded.rrule'); }
-      if (dbRow.created_at !== undefined) { columns.push('created_at'); values.push(dbRow.created_at); }
-      if (dbRow.updated_at !== undefined) { columns.push('updated_at'); values.push(dbRow.updated_at); updates.push('updated_at = excluded.updated_at'); }
+      if (dbRow.canvas_id !== undefined) {
+        columns.push('canvas_id');
+        values.push(dbRow.canvas_id);
+        updates.push('canvas_id = excluded.canvas_id');
+      }
+      if (dbRow.title !== undefined) {
+        columns.push('title');
+        values.push(dbRow.title);
+        updates.push('title = excluded.title');
+      }
+      if (dbRow.description !== undefined) {
+        columns.push('description');
+        values.push(dbRow.description);
+        updates.push('description = excluded.description');
+      }
+      if (dbRow.course_name !== undefined) {
+        columns.push('course_name');
+        values.push(dbRow.course_name);
+        updates.push('course_name = excluded.course_name');
+      }
+      if (dbRow.course_color !== undefined) {
+        columns.push('course_color');
+        values.push(dbRow.course_color);
+        updates.push('course_color = excluded.course_color');
+      }
+      if (dbRow.due_at !== undefined) {
+        columns.push('due_at');
+        values.push(dbRow.due_at);
+        updates.push('due_at = excluded.due_at');
+      }
+      if (dbRow.unlock_at !== undefined) {
+        columns.push('unlock_at');
+        values.push(dbRow.unlock_at);
+        updates.push('unlock_at = excluded.unlock_at');
+      }
+      if (dbRow.lock_at !== undefined) {
+        columns.push('lock_at');
+        values.push(dbRow.lock_at);
+        updates.push('lock_at = excluded.lock_at');
+      }
+      if (dbRow.points_possible !== undefined) {
+        columns.push('points_possible');
+        values.push(dbRow.points_possible);
+        updates.push('points_possible = excluded.points_possible');
+      }
+      if (dbRow.submission_types !== undefined) {
+        columns.push('submission_types');
+        values.push(dbRow.submission_types);
+        updates.push('submission_types = excluded.submission_types');
+      }
+      if (dbRow.workflow_state !== undefined) {
+        columns.push('workflow_state');
+        values.push(dbRow.workflow_state);
+        updates.push('workflow_state = excluded.workflow_state');
+      }
+      if (dbRow.html_url !== undefined) {
+        columns.push('html_url');
+        values.push(dbRow.html_url);
+        updates.push('html_url = excluded.html_url');
+      }
+      if (dbRow.ical_uid !== undefined) {
+        columns.push('ical_uid');
+        values.push(dbRow.ical_uid);
+        updates.push('ical_uid = excluded.ical_uid');
+      }
+      if (dbRow.status !== undefined) {
+        columns.push('status');
+        values.push(dbRow.status);
+        updates.push('status = excluded.status');
+      }
+      if (dbRow.source !== undefined) {
+        columns.push('source');
+        values.push(dbRow.source);
+        updates.push('source = excluded.source');
+      }
+      if (dbRow.source_url !== undefined) {
+        columns.push('source_url');
+        values.push(dbRow.source_url);
+        updates.push('source_url = excluded.source_url');
+      }
+      if (dbRow.rrule !== undefined) {
+        columns.push('rrule');
+        values.push(dbRow.rrule);
+        updates.push('rrule = excluded.rrule');
+      }
+      if (dbRow.created_at !== undefined) {
+        columns.push('created_at');
+        values.push(dbRow.created_at);
+      }
+      if (dbRow.updated_at !== undefined) {
+        columns.push('updated_at');
+        values.push(dbRow.updated_at);
+        updates.push('updated_at = excluded.updated_at');
+      }
 
       // Always update updated_at on conflict
-      if (!updates.some(u => u.startsWith('updated_at'))) {
+      if (!updates.some((u) => u.startsWith('updated_at'))) {
         updates.push('updated_at = excluded.updated_at');
       }
 
@@ -304,28 +379,103 @@ export const repo = {
         const values: (string | number | null)[] = [id];
         const updates: string[] = [];
 
-        if (dbRow.canvas_id !== undefined) { columns.push('canvas_id'); values.push(dbRow.canvas_id); updates.push('canvas_id = excluded.canvas_id'); }
-        if (dbRow.title !== undefined) { columns.push('title'); values.push(dbRow.title); updates.push('title = excluded.title'); }
-        if (dbRow.description !== undefined) { columns.push('description'); values.push(dbRow.description); updates.push('description = excluded.description'); }
-        if (dbRow.course_name !== undefined) { columns.push('course_name'); values.push(dbRow.course_name); updates.push('course_name = excluded.course_name'); }
-        if (dbRow.course_color !== undefined) { columns.push('course_color'); values.push(dbRow.course_color); updates.push('course_color = excluded.course_color'); }
-        if (dbRow.due_at !== undefined) { columns.push('due_at'); values.push(dbRow.due_at); updates.push('due_at = excluded.due_at'); }
-        if (dbRow.unlock_at !== undefined) { columns.push('unlock_at'); values.push(dbRow.unlock_at); updates.push('unlock_at = excluded.unlock_at'); }
-        if (dbRow.lock_at !== undefined) { columns.push('lock_at'); values.push(dbRow.lock_at); updates.push('lock_at = excluded.lock_at'); }
-        if (dbRow.points_possible !== undefined) { columns.push('points_possible'); values.push(dbRow.points_possible); updates.push('points_possible = excluded.points_possible'); }
-        if (dbRow.submission_types !== undefined) { columns.push('submission_types'); values.push(dbRow.submission_types); updates.push('submission_types = excluded.submission_types'); }
-        if (dbRow.workflow_state !== undefined) { columns.push('workflow_state'); values.push(dbRow.workflow_state); updates.push('workflow_state = excluded.workflow_state'); }
-        if (dbRow.html_url !== undefined) { columns.push('html_url'); values.push(dbRow.html_url); updates.push('html_url = excluded.html_url'); }
-        if (dbRow.ical_uid !== undefined) { columns.push('ical_uid'); values.push(dbRow.ical_uid); updates.push('ical_uid = excluded.ical_uid'); }
-        if (dbRow.status !== undefined) { columns.push('status'); values.push(dbRow.status); updates.push('status = excluded.status'); }
-        if (dbRow.source !== undefined) { columns.push('source'); values.push(dbRow.source); updates.push('source = excluded.source'); }
-        if (dbRow.source_url !== undefined) { columns.push('source_url'); values.push(dbRow.source_url); updates.push('source_url = excluded.source_url'); }
-        if (dbRow.rrule !== undefined) { columns.push('rrule'); values.push(dbRow.rrule); updates.push('rrule = excluded.rrule'); }
-        if (dbRow.created_at !== undefined) { columns.push('created_at'); values.push(dbRow.created_at); }
-        if (dbRow.updated_at !== undefined) { columns.push('updated_at'); values.push(dbRow.updated_at); updates.push('updated_at = excluded.updated_at'); }
+        if (dbRow.canvas_id !== undefined) {
+          columns.push('canvas_id');
+          values.push(dbRow.canvas_id);
+          updates.push('canvas_id = excluded.canvas_id');
+        }
+        if (dbRow.title !== undefined) {
+          columns.push('title');
+          values.push(dbRow.title);
+          updates.push('title = excluded.title');
+        }
+        if (dbRow.description !== undefined) {
+          columns.push('description');
+          values.push(dbRow.description);
+          updates.push('description = excluded.description');
+        }
+        if (dbRow.course_name !== undefined) {
+          columns.push('course_name');
+          values.push(dbRow.course_name);
+          updates.push('course_name = excluded.course_name');
+        }
+        if (dbRow.course_color !== undefined) {
+          columns.push('course_color');
+          values.push(dbRow.course_color);
+          updates.push('course_color = excluded.course_color');
+        }
+        if (dbRow.due_at !== undefined) {
+          columns.push('due_at');
+          values.push(dbRow.due_at);
+          updates.push('due_at = excluded.due_at');
+        }
+        if (dbRow.unlock_at !== undefined) {
+          columns.push('unlock_at');
+          values.push(dbRow.unlock_at);
+          updates.push('unlock_at = excluded.unlock_at');
+        }
+        if (dbRow.lock_at !== undefined) {
+          columns.push('lock_at');
+          values.push(dbRow.lock_at);
+          updates.push('lock_at = excluded.lock_at');
+        }
+        if (dbRow.points_possible !== undefined) {
+          columns.push('points_possible');
+          values.push(dbRow.points_possible);
+          updates.push('points_possible = excluded.points_possible');
+        }
+        if (dbRow.submission_types !== undefined) {
+          columns.push('submission_types');
+          values.push(dbRow.submission_types);
+          updates.push('submission_types = excluded.submission_types');
+        }
+        if (dbRow.workflow_state !== undefined) {
+          columns.push('workflow_state');
+          values.push(dbRow.workflow_state);
+          updates.push('workflow_state = excluded.workflow_state');
+        }
+        if (dbRow.html_url !== undefined) {
+          columns.push('html_url');
+          values.push(dbRow.html_url);
+          updates.push('html_url = excluded.html_url');
+        }
+        if (dbRow.ical_uid !== undefined) {
+          columns.push('ical_uid');
+          values.push(dbRow.ical_uid);
+          updates.push('ical_uid = excluded.ical_uid');
+        }
+        if (dbRow.status !== undefined) {
+          columns.push('status');
+          values.push(dbRow.status);
+          updates.push('status = excluded.status');
+        }
+        if (dbRow.source !== undefined) {
+          columns.push('source');
+          values.push(dbRow.source);
+          updates.push('source = excluded.source');
+        }
+        if (dbRow.source_url !== undefined) {
+          columns.push('source_url');
+          values.push(dbRow.source_url);
+          updates.push('source_url = excluded.source_url');
+        }
+        if (dbRow.rrule !== undefined) {
+          columns.push('rrule');
+          values.push(dbRow.rrule);
+          updates.push('rrule = excluded.rrule');
+        }
+        if (dbRow.created_at !== undefined) {
+          columns.push('created_at');
+          values.push(dbRow.created_at);
+        }
+        if (dbRow.updated_at !== undefined) {
+          columns.push('updated_at');
+          values.push(dbRow.updated_at);
+          updates.push('updated_at = excluded.updated_at');
+        }
 
         // Always update updated_at on conflict
-        if (!updates.some(u => u.startsWith('updated_at'))) {
+        if (!updates.some((u) => u.startsWith('updated_at'))) {
           updates.push('updated_at = excluded.updated_at');
         }
 
@@ -371,7 +521,9 @@ export const repo = {
     // Prepared statements for performance
     const db = getDatabase();
 
-    const selectStmt = db.prepare('SELECT id, description, status, updated_at FROM assignments WHERE ical_uid = ?');
+    const selectStmt = db.prepare(
+      'SELECT id, description, status, updated_at FROM assignments WHERE ical_uid = ?',
+    );
     const insertStmt = db.prepare(`
       INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at, unlock_at, lock_at,
         points_possible, submission_types, workflow_state, html_url, ical_uid, status, source, source_url, rrule, created_at, updated_at)
@@ -384,7 +536,7 @@ export const repo = {
       WHERE id = ?
     `);
     const staleStmt = db.prepare(
-      "SELECT id, ical_uid FROM assignments WHERE source = 'ical' AND status NOT IN ('completed', 'archived')"
+      "SELECT id, ical_uid FROM assignments WHERE source = 'ical' AND status NOT IN ('completed', 'archived')",
     );
     const deleteStmt = db.prepare('DELETE FROM assignments WHERE id = ?');
 
@@ -431,8 +583,12 @@ export const repo = {
               input.workflowState ?? existing['workflow_state'] ?? 'published', // workflow_state
               input.htmlUrl ?? existing['html_url'] ?? '', // html_url
               input.pointsPossible ?? toNullable(existing['points_possible']), // points_possible
-              input.submissionTypes ? JSON.stringify(input.submissionTypes) : toNullable(existing['submission_types']), // submission_types
-              input.unlockAt ? new Date(input.unlockAt).getTime() : toNullable(existing['unlock_at']), // unlock_at
+              input.submissionTypes
+                ? JSON.stringify(input.submissionTypes)
+                : toNullable(existing['submission_types']), // submission_types
+              input.unlockAt
+                ? new Date(input.unlockAt).getTime()
+                : toNullable(existing['unlock_at']), // unlock_at
               input.lockAt ? new Date(input.lockAt).getTime() : toNullable(existing['lock_at']), // lock_at
               input.rrule ?? toNullable(existing['rrule']), // rrule
               input.source ?? existing['source'] ?? 'ical', // source
@@ -447,7 +603,11 @@ export const repo = {
 
             // Preserve protected fields by restoring them if they were overwritten
             // Status: preserve if user marked as completed (or archived in future)
-            if (existingStatus === 'completed' && input.status !== undefined && input.status !== 'completed') {
+            if (
+              existingStatus === 'completed' &&
+              input.status !== undefined &&
+              input.status !== 'completed'
+            ) {
               run('UPDATE assignments SET status = ? WHERE id = ?', ['completed', existingId]);
             }
             // course_color: preserve user's course color (do not overwrite from Canvas)
@@ -455,7 +615,11 @@ export const repo = {
             // Notes and Subtasks: separate tables, not affected
 
             result.updated++;
-            sendEventToRenderers('db:changed', { table: 'assignments', action: 'update', id: existingId });
+            sendEventToRenderers('db:changed', {
+              table: 'assignments',
+              action: 'update',
+              id: existingId,
+            });
           } else {
             // SKIP: incoming is not newer
             result.skipped++;
@@ -522,7 +686,11 @@ export const repo = {
           deleteStmt.bind([stale.id]);
           deleteStmt.step();
           deleteStmt.reset();
-          sendEventToRenderers('db:changed', { table: 'assignments', action: 'delete', id: stale.id });
+          sendEventToRenderers('db:changed', {
+            table: 'assignments',
+            action: 'delete',
+            id: stale.id,
+          });
         }
       }
 
@@ -550,9 +718,7 @@ export const repo = {
    * Get all priority order entries ordered by position (0 = highest priority).
    */
   getAllPriorityOrders(): PriorityOrder[] {
-    const rows = all<DbPriorityOrder>(
-      'SELECT * FROM priority_order ORDER BY position ASC',
-    );
+    const rows = all<DbPriorityOrder>('SELECT * FROM priority_order ORDER BY position ASC');
     return rows.map(mapPriorityOrderRow);
   },
 
@@ -560,10 +726,9 @@ export const repo = {
    * Get a single priority order entry by assignment ID.
    */
   getPriorityOrderByAssignmentId(assignmentId: string): PriorityOrder | null {
-    const row = get<DbPriorityOrder>(
-      'SELECT * FROM priority_order WHERE assignment_id = ?',
-      [assignmentId],
-    );
+    const row = get<DbPriorityOrder>('SELECT * FROM priority_order WHERE assignment_id = ?', [
+      assignmentId,
+    ]);
     return row ? mapPriorityOrderRow(row) : null;
   },
 
@@ -603,10 +768,11 @@ export const repo = {
     exec('BEGIN IMMEDIATE TRANSACTION', false);
     try {
       for (let i = 0; i < orderedAssignmentIds.length; i++) {
-        run(
-          'UPDATE priority_order SET position = ?, updated_at = ? WHERE assignment_id = ?',
-          [i, now, orderedAssignmentIds[i]!],
-        );
+        run('UPDATE priority_order SET position = ?, updated_at = ? WHERE assignment_id = ?', [
+          i,
+          now,
+          orderedAssignmentIds[i]!,
+        ]);
       }
       exec('COMMIT', false);
     } catch (e) {
@@ -647,7 +813,10 @@ export const repo = {
   /**
    * Update a sub-task by ID (partial update).
    */
-  updateSubTask(id: string, updates: { completed?: boolean; title?: string; position?: number }): SubTask | null {
+  updateSubTask(
+    id: string,
+    updates: { completed?: boolean; title?: string; position?: number },
+  ): SubTask | null {
     const now = Date.now();
     const setParts: string[] = [];
     const params: (string | number)[] = [];
@@ -698,15 +867,7 @@ export const repo = {
         position = excluded.position,
         updated_at = excluded.updated_at
     `,
-      [
-        id,
-        dbInput.assignment_id,
-        dbInput.title,
-        dbInput.completed,
-        dbInput.position,
-        now,
-        now,
-      ],
+      [id, dbInput.assignment_id, dbInput.title, dbInput.completed, dbInput.position, now, now],
     );
 
     const row = get<DbSubTask>('SELECT * FROM sub_tasks WHERE id = ?', [id]);
@@ -801,10 +962,7 @@ export const repo = {
    */
   updateNote(id: string, content: string, now?: number): Note {
     const timestamp = now ?? Date.now();
-    run(
-      'UPDATE notes SET content = ?, updated_at = ? WHERE id = ?',
-      [content, timestamp, id],
-    );
+    run('UPDATE notes SET content = ?, updated_at = ? WHERE id = ?', [content, timestamp, id]);
 
     const row = get<DbNote>('SELECT * FROM notes WHERE id = ?', [id]);
     if (!row) throw new Error(`Note not found: ${id}`);
@@ -950,10 +1108,7 @@ export const repo = {
           const encrypted = await encryptIcalUrl(value);
           valueToStore = encrypted;
         }
-        run(
-          'INSERT INTO settings (key, value) VALUES (?, ?)',
-          [key, JSON.stringify(valueToStore)],
-        );
+        run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, JSON.stringify(valueToStore)]);
       }
       exec('COMMIT', false);
     } catch (e) {

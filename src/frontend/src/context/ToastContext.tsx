@@ -84,7 +84,7 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
 
       return id;
     },
-    []
+    [],
   );
 
   const dismiss = useCallback((id: string) => {
@@ -93,19 +93,19 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
 
   const success = useCallback(
     (message: string, options?: ToastOptions) => addToast('success', message, options),
-    [addToast]
+    [addToast],
   );
   const error = useCallback(
     (message: string, options?: ToastOptions) => addToast('error', message, options),
-    [addToast]
+    [addToast],
   );
   const info = useCallback(
     (message: string, options?: ToastOptions) => addToast('info', message, options),
-    [addToast]
+    [addToast],
   );
   const warning = useCallback(
     (message: string, options?: ToastOptions) => addToast('warning', message, options),
-    [addToast]
+    [addToast],
   );
 
   return (

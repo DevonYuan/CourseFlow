@@ -17,8 +17,11 @@ import { useAssignments } from '../hooks/useAssignments';
 import { useAssignmentsStore } from '../store/assignmentsStore';
 
 // Mock window.api
-type AssignmentsListResult = { ok: true; data: Assignment[] } | { ok: false; error: string; code?: string };
-type PriorityListResult = { ok: true; data: import('@backend/shared/types').PriorityOrder[] } | { ok: false; error: string; code?: string };
+type AssignmentsListResult =
+  { ok: true; data: Assignment[] } | { ok: false; error: string; code?: string };
+type PriorityListResult =
+  | { ok: true; data: import('@backend/shared/types').PriorityOrder[] }
+  | { ok: false; error: string; code?: string };
 
 const mockApi = {
   db: {

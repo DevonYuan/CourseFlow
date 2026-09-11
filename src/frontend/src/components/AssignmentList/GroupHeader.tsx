@@ -28,7 +28,12 @@ interface GroupHeaderProps {
  * Group header component with collapsible functionality.
  * Uses native button element for accessibility with proper ARIA attributes.
  */
-export function GroupHeader({ group, isExpanded, onToggle, groupId }: GroupHeaderProps): JSX.Element {
+export function GroupHeader({
+  group,
+  isExpanded,
+  onToggle,
+  groupId,
+}: GroupHeaderProps): JSX.Element {
   const controlsId = useMemo(() => `group-${groupId}`, [groupId]);
   const labelledById = useMemo(() => `group-label-${groupId}`, [groupId]);
 
@@ -43,7 +48,7 @@ export function GroupHeader({ group, isExpanded, onToggle, groupId }: GroupHeade
         onToggle(group.groupKey);
       }
     },
-    [onToggle, group.groupKey]
+    [onToggle, group.groupKey],
   );
 
   return (

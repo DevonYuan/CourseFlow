@@ -97,7 +97,11 @@ interface DateRangePickerProps {
 /**
  * Date range picker with From/To inputs, preset buttons, and clear action.
  */
-export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due date range' }: DateRangePickerProps): JSX.Element {
+export function DateRangePicker({
+  value,
+  onChange,
+  ariaLabel = 'Filter by due date range',
+}: DateRangePickerProps): JSX.Element {
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
   const presetsRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -213,7 +217,11 @@ export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due da
       </div>
 
       {/* Presets dropdown */}
-      <div className="date-range-picker__presets-wrapper" role="group" aria-label="Date range presets">
+      <div
+        className="date-range-picker__presets-wrapper"
+        role="group"
+        aria-label="Date range presets"
+      >
         <button
           ref={triggerRef}
           type="button"
@@ -221,7 +229,11 @@ export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due da
           onClick={() => setIsPresetsOpen((prev) => !prev)}
           aria-haspopup="menu"
           aria-expanded={isPresetsOpen}
-          aria-label={hasActiveRange ? 'Date range selected. Click to change preset.' : 'Select date range preset'}
+          aria-label={
+            hasActiveRange
+              ? 'Date range selected. Click to change preset.'
+              : 'Select date range preset'
+          }
           data-testid="date-presets-trigger"
         >
           <svg
@@ -243,7 +255,7 @@ export function DateRangePicker({ value, onChange, ariaLabel = 'Filter by due da
           </svg>
           <span className="date-range-picker__presets-text">
             {activePreset
-              ? DATE_PRESETS.find((p) => p.id === activePreset)?.label ?? 'Custom range'
+              ? (DATE_PRESETS.find((p) => p.id === activePreset)?.label ?? 'Custom range')
               : 'Date range'}
           </span>
           <svg

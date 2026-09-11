@@ -9,13 +9,13 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #FBFAF6;
+  background: #fbfaf6;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 html.dark .bar-toolbar {
-  background: #1E2220;
+  background: #1e2220;
 }
 
 /* Groups */
@@ -51,7 +51,9 @@ html.dark .bar-toolbar {
   color: var(--ink);
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .chip:hover {
@@ -105,7 +107,9 @@ html.dark .bar-toolbar {
   color: var(--ink-faint);
   cursor: pointer;
   border-left: 1px solid var(--line);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .view-btn:first-child {
@@ -118,7 +122,7 @@ html.dark .bar-toolbar {
 }
 
 html.dark .view-btn:hover {
-  background: #2A2F2C;
+  background: #2a2f2c;
 }
 
 .view-btn.active {

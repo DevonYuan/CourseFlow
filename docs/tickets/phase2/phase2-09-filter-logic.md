@@ -54,10 +54,10 @@ Implement memoized selector in Zustand store that derives the filtered, sorted, 
 - **Grouped type**:
   ```typescript
   type GroupedAssignments = {
-    groupKey: string
-    groupLabel: string
-    assignments: Assignment[]
-  }[]
+    groupKey: string;
+    groupLabel: string;
+    assignments: Assignment[];
+  }[];
   ```
 - **Date comparison**: Use `date-fns` `isWithinInterval`, `parseISO`
 - **Search**: Simple `toLowerCase().includes()` — no regex for performance
@@ -90,17 +90,17 @@ Search first (most restrictive) → Course → Status → Date (least restrictiv
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Search filters by title/course/description | Unit test |
-| 2 | Course filter includes/excludes correctly | Unit test |
-| 3 | Status filter shows only pending/completed | Unit test |
-| 4 | Date range filters by due_at correctly | Unit test |
-| 5 | Each sort option orders correctly | Unit test |
-| 6 | Combined filters + sort produce correct result | Unit test |
-| 7 | Memoization works (no recompute on unrelated state change) | Unit test |
-| 8 | Null due_at handled (sorts to end) | Unit test |
-| 9 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                  | Verification |
+| --- | ---------------------------------------------------------- | ------------ |
+| 1   | Search filters by title/course/description                 | Unit test    |
+| 2   | Course filter includes/excludes correctly                  | Unit test    |
+| 3   | Status filter shows only pending/completed                 | Unit test    |
+| 4   | Date range filters by due_at correctly                     | Unit test    |
+| 5   | Each sort option orders correctly                          | Unit test    |
+| 6   | Combined filters + sort produce correct result             | Unit test    |
+| 7   | Memoization works (no recompute on unrelated state change) | Unit test    |
+| 8   | Null due_at handled (sorts to end)                         | Unit test    |
+| 9   | All tests pass (`pnpm test`)                               | CI run       |
 
 ---
 

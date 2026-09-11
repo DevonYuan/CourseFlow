@@ -52,9 +52,10 @@ export function GroupingSelector(): JSX.Element {
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
-    const option = value === 'none' || value === 'week' || value === 'status' || value === 'course'
-      ? value
-      : 'none';
+    const option =
+      value === 'none' || value === 'week' || value === 'status' || value === 'course'
+        ? value
+        : 'none';
     setGroupingType(option);
   };
 

@@ -54,23 +54,23 @@ Add a visual progress indicator for sub-tasks in two places: (1) the assignment 
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/hooks/useSubTaskProgress.ts` | **New**. Hook returning `{ completedCount, totalCount, percentage, isAllComplete }` for a given `assignmentId`. Subscribes to sub-task store + `db:changed` for live updates. |
-| `src/frontend/src/components/ui/ProgressBar.tsx` | **New**. Reusable progress bar: `value`, `label`, `size`, `color`, `showPercentage`, `ariaLabel`. Animated fill, reduced-motion support. |
-| `src/frontend/src/components/assignments/AssignmentRow.tsx` | Update: import `ProgressBar` and `useSubTaskProgress`. Show compact progress when `totalCount > 0`. Use `size="sm"`, `showPercentage={false}`. |
-| `src/frontend/src/pages/AssignmentDetailPage.tsx` | Update: import `ProgressBar`, `useSubTaskProgress`, and `AllCompletePrompt` (new). Show prominent progress in header (`size="md"`, `showPercentage={true}`). Render `AllCompletePrompt` when `isAllComplete && assignment.status === 'pending' && !dismissed`. |
-| `src/frontend/src/components/subtasks/AllCompletePrompt.tsx` | **New**. Banner component: message, "Mark Complete" button (calls `db:assignments:upsert`), "Dismiss" link (sets `localStorage` flag). Props: `assignmentId`, `onMarkComplete`, `dismissed`, `onDismiss`. ARIA live region. |
-| `src/frontend/src/stores/assignmentStore.ts` | Update: ensure assignment list subscribes to `db:changed` for `sub_tasks` to refresh compact progress indicators. Or use `useSubTaskProgress` in each row (preferred for simplicity). |
-| `src/frontend/src/utils/localStorage.ts` | Helper functions for prompt dismissal: `isPromptDismissed(assignmentId)`, `setPromptDismissed(assignmentId, dismissed)`, `clearPromptDismissed(assignmentId)`. |
+| File                                                         | Change                                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/hooks/useSubTaskProgress.ts`               | **New**. Hook returning `{ completedCount, totalCount, percentage, isAllComplete }` for a given `assignmentId`. Subscribes to sub-task store + `db:changed` for live updates.                                                                                  |
+| `src/frontend/src/components/ui/ProgressBar.tsx`             | **New**. Reusable progress bar: `value`, `label`, `size`, `color`, `showPercentage`, `ariaLabel`. Animated fill, reduced-motion support.                                                                                                                       |
+| `src/frontend/src/components/assignments/AssignmentRow.tsx`  | Update: import `ProgressBar` and `useSubTaskProgress`. Show compact progress when `totalCount > 0`. Use `size="sm"`, `showPercentage={false}`.                                                                                                                 |
+| `src/frontend/src/pages/AssignmentDetailPage.tsx`            | Update: import `ProgressBar`, `useSubTaskProgress`, and `AllCompletePrompt` (new). Show prominent progress in header (`size="md"`, `showPercentage={true}`). Render `AllCompletePrompt` when `isAllComplete && assignment.status === 'pending' && !dismissed`. |
+| `src/frontend/src/components/subtasks/AllCompletePrompt.tsx` | **New**. Banner component: message, "Mark Complete" button (calls `db:assignments:upsert`), "Dismiss" link (sets `localStorage` flag). Props: `assignmentId`, `onMarkComplete`, `dismissed`, `onDismiss`. ARIA live region.                                    |
+| `src/frontend/src/stores/assignmentStore.ts`                 | Update: ensure assignment list subscribes to `db:changed` for `sub_tasks` to refresh compact progress indicators. Or use `useSubTaskProgress` in each row (preferred for simplicity).                                                                          |
+| `src/frontend/src/utils/localStorage.ts`                     | Helper functions for prompt dismissal: `isPromptDismissed(assignmentId)`, `setPromptDismissed(assignmentId, dismissed)`, `clearPromptDismissed(assignmentId)`.                                                                                                 |
 
 ### Backend — No Changes Expected
 
 > Uses existing `db:assignments:upsert` for "Mark Complete" and existing sub-task IPC. No new backend work.
 
-| File | Change |
-|------|--------|
-| *(none expected)* | Verify `db:assignments:upsert` accepts `{ id, status: 'completed' }` and emits `db:changed`. |
+| File              | Change                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| _(none expected)_ | Verify `db:assignments:upsert` accepts `{ id, status: 'completed' }` and emits `db:changed`. |
 
 ## Acceptance Criteria
 

@@ -41,7 +41,7 @@ export function filterBySearch(assignments: Assignment[], query: string): Assign
     (assignment) =>
       assignment.title.toLowerCase().includes(lowerQuery) ||
       assignment.courseName.toLowerCase().includes(lowerQuery) ||
-      assignment.description.toLowerCase().includes(lowerQuery)
+      assignment.description.toLowerCase().includes(lowerQuery),
   );
 }
 
@@ -58,7 +58,7 @@ export function filterByCourse(assignments: Assignment[], courseFilter: string[]
  */
 export function filterByStatus(
   assignments: Assignment[],
-  statusFilter: FilterState['statusFilter']
+  statusFilter: FilterState['statusFilter'],
 ): Assignment[] {
   if (statusFilter === 'all') return assignments;
   if (statusFilter === 'pending') {
@@ -75,7 +75,7 @@ export function filterByStatus(
  */
 export function filterByDateRange(
   assignments: Assignment[],
-  dueDateRange: FilterState['dueDateRange']
+  dueDateRange: FilterState['dueDateRange'],
 ): Assignment[] {
   if (!dueDateRange) return assignments;
 
@@ -94,10 +94,7 @@ export function filterByDateRange(
  * Combined filter pipeline — applies all filters in order:
  * search → course → status → dateRange
  */
-export function applyFilters(
-  assignments: Assignment[],
-  filters: FilterState
-): Assignment[] {
+export function applyFilters(assignments: Assignment[], filters: FilterState): Assignment[] {
   let result = assignments;
   result = filterBySearch(result, filters.searchQuery);
   result = filterByCourse(result, filters.courseFilter);
@@ -111,7 +108,7 @@ export function applyFilters(
  * Assignments not in priorityOrder sort to end (Infinity).
  */
 export function createPrioritySortComparator(
-  priorityOrder: string[]
+  priorityOrder: string[],
 ): (a: Assignment, b: Assignment) => number {
   const orderMap = new Map(priorityOrder.map((id, index) => [id, index]));
 
@@ -182,7 +179,7 @@ export function sortByCreatedDesc(a: Assignment, b: Assignment): number {
 export function applySort(
   assignments: Assignment[],
   sortOption: SortOption,
-  priorityOrder: string[] = []
+  priorityOrder: string[] = [],
 ): Assignment[] {
   if (assignments.length <= 1) return [...assignments];
 
@@ -225,7 +222,7 @@ let selectFilteredAssignmentsCache: {
 export function selectFilteredAssignments(
   assignments: Assignment[],
   filters: FilterState,
-  priorityOrder: string[] = []
+  priorityOrder: string[] = [],
 ): Assignment[] | GroupedAssignments[] {
   // Check cache - compare by reference for arrays/objects
   if (

@@ -27,10 +27,5 @@ export function SettingsPage(): JSX.Element {
     }
   }, [isOpen, navigate]);
 
-  return (
-    <SettingsModal
-      isOpen={isOpen}
-      onClose={() => setIsOpen(false)}
-    />
-  );
+  return <SettingsModal isOpen={isOpen} onClose={() => setIsOpen(false)} />;
 }

@@ -49,7 +49,7 @@ export function emitSchedulerTick(nextRun: IsoDateTime): void {
  */
 export function emitSchedulerError(
   message: string,
-  code: 'network' | 'auth' | 'parse' | 'server' | 'unknown'
+  code: 'network' | 'auth' | 'parse' | 'server' | 'unknown',
 ): void {
   sendEventToRenderers('scheduler:error', { message, code });
 }

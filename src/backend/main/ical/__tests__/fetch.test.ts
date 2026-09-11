@@ -73,8 +73,12 @@ describe('iCal Fetch Utility', () => {
         text: () => Promise.resolve('Server Error'),
       });
 
-      await expect(fetchICalFeed(testUrl, { maxRetries: 3, baseRetryDelayMs: 10 })).rejects.toThrow(HttpError);
-      await expect(fetchICalFeed(testUrl, { maxRetries: 3, baseRetryDelayMs: 10 })).rejects.toMatchObject({
+      await expect(fetchICalFeed(testUrl, { maxRetries: 3, baseRetryDelayMs: 10 })).rejects.toThrow(
+        HttpError,
+      );
+      await expect(
+        fetchICalFeed(testUrl, { maxRetries: 3, baseRetryDelayMs: 10 }),
+      ).rejects.toMatchObject({
         status: 500,
       });
     });
@@ -113,14 +117,18 @@ describe('iCal Fetch Utility', () => {
       const abortError = new DOMException('Aborted', 'AbortError');
       mockFetch.mockRejectedValueOnce(abortError);
 
-      await expect(fetchICalFeed(testUrl, { timeoutMs: 100, maxRetries: 1 })).rejects.toThrow(TimeoutError);
+      await expect(fetchICalFeed(testUrl, { timeoutMs: 100, maxRetries: 1 })).rejects.toThrow(
+        TimeoutError,
+      );
     });
 
     it('throws NetworkError on network failure after retries', async () => {
       const networkError = new TypeError('Failed to fetch');
       mockFetch.mockRejectedValue(networkError);
 
-      await expect(fetchICalFeed(testUrl, { maxRetries: 2, baseRetryDelayMs: 10 })).rejects.toThrow(NetworkError);
+      await expect(fetchICalFeed(testUrl, { maxRetries: 2, baseRetryDelayMs: 10 })).rejects.toThrow(
+        NetworkError,
+      );
       expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
@@ -161,7 +169,9 @@ describe('iCal Fetch Utility', () => {
       const abortError = new DOMException('Aborted', 'AbortError');
       mockFetch.mockRejectedValueOnce(abortError);
 
-      await expect(fetchICalFeed(testUrl, { timeoutMs: 5000, maxRetries: 1 })).rejects.toThrow(TimeoutError);
+      await expect(fetchICalFeed(testUrl, { timeoutMs: 5000, maxRetries: 1 })).rejects.toThrow(
+        TimeoutError,
+      );
     });
 
     it('sanitizes URL in error messages', async () => {
@@ -195,9 +205,7 @@ describe('iCal Fetch Utility', () => {
 
       const result = await fetchICalFeed(testUrl);
       expect(result).toBe('{"data": "test"}');
-      expect(consoleWarn).toHaveBeenCalledWith(
-        expect.stringContaining('Unexpected content-type')
-      );
+      expect(consoleWarn).toHaveBeenCalledWith(expect.stringContaining('Unexpected content-type'));
 
       consoleWarn.mockRestore();
     });
@@ -310,7 +318,9 @@ END:VCALENDAR`;
 
       const events = parseICalFeed(icalText);
       expect(events).toHaveLength(1);
-      expect(events[0]?.summary).toBe('This is a very long summary that gets folded across multiple lines');
+      expect(events[0]?.summary).toBe(
+        'This is a very long summary that gets folded across multiple lines',
+      );
     });
 
     it('skips events missing required fields', () => {
@@ -368,7 +378,9 @@ END:VCALENDAR`;
     it('propagates fetch errors', async () => {
       mockFetch.mockRejectedValueOnce(new TypeError('Network error'));
 
-      await expect(fetchAndParseICalFeed('https://test.com/feed.ics', { maxRetries: 1 })).rejects.toThrow(NetworkError);
+      await expect(
+        fetchAndParseICalFeed('https://test.com/feed.ics', { maxRetries: 1 }),
+      ).rejects.toThrow(NetworkError);
     });
   });
 

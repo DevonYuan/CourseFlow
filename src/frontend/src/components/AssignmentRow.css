@@ -13,7 +13,9 @@
   border-radius: 9px;
   padding: 14px 16px;
   background: var(--surface);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .row:hover {
@@ -29,7 +31,7 @@
 .row--dragging {
   opacity: 0.5;
   border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(59,110,113,0.15);
+  box-shadow: 0 4px 12px rgba(59, 110, 113, 0.15);
   z-index: 100;
 }
 
@@ -175,8 +177,8 @@
 
 /* Completed status gets green badge */
 .row--completed .status-badge {
-  background: #D1FADF;
-  color: #065F46;
+  background: #d1fadf;
+  color: #065f46;
 }
 
 /* Checkbox / Check wrapper */
@@ -199,7 +201,10 @@
   justify-content: center;
   background: transparent;
   color: var(--accent);
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease;
 }
 
 .row-check:hover {
@@ -254,7 +259,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .row-delete:hover {
@@ -283,8 +290,8 @@
   }
 
   .row--completed .status-badge {
-    background: #064E3B;
-    color: #6EE7B7;
+    background: #064e3b;
+    color: #6ee7b7;
   }
 
   .row-check {

@@ -61,9 +61,24 @@ function createMockAssignment(overrides: Partial<Assignment> = {}): Assignment {
 
 describe('filterBySearch', () => {
   const assignments = [
-    createMockAssignment({ id: '1' as any, title: 'Math Homework', courseName: 'Math 101', description: 'Algebra problems' }),
-    createMockAssignment({ id: '2' as any, title: 'English Essay', courseName: 'English 101', description: 'Shakespeare analysis' }),
-    createMockAssignment({ id: '3' as any, title: 'Physics Lab', courseName: 'Physics 101', description: 'Newton laws' }),
+    createMockAssignment({
+      id: '1' as any,
+      title: 'Math Homework',
+      courseName: 'Math 101',
+      description: 'Algebra problems',
+    }),
+    createMockAssignment({
+      id: '2' as any,
+      title: 'English Essay',
+      courseName: 'English 101',
+      description: 'Shakespeare analysis',
+    }),
+    createMockAssignment({
+      id: '3' as any,
+      title: 'Physics Lab',
+      courseName: 'Physics 101',
+      description: 'Newton laws',
+    }),
   ];
 
   it('returns all assignments when query is empty', () => {
@@ -149,10 +164,22 @@ describe('filterByStatus', () => {
 describe('filterByDateRange', () => {
   const baseDate = new Date('2025-01-15T12:00:00.000Z');
   const assignments = [
-    createMockAssignment({ id: '1' as any, dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime }), // Before range
-    createMockAssignment({ id: '2' as any, dueAt: new Date('2025-01-15T12:00:00.000Z').toISOString() as IsoDateTime }), // Start of range
-    createMockAssignment({ id: '3' as any, dueAt: new Date('2025-01-20T12:00:00.000Z').toISOString() as IsoDateTime }), // End of range
-    createMockAssignment({ id: '4' as any, dueAt: new Date('2025-01-25T12:00:00.000Z').toISOString() as IsoDateTime }), // After range
+    createMockAssignment({
+      id: '1' as any,
+      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime,
+    }), // Before range
+    createMockAssignment({
+      id: '2' as any,
+      dueAt: new Date('2025-01-15T12:00:00.000Z').toISOString() as IsoDateTime,
+    }), // Start of range
+    createMockAssignment({
+      id: '3' as any,
+      dueAt: new Date('2025-01-20T12:00:00.000Z').toISOString() as IsoDateTime,
+    }), // End of range
+    createMockAssignment({
+      id: '4' as any,
+      dueAt: new Date('2025-01-25T12:00:00.000Z').toISOString() as IsoDateTime,
+    }), // After range
     createMockAssignment({ id: '5' as any, dueAt: null }), // No due date
   ];
 
@@ -161,14 +188,20 @@ describe('filterByDateRange', () => {
   });
 
   it('filters by inclusive date range', () => {
-    const range = { start: '2025-01-15T00:00:00.000Z' as IsoDateTime, end: '2025-01-20T23:59:59.999Z' as IsoDateTime };
+    const range = {
+      start: '2025-01-15T00:00:00.000Z' as IsoDateTime,
+      end: '2025-01-20T23:59:59.999Z' as IsoDateTime,
+    };
     const result = filterByDateRange(assignments, range);
     expect(result).toHaveLength(2);
     expect(result.map((a) => a.id)).toEqual(['2', '3']);
   });
 
   it('excludes assignments with null dueAt', () => {
-    const range = { start: '2025-01-01T00:00:00.000Z' as IsoDateTime, end: '2025-12-31T23:59:59.999Z' as IsoDateTime };
+    const range = {
+      start: '2025-01-01T00:00:00.000Z' as IsoDateTime,
+      end: '2025-12-31T23:59:59.999Z' as IsoDateTime,
+    };
     const result = filterByDateRange(assignments, range);
     expect(result.every((a) => a.dueAt !== null)).toBe(true);
   });
@@ -176,9 +209,27 @@ describe('filterByDateRange', () => {
 
 describe('applyFilters', () => {
   const assignments = [
-    createMockAssignment({ id: '1' as any, title: 'Math HW', courseName: 'Math', status: 'pending', dueAt: '2025-01-15T12:00:00.000Z' as IsoDateTime }),
-    createMockAssignment({ id: '2' as any, title: 'English Essay', courseName: 'English', status: 'completed', dueAt: '2025-01-20T12:00:00.000Z' as IsoDateTime }),
-    createMockAssignment({ id: '3' as any, title: 'Physics Lab', courseName: 'Physics', status: 'pending', dueAt: '2025-01-25T12:00:00.000Z' as IsoDateTime }),
+    createMockAssignment({
+      id: '1' as any,
+      title: 'Math HW',
+      courseName: 'Math',
+      status: 'pending',
+      dueAt: '2025-01-15T12:00:00.000Z' as IsoDateTime,
+    }),
+    createMockAssignment({
+      id: '2' as any,
+      title: 'English Essay',
+      courseName: 'English',
+      status: 'completed',
+      dueAt: '2025-01-20T12:00:00.000Z' as IsoDateTime,
+    }),
+    createMockAssignment({
+      id: '3' as any,
+      title: 'Physics Lab',
+      courseName: 'Physics',
+      status: 'pending',
+      dueAt: '2025-01-25T12:00:00.000Z' as IsoDateTime,
+    }),
   ];
 
   const baseFilters = {
@@ -278,7 +329,12 @@ describe('Sort Comparators', () => {
       const comparator = createPrioritySortComparator(priorityOrder);
       const result = [...assignments].sort(comparator);
       expect(result[0]!.id).toBe('1');
-      expect(result.slice(1).map((a) => a.id).sort()).toEqual(['2', '3']);
+      expect(
+        result
+          .slice(1)
+          .map((a) => a.id)
+          .sort(),
+      ).toEqual(['2', '3']);
     });
 
     it('uses due date as tiebreaker for same priority', () => {
@@ -348,13 +404,43 @@ describe('Grouping Functions', () => {
   const sundayThisWeek = new Date('2025-01-19T23:59:59.999Z');
 
   const assignments = [
-    createMockAssignment({ id: '1' as any, status: 'pending', dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime, courseName: 'CS101' }), // Overdue
-    createMockAssignment({ id: '2' as any, status: 'pending', dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime, courseName: 'CS101' }), // This week
-    createMockAssignment({ id: '3' as any, status: 'pending', dueAt: new Date('2025-01-25T12:00:00.000Z').toISOString() as IsoDateTime, courseName: 'MATH101' }), // Upcoming
-    createMockAssignment({ id: '4' as any, status: 'completed', dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime, courseName: 'CS101' }), // Completed
+    createMockAssignment({
+      id: '1' as any,
+      status: 'pending',
+      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'CS101',
+    }), // Overdue
+    createMockAssignment({
+      id: '2' as any,
+      status: 'pending',
+      dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'CS101',
+    }), // This week
+    createMockAssignment({
+      id: '3' as any,
+      status: 'pending',
+      dueAt: new Date('2025-01-25T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'MATH101',
+    }), // Upcoming
+    createMockAssignment({
+      id: '4' as any,
+      status: 'completed',
+      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'CS101',
+    }), // Completed
     createMockAssignment({ id: '5' as any, status: 'pending', dueAt: null, courseName: 'PHYS101' }), // No due date -> Upcoming
-    createMockAssignment({ id: '6' as any, status: 'in_progress', dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime, courseName: 'MATH101' }), // In progress
-    createMockAssignment({ id: '7' as any, status: 'archived', dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime, courseName: 'PHYS101' }), // Archived
+    createMockAssignment({
+      id: '6' as any,
+      status: 'in_progress',
+      dueAt: new Date('2025-01-14T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'MATH101',
+    }), // In progress
+    createMockAssignment({
+      id: '7' as any,
+      status: 'archived',
+      dueAt: new Date('2025-01-10T12:00:00.000Z').toISOString() as IsoDateTime,
+      courseName: 'PHYS101',
+    }), // Archived
   ];
 
   describe('groupByWeek', () => {
@@ -462,7 +548,9 @@ describe('applyGrouping', () => {
   it('returns flat array for none grouping', () => {
     const result = applyGrouping(assignments, 'none');
     expect(result).toEqual(assignments);
-    expect(Array.isArray(result) && (result.length === 0 || !('groupKey' in (result as any)[0]))).toBe(true);
+    expect(
+      Array.isArray(result) && (result.length === 0 || !('groupKey' in (result as any)[0])),
+    ).toBe(true);
   });
 
   it('returns grouped for week', () => {
@@ -491,9 +579,27 @@ describe('applyGrouping', () => {
 
 describe('selectFilteredAssignments (full pipeline)', () => {
   const assignments = [
-    createMockAssignment({ id: '1' as any, title: 'Math HW', courseName: 'Math', status: 'pending', dueAt: '2025-01-15T12:00:00.000Z' as IsoDateTime }),
-    createMockAssignment({ id: '2' as any, title: 'English Essay', courseName: 'English', status: 'completed', dueAt: '2025-01-20T12:00:00.000Z' as IsoDateTime }),
-    createMockAssignment({ id: '3' as any, title: 'Physics Lab', courseName: 'Physics', status: 'pending', dueAt: '2025-01-25T12:00:00.000Z' as IsoDateTime }),
+    createMockAssignment({
+      id: '1' as any,
+      title: 'Math HW',
+      courseName: 'Math',
+      status: 'pending',
+      dueAt: '2025-01-15T12:00:00.000Z' as IsoDateTime,
+    }),
+    createMockAssignment({
+      id: '2' as any,
+      title: 'English Essay',
+      courseName: 'English',
+      status: 'completed',
+      dueAt: '2025-01-20T12:00:00.000Z' as IsoDateTime,
+    }),
+    createMockAssignment({
+      id: '3' as any,
+      title: 'Physics Lab',
+      courseName: 'Physics',
+      status: 'pending',
+      dueAt: '2025-01-25T12:00:00.000Z' as IsoDateTime,
+    }),
   ];
 
   const baseFilters = {
@@ -507,7 +613,9 @@ describe('selectFilteredAssignments (full pipeline)', () => {
 
   it('returns flat array when no grouping', () => {
     const result = selectFilteredAssignments(assignments, baseFilters, ['3', '2', '1']);
-    expect(Array.isArray(result) && (result.length === 0 || !('groupKey' in (result as any)[0]))).toBe(true);
+    expect(
+      Array.isArray(result) && (result.length === 0 || !('groupKey' in (result as any)[0])),
+    ).toBe(true);
     expect(result).toHaveLength(3);
   });
 
@@ -532,7 +640,10 @@ describe('selectFilteredAssignments (full pipeline)', () => {
   it('applies date range filter', () => {
     const filters = {
       ...baseFilters,
-      dueDateRange: { start: '2025-01-10T00:00:00.000Z' as IsoDateTime, end: '2025-01-18T23:59:59.999Z' as IsoDateTime },
+      dueDateRange: {
+        start: '2025-01-10T00:00:00.000Z' as IsoDateTime,
+        end: '2025-01-18T23:59:59.999Z' as IsoDateTime,
+      },
     };
     const result = selectFilteredAssignments(assignments, filters);
     expect((result as Assignment[]).map((a) => a.id)).toEqual(['1']);

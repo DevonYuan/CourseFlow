@@ -124,7 +124,7 @@ export function NotesEditor({
         }
       }
     },
-    [content, onSave, onCancel]
+    [content, onSave, onCancel],
   );
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -160,6 +160,7 @@ export function NotesEditor({
         disabled={isSaving}
         aria-label="Note content"
         aria-describedby="notes-editor-char-count"
+        aria-multiline="true"
         rows={4}
         style={{ height: `${height}px` }}
         maxLength={MAX_CHARS}
@@ -174,7 +175,11 @@ export function NotesEditor({
           {charCount} / {MAX_CHARS} characters
         </span>
         <div className="notes-editor__actions">
-          {isSaving && <span className="notes-editor__saving" aria-live="polite">Saving…</span>}
+          {isSaving && (
+            <span className="notes-editor__saving" aria-live="polite">
+              Saving…
+            </span>
+          )}
           <button
             type="button"
             className="notes-editor__btn notes-editor__btn--cancel"

@@ -8,7 +8,7 @@
  * @module @frontend/pages/AssignmentDetailPage
  */
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AssignmentHeader } from '../components/assignments/AssignmentHeader';
@@ -16,6 +16,7 @@ import { NotesList } from '../components/notes/NotesList';
 import { AllCompletePrompt } from '../components/subtasks/AllCompletePrompt';
 import { SubTaskList } from '../components/subtasks/SubTaskList';
 import { useAssignmentDetail } from '../hooks/useAssignmentDetail';
+import { useFocusRestorationContext } from '../context/FocusRestorationContext';
 import { isPromptDismissed, setPromptDismissed } from '../utils/localStorage';
 
 import './AssignmentDetailPage.css';
@@ -25,7 +26,11 @@ import './AssignmentDetailPage.css';
  */
 function DetailSkeleton(): JSX.Element {
   return (
-    <div className="assignment-detail__skeleton" role="status" aria-label="Loading assignment details">
+    <div
+      className="assignment-detail__skeleton"
+      role="status"
+      aria-label="Loading assignment details"
+    >
       <div className="assignment-detail__header-skeleton">
         <div className="skeleton skeleton--back-button" />
         <div className="skeleton skeleton--title" />
@@ -49,7 +54,14 @@ function NotFound({ onBack }: { onBack: () => void }): JSX.Element {
   return (
     <div className="assignment-detail__not-found" role="alert">
       <div className="not-found__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg
+          viewBox="0 0 24 24"
+          width="48"
+          height="48"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
           <circle cx="12" cy="12" r="10" />
           <line x1="15" y1="9" x2="9" y2="15" />
           <line x1="9" y1="9" x2="15" y2="15" />
@@ -69,12 +81,27 @@ function NotFound({ onBack }: { onBack: () => void }): JSX.Element {
 /**
  * Error state component.
  */
-function DetailError({ error, onRetry, onBack }: { error: string; onRetry: () => void; onBack: () => void }): JSX.Element {
+function DetailError({
+  error,
+  onRetry,
+  onBack,
+}: {
+  error: string;
+  onRetry: () => void;
+  onBack: () => void;
+}): JSX.Element {
   return (
     <div className="assignment-detail__error" role="alert">
       <div className="error-banner">
         <div className="error-banner__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -104,15 +131,27 @@ function DetailError({ error, onRetry, onBack }: { error: string; onRetry: () =>
 export function AssignmentDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { restoreFocus } = useFocusRestorationContext();
 
   const assignmentId = id ?? '';
-  const { assignment, subTasks, isLoading, error, notFound, refetch } = useAssignmentDetail(assignmentId);
+  const { assignment, subTasks, isLoading, error, notFound, refetch } =
+    useAssignmentDetail(assignmentId);
 
   const subtasksSectionRef = useRef<HTMLDivElement>(null);
 
   const handleBack = () => {
+    restoreFocus();
     void navigate(-1);
   };
+
+  // Handle browser back button (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      restoreFocus();
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [restoreFocus]);
 
   const handleRetry = () => {
     void refetch();
@@ -170,6 +209,10 @@ export function AssignmentDetailPage(): JSX.Element {
 
   return (
     <article className="assignment-detail" role="main" aria-label={assignment.title}>
+      {/* Skip link for keyboard users */}
+      <a href="#assignment-detail-content" className="skip-link" tabIndex={0}>
+        Skip to main content
+      </a>
       {/* Header Section */}
       <AssignmentHeader
         assignment={assignment}
@@ -180,7 +223,7 @@ export function AssignmentDetailPage(): JSX.Element {
       />
 
       {/* Content Section */}
-      <div className="assignment-detail__content">
+      <div id="assignment-detail-content" className="assignment-detail__content">
         {/* All-complete prompt (shows when all sub-tasks done and assignment pending) */}
         {showAllCompletePrompt && (
           <AllCompletePrompt
@@ -192,7 +235,11 @@ export function AssignmentDetailPage(): JSX.Element {
         )}
 
         {/* Sub-tasks Section */}
-        <section ref={subtasksSectionRef} className="assignment-detail__section" aria-labelledby="subtasks-heading">
+        <section
+          ref={subtasksSectionRef}
+          className="assignment-detail__section"
+          aria-labelledby="subtasks-heading"
+        >
           <h2 id="subtasks-heading" className="assignment-detail__section-title">
             Sub-tasks
           </h2>

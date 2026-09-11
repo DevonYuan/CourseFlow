@@ -41,35 +41,35 @@ Verify and enforce safety guarantees for sub-tasks and notes when assignments ar
 
 ### Backend — Database Schema / Migrations
 
-| File | Change |
-|------|--------|
+| File                                  | Change                                                                                                                                                                                                  |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/db/migrations/*.ts` | Verify FK definitions: `sub_tasks.assignment_id REFERENCES assignments(id) ON DELETE CASCADE`, `notes.assignment_id REFERENCES assignments(id) ON DELETE CASCADE`. If missing, create migration to add. |
 
 ### Backend — Repository / Import Pipeline
 
-| File | Change |
-|------|--------|
+| File                                | Change                                                                                                                                                                                                                           |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/db/repository.ts` | Verify `upsertAssignment` uses an explicit column allowlist. Ensure `sub_tasks` and `notes` are not in the allowlist. Verify `deleteAssignment` does a simple `DELETE FROM assignments WHERE id = ?` (cascade handles the rest). |
-| `src/backend/main/ical/import.ts` | Verify the import logic only calls `repository.upsertAssignment` with the allowlisted fields. No calls to sub-task/note repo methods. |
+| `src/backend/main/ical/import.ts`   | Verify the import logic only calls `repository.upsertAssignment` with the allowlisted fields. No calls to sub-task/note repo methods.                                                                                            |
 
 ### Backend — IPC Handlers
 
-| File | Change |
-|------|--------|
+| File                               | Change                                                                                                                                                                                                                            |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/backend/main/ipc-handlers.ts` | Verify `db:assignments:delete` handler calls `repository.deleteAssignment(id)` and emits `db:changed` for `assignments` (cascade deletions of sub-tasks/notes will emit their own `db:changed` events if triggers fire — verify). |
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/components/assignments/AssignmentRow.tsx` | Verify delete button calls `window.api.db.assignments.delete(id)` only. No manual sub-task/note cleanup. |
-| `src/frontend/src/pages/AssignmentDetailPage.tsx` | Verify no iCal-specific assumptions (e.g., requiring `ical_uid` or `source_url`). Works for `source = 'manual'`. |
-| `src/frontend/src/stores/assignmentStore.ts` | Verify `deleteAssignment` action only calls the delete IPC. Optimistic removal of assignment from list; sub-tasks/notes removed via `db:changed` subscription. |
+| File                                                        | Change                                                                                                                                                         |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/components/assignments/AssignmentRow.tsx` | Verify delete button calls `window.api.db.assignments.delete(id)` only. No manual sub-task/note cleanup.                                                       |
+| `src/frontend/src/pages/AssignmentDetailPage.tsx`           | Verify no iCal-specific assumptions (e.g., requiring `ical_uid` or `source_url`). Works for `source = 'manual'`.                                               |
+| `src/frontend/src/stores/assignmentStore.ts`                | Verify `deleteAssignment` action only calls the delete IPC. Optimistic removal of assignment from list; sub-tasks/notes removed via `db:changed` subscription. |
 
 ### Documentation
 
-| File | Change |
-|------|--------|
+| File                              | Change                                                                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `docs/architecture/data-model.md` | Add "Protected from iCal re-import" section for SubTask and Note entities. Document `source` field semantics and manual assignment support. |
 
 ## Acceptance Criteria
@@ -97,7 +97,7 @@ Verify and enforce safety guarantees for sub-tasks and notes when assignments ar
   1. Accept that cascade deletions don't emit `db:changed` for children (the assignment deletion event is enough for UI to clear the detail view).
   2. Add explicit `DELETE` triggers on `sub_tasks`/`notes` to emit events (complex).
   3. In the repository `deleteAssignment`, manually delete sub-tasks/notes first (explicit, emits events), then delete assignment.
-  
+
   **Recommendation**: Option 3 (explicit delete in repo) for reliable `db:changed` events. Update `repository.deleteAssignment` to: `DELETE FROM sub_tasks WHERE assignment_id = ?; DELETE FROM notes WHERE assignment_id = ?; DELETE FROM assignments WHERE id = ?;` — each emits `db:changed`. This is cleaner than relying on FK cascade for events.
 
 - **Import pipeline allowlist**: The current `upsertAssignment` likely does `INSERT OR REPLACE` or `UPSERT` with all columns. Change to explicit column list: `title, due_at, workflow_state, description, html_url, points_possible, submission_types, unlock_at, lock_at, course_name, course_color, updated_at`. Exclude: `id`, `canvas_id`, `ical_uid`, `source`, `source_url`, `created_at`, `status` (user may have marked complete), `priority` (handled separately).

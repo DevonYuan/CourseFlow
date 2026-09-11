@@ -150,11 +150,7 @@ function icalTimeToIso(time: ICAL.Time): IsoDateTime {
  * @param windowEnd - End of the window (inclusive)
  * @returns Array of occurrence ISO date strings within the window
  */
-function expandRecurringEvent(
-  event: ICalEvent,
-  windowStart: Date,
-  windowEnd: Date
-): IsoDateTime[] {
+function expandRecurringEvent(event: ICalEvent, windowStart: Date, windowEnd: Date): IsoDateTime[] {
   if (!event.rrule || !event.dtStart) {
     return [];
   }
@@ -394,7 +390,11 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
 
       // If no occurrences in window but master event is in window, include master
       // (This handles edge cases where RRULE expansion yields no results but event is in window)
-      if (occurrences.length === 0 && eventTime >= windowStart.getTime() && eventTime <= windowEnd.getTime()) {
+      if (
+        occurrences.length === 0 &&
+        eventTime >= windowStart.getTime() &&
+        eventTime <= windowEnd.getTime()
+      ) {
         const dueAt = event.dtStart;
         const numericPriority = calculateNumericPriority(dueAt, now);
         const priority = mapPriorityToEnum(numericPriority);

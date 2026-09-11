@@ -11,11 +11,15 @@ import initSqlJs from 'sql.js';
 import type { Database } from 'sql.js';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
-import type { Assignment, AssignmentInput, DbAssignment, Settings, EntityId, IsoDateTime } from '../../../shared/types.js';
-import {
-  mapDbAssignmentToAssignment,
-  mapAssignmentInputToDb,
-} from '../mappers.js';
+import type {
+  Assignment,
+  AssignmentInput,
+  DbAssignment,
+  Settings,
+  EntityId,
+  IsoDateTime,
+} from '../../../shared/types.js';
+import { mapDbAssignmentToAssignment, mapAssignmentInputToDb } from '../mappers.js';
 
 // Test database instance
 let testDb: Database | null = null;
@@ -25,11 +29,21 @@ let SQL: Awaited<ReturnType<typeof initSqlJs>> | null = null;
 
 async function initTestDb(): Promise<Database> {
   if (SQL === null) {
-     
     const fs = await import('node:fs');
-     
+
     const path = await import('node:path');
-    const wasmPath = path.resolve(__dirname, '..', '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+    const wasmPath = path.resolve(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      '..',
+      'node_modules',
+      'sql.js',
+      'dist',
+      'sql-wasm.wasm',
+    );
     const wasmBuffer = fs.readFileSync(wasmPath);
     SQL = await initSqlJs({ wasmBinary: new Uint8Array(wasmBuffer).buffer });
   }

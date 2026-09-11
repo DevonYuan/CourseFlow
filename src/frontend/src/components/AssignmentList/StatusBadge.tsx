@@ -38,11 +38,19 @@ interface StatusBadgeProps {
 /**
  * StatusBadge - Displays a colored badge with the assignment status label.
  */
-export function StatusBadge({ status, size = 'md', className = '' }: StatusBadgeProps): JSX.Element {
+export function StatusBadge({
+  status,
+  size = 'md',
+  className = '',
+}: StatusBadgeProps): JSX.Element {
   return (
     <span
       className={`status-badge ${sizeClasses[size]} ${className}`}
-      style={{ backgroundColor: `var(--status-${status}, ${getStatusColor(status)})` } as React.CSSProperties}
+      style={
+        {
+          backgroundColor: `var(--status-${status}, ${getStatusColor(status)})`,
+        } as React.CSSProperties
+      }
       aria-label={`Status: ${statusLabels[status]}`}
     >
       {statusLabels[status]}

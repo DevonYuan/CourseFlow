@@ -14,7 +14,9 @@
   color: var(--color-text-muted, #9ca3af);
   cursor: grab;
   border-radius: var(--radius-sm, 4px);
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
   flex-shrink: 0;
 }
 

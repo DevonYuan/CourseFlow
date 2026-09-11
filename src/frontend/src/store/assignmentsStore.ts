@@ -8,16 +8,20 @@
  */
 
 import type { IpcEvents } from '@backend/shared/ipc';
-import type { Assignment, PriorityOrder, SortOption, GroupingType, IsoDateTime, FilterState as SharedFilterState } from '@backend/shared/types';
+import type {
+  Assignment,
+  PriorityOrder,
+  SortOption,
+  GroupingType,
+  IsoDateTime,
+  FilterState as SharedFilterState,
+} from '@backend/shared/types';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
 import { mapErrorToMessage } from '../utils/errorMessages';
 
-import {
-  selectFilteredAssignments,
-  type GroupedAssignments,
-} from './selectors';
+import { selectFilteredAssignments, type GroupedAssignments } from './selectors';
 
 /**
  * Filter state for assignment list — persisted to localStorage.
@@ -95,7 +99,10 @@ interface AssignmentsActions {
    * @param direction - Direction to move: 'up' | 'down' | 'top' | 'bottom'
    * @returns Object with newIndex (position after move) and total (total movable items), or null if move not possible
    */
-  moveAssignment: (assignmentId: string, direction: 'up' | 'down' | 'top' | 'bottom') => { newIndex: number; total: number } | null;
+  moveAssignment: (
+    assignmentId: string,
+    direction: 'up' | 'down' | 'top' | 'bottom',
+  ) => { newIndex: number; total: number } | null;
 
   // Filter actions
   /** Sets the course filter (multi-select) */
@@ -154,47 +161,38 @@ function writeFiltersToStorage(filters: FilterState): void {
  * Zustand store for assignment list state.
  */
 export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
-    // Initial state
-    assignments: [],
-    isLoading: true,
-    error: null,
-    isEmpty: true,
-    priorityOrder: [],
-    _previousPriorityOrder: null,
-    filters: defaultFilterState,
-    _searchQueryDebounceTimer: null,
+  // Initial state
+  assignments: [],
+  isLoading: true,
+  error: null,
+  isEmpty: true,
+  priorityOrder: [],
+  _previousPriorityOrder: null,
+  filters: defaultFilterState,
+  _searchQueryDebounceTimer: null,
 
-    // Actions
-    fetchAssignments: async () => {
-      // Always set loading state at start (allows re-fetching)
-      set({ isLoading: true, error: null });
+  // Actions
+  fetchAssignments: async () => {
+    // Always set loading state at start (allows re-fetching)
+    set({ isLoading: true, error: null });
 
-      try {
-        const result = await window.api.db.assignments.list();
+    try {
+      const result = await window.api.db.assignments.list();
 
-        if (result.ok) {
-          const assignments = result.data;
-          set({
-            assignments,
-            isLoading: false,
-            error: null,
-            isEmpty: assignments.length === 0,
-          });
-        } else {
-          // Create an error object with the IPC error code as the name
-          // so mapErrorToMessage can map it to a user-friendly message
-          const error = new Error(result.error);
-          error.name = result.code || 'UNKNOWN_ERROR';
-          const errorMessage = mapErrorToMessage(error);
-          set({
-            assignments: [],
-            isLoading: false,
-            error: errorMessage,
-            isEmpty: true,
-          });
-        }
-      } catch (err) {
-        const errorMessage = mapErrorToMessage(err);
+      if (result.ok) {
+        const assignments = result.data;
+        set({
+          assignments,
+          isLoading: false,
+          error: null,
+          isEmpty: assignments.length === 0,
+        });
+      } else {
+        // Create an error object with the IPC error code as the name
+        // so mapErrorToMessage can map it to a user-friendly message
+        const error = new Error(result.error);
+        error.name = result.code || 'UNKNOWN_ERROR';
+        const errorMessage = mapErrorToMessage(error);
         set({
           assignments: [],
           isLoading: false,
@@ -202,205 +200,213 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
           isEmpty: true,
         });
       }
-    },
-
-    setAssignments: (assignments: Assignment[]) => {
+    } catch (err) {
+      const errorMessage = mapErrorToMessage(err);
       set({
-        assignments,
+        assignments: [],
         isLoading: false,
-        error: null,
-        isEmpty: assignments.length === 0,
+        error: errorMessage,
+        isEmpty: true,
       });
-    },
+    }
+  },
 
-    hydrate: (assignments: Assignment[], priorityOrder: PriorityOrder[]) => {
-      // Sort priorityOrder by position to get the correct order
-      const sortedPriorityOrder = [...priorityOrder].sort((a, b) => a.order - b.order);
-      const priorityIds = sortedPriorityOrder.map((po) => po.assignmentId);
-      set({
-        assignments,
-        priorityOrder: priorityIds,
-        isLoading: false,
-        error: null,
-        isEmpty: assignments.length === 0,
-      });
-    },
+  setAssignments: (assignments: Assignment[]) => {
+    set({
+      assignments,
+      isLoading: false,
+      error: null,
+      isEmpty: assignments.length === 0,
+    });
+  },
 
-    clearError: () => {
-      set({ error: null });
-    },
+  hydrate: (assignments: Assignment[], priorityOrder: PriorityOrder[]) => {
+    // Sort priorityOrder by position to get the correct order
+    const sortedPriorityOrder = [...priorityOrder].sort((a, b) => a.order - b.order);
+    const priorityIds = sortedPriorityOrder.map((po) => po.assignmentId);
+    set({
+      assignments,
+      priorityOrder: priorityIds,
+      isLoading: false,
+      error: null,
+      isEmpty: assignments.length === 0,
+    });
+  },
 
-    setAssignmentStatus: (id: string, status: Assignment['status']) => {
-      set((state) => ({
-        assignments: state.assignments.map((assignment) =>
-          assignment.id === id ? { ...assignment, status } : assignment
-        ),
-      }));
-    },
+  clearError: () => {
+    set({ error: null });
+  },
 
-    handleDbChanged: (payload: IpcEvents['db:changed']) => {
-      if (payload.table === 'assignments') {
-        // Re-fetch on any assignment change
-        get().fetchAssignments();
+  setAssignmentStatus: (id: string, status: Assignment['status']) => {
+    set((state) => ({
+      assignments: state.assignments.map((assignment) =>
+        assignment.id === id ? { ...assignment, status } : assignment,
+      ),
+    }));
+  },
+
+  handleDbChanged: (payload: IpcEvents['db:changed']) => {
+    if (payload.table === 'assignments') {
+      // Re-fetch on any assignment change
+      get().fetchAssignments();
+    }
+  },
+
+  setPriorityOrder: (ids: string[]) => {
+    set({ priorityOrder: ids });
+  },
+
+  reorderOptimistic: (ids: string[]) => {
+    // Store current order for potential rollback
+    const currentOrder = get().priorityOrder;
+    set({ priorityOrder: ids, _previousPriorityOrder: currentOrder });
+  },
+
+  revertPriorityOrder: () => {
+    const previous = get()._previousPriorityOrder;
+    if (previous !== null) {
+      set({ priorityOrder: previous, _previousPriorityOrder: null });
+    }
+  },
+
+  moveAssignment: (assignmentId: string, direction: 'up' | 'down' | 'top' | 'bottom') => {
+    const { assignments, priorityOrder } = get();
+
+    // Get the list of movable assignment IDs (exclude completed)
+    // Use priorityOrder if available, otherwise use assignments order
+    const baseOrder = priorityOrder.length > 0 ? priorityOrder : assignments.map((a) => a.id);
+    const movableIds = baseOrder.filter((id) => {
+      const assignment = assignments.find((a) => a.id === id);
+      return assignment && assignment.status !== 'completed';
+    });
+
+    const currentIndex = movableIds.indexOf(assignmentId);
+    if (currentIndex === -1) {
+      return null; // Assignment not found or is completed
+    }
+
+    let newIndex: number;
+    switch (direction) {
+      case 'up': {
+        newIndex = Math.max(0, currentIndex - 1);
+        break;
       }
-    },
-
-    setPriorityOrder: (ids: string[]) => {
-      set({ priorityOrder: ids });
-    },
-
-    reorderOptimistic: (ids: string[]) => {
-      // Store current order for potential rollback
-      const currentOrder = get().priorityOrder;
-      set({ priorityOrder: ids, _previousPriorityOrder: currentOrder });
-    },
-
-    revertPriorityOrder: () => {
-      const previous = get()._previousPriorityOrder;
-      if (previous !== null) {
-        set({ priorityOrder: previous, _previousPriorityOrder: null });
+      case 'down': {
+        newIndex = Math.min(movableIds.length - 1, currentIndex + 1);
+        break;
       }
-    },
-
-    moveAssignment: (assignmentId: string, direction: 'up' | 'down' | 'top' | 'bottom') => {
-      const { assignments, priorityOrder } = get();
-
-      // Get the list of movable assignment IDs (exclude completed)
-      // Use priorityOrder if available, otherwise use assignments order
-      const baseOrder = priorityOrder.length > 0 ? priorityOrder : assignments.map((a) => a.id);
-      const movableIds = baseOrder.filter((id) => {
-        const assignment = assignments.find((a) => a.id === id);
-        return assignment && assignment.status !== 'completed';
-      });
-
-      const currentIndex = movableIds.indexOf(assignmentId);
-      if (currentIndex === -1) {
-        return null; // Assignment not found or is completed
+      case 'top': {
+        newIndex = 0;
+        break;
       }
-
-      let newIndex: number;
-      switch (direction) {
-        case 'up': {
-          newIndex = Math.max(0, currentIndex - 1);
-          break;
-        }
-        case 'down': {
-          newIndex = Math.min(movableIds.length - 1, currentIndex + 1);
-          break;
-        }
-        case 'top': {
-          newIndex = 0;
-          break;
-        }
-        case 'bottom': {
-          newIndex = movableIds.length - 1;
-          break;
-        }
+      case 'bottom': {
+        newIndex = movableIds.length - 1;
+        break;
       }
+    }
 
-      if (newIndex === currentIndex) {
-        return null; // No change
+    if (newIndex === currentIndex) {
+      return null; // No change
+    }
+
+    // Create new order by moving the item
+    const newMovableIds = [...movableIds];
+    const movedId = newMovableIds.splice(currentIndex, 1)[0];
+    if (movedId === undefined) return null;
+    newMovableIds.splice(newIndex, 0, movedId);
+
+    // Merge back with non-movable items (completed assignments)
+    // Completed assignments stay in their relative positions at the end
+    const completedIds = baseOrder.filter((id) => !movableIds.includes(id));
+    const newOrder = [...newMovableIds, ...completedIds];
+
+    // Optimistic update
+    get().reorderOptimistic(newOrder);
+
+    return { newIndex, total: movableIds.length };
+  },
+
+  // Filter actions
+  setCourseFilter: (courses: string[]) => {
+    set((state) => {
+      const newFilters = { ...state.filters, courseFilter: courses };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
+
+  toggleCourseFilter: (course: string) => {
+    set((state) => {
+      const current = state.filters.courseFilter;
+      const newCourseFilter = current.includes(course)
+        ? current.filter((c: string) => c !== course)
+        : [...current, course];
+      const newFilters = { ...state.filters, courseFilter: newCourseFilter };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
+
+  setStatusFilter: (status: FilterState['statusFilter']) => {
+    set((state) => {
+      const newFilters = { ...state.filters, statusFilter: status };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
+
+  setDueDateRange: (range: FilterState['dueDateRange']) => {
+    set((state) => {
+      const newFilters = { ...state.filters, dueDateRange: range };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
+
+  setSearchQuery: (query: string) => {
+    set((state) => {
+      const newFilters = { ...state.filters, searchQuery: query };
+      // Debounce search query persistence (300ms)
+      if (state._searchQueryDebounceTimer) {
+        clearTimeout(state._searchQueryDebounceTimer);
       }
-
-      // Create new order by moving the item
-      const newMovableIds = [...movableIds];
-      const movedId = newMovableIds.splice(currentIndex, 1)[0];
-      if (movedId === undefined) return null;
-      newMovableIds.splice(newIndex, 0, movedId);
-
-      // Merge back with non-movable items (completed assignments)
-      // Completed assignments stay in their relative positions at the end
-      const completedIds = baseOrder.filter((id) => !movableIds.includes(id));
-      const newOrder = [...newMovableIds, ...completedIds];
-
-      // Optimistic update
-      get().reorderOptimistic(newOrder);
-
-      return { newIndex, total: movableIds.length };
-    },
-
-    // Filter actions
-    setCourseFilter: (courses: string[]) => {
-      set((state) => {
-        const newFilters = { ...state.filters, courseFilter: courses };
+      const timer = window.setTimeout(() => {
         writeFiltersToStorage(newFilters);
-        return { filters: newFilters };
-      });
-    },
+      }, 300);
+      return { filters: newFilters, _searchQueryDebounceTimer: timer };
+    });
+  },
 
-    toggleCourseFilter: (course: string) => {
-      set((state) => {
-        const current = state.filters.courseFilter;
-        const newCourseFilter = current.includes(course)
-          ? current.filter((c: string) => c !== course)
-          : [...current, course];
-        const newFilters = { ...state.filters, courseFilter: newCourseFilter };
-        writeFiltersToStorage(newFilters);
-        return { filters: newFilters };
-      });
-    },
+  setSortOption: (option: SortOption) => {
+    set((state) => {
+      const newFilters = { ...state.filters, sortOption: option };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
 
-    setStatusFilter: (status: FilterState['statusFilter']) => {
-      set((state) => {
-        const newFilters = { ...state.filters, statusFilter: status };
-        writeFiltersToStorage(newFilters);
-        return { filters: newFilters };
-      });
-    },
+  setGroupingType: (type: GroupingType) => {
+    set((state) => {
+      const newFilters = { ...state.filters, groupingType: type };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
 
-    setDueDateRange: (range: FilterState['dueDateRange']) => {
-      set((state) => {
-        const newFilters = { ...state.filters, dueDateRange: range };
-        writeFiltersToStorage(newFilters);
-        return { filters: newFilters };
-      });
-    },
+  resetFilters: () => {
+    set((_state) => {
+      writeFiltersToStorage(defaultFilterState);
+      return { filters: defaultFilterState };
+    });
+  },
 
-    setSearchQuery: (query: string) => {
-      set((state) => {
-        const newFilters = { ...state.filters, searchQuery: query };
-        // Debounce search query persistence (300ms)
-        if (state._searchQueryDebounceTimer) {
-          clearTimeout(state._searchQueryDebounceTimer);
-        }
-        const timer = window.setTimeout(() => {
-          writeFiltersToStorage(newFilters);
-        }, 300);
-        return { filters: newFilters, _searchQueryDebounceTimer: timer };
-      });
-    },
-
-    setSortOption: (option: SortOption) => {
-      set((state) => {
-        const newFilters = { ...state.filters, sortOption: option };
-        writeFiltersToStorage(newFilters);
-        return { filters: newFilters };
-      });
-    },
-
-    setGroupingType: (type: GroupingType) => {
-      set((state) => {
-        const newFilters = { ...state.filters, groupingType: type };
-        writeFiltersToStorage(newFilters);
-        return { filters: newFilters };
-      });
-    },
-
-    resetFilters: () => {
-      set((_state) => {
-        writeFiltersToStorage(defaultFilterState);
-        return { filters: defaultFilterState };
-      });
-    },
-
-    hydrateFilters: () => {
-      const stored = readFiltersFromStorage();
-      if (stored) {
-        set({ filters: stored });
-      }
-    },
-  })
-);
+  hydrateFilters: () => {
+    const stored = readFiltersFromStorage();
+    if (stored) {
+      set({ filters: stored });
+    }
+  },
+}));
 
 /**
  * Selector hooks for common use cases — prevents unnecessary re-renders.
@@ -409,11 +415,13 @@ export const useAssignments = () => useAssignmentsStore((state) => state.assignm
 export const useAssignmentsLoading = () => useAssignmentsStore((state) => state.isLoading);
 export const useAssignmentsError = () => useAssignmentsStore((state) => state.error);
 export const useAssignmentsEmpty = () => useAssignmentsStore((state) => state.isEmpty);
-export const useSetAssignmentStatus = () => useAssignmentsStore((state) => state.setAssignmentStatus);
+export const useSetAssignmentStatus = () =>
+  useAssignmentsStore((state) => state.setAssignmentStatus);
 export const usePriorityOrder = () => useAssignmentsStore((state) => state.priorityOrder);
 export const useSetPriorityOrder = () => useAssignmentsStore((state) => state.setPriorityOrder);
 export const useReorderOptimistic = () => useAssignmentsStore((state) => state.reorderOptimistic);
-export const useRevertPriorityOrder = () => useAssignmentsStore((state) => state.revertPriorityOrder);
+export const useRevertPriorityOrder = () =>
+  useAssignmentsStore((state) => state.revertPriorityOrder);
 export const useMoveAssignment = () => useAssignmentsStore((state) => state.moveAssignment);
 export const useHydrate = () => useAssignmentsStore((state) => state.hydrate);
 
@@ -453,7 +461,9 @@ export const useCourseNames = () =>
  */
 export const useFilteredAssignments = () =>
   useAssignmentsStore(
-    useShallow((state) => selectFilteredAssignments(state.assignments, state.filters, state.priorityOrder))
+    useShallow((state) =>
+      selectFilteredAssignments(state.assignments, state.filters, state.priorityOrder),
+    ),
   );
 
 /**
@@ -468,26 +478,37 @@ export function initializeAssignmentsStore(): () => void {
   store.hydrateFilters();
 
   // Fetch both assignments and priority order in parallel, then hydrate
-  Promise.all([
-    window.api.db.assignments.list(),
-    window.api.db.priority.list(),
-  ]).then(([assignmentsResult, priorityResult]) => {
-    if (assignmentsResult.ok && priorityResult.ok) {
-      store.hydrate(assignmentsResult.data, priorityResult.data);
-    } else if (assignmentsResult.ok) {
-      // Fallback: if priority fetch fails, just set assignments
-      store.setAssignments(assignmentsResult.data);
-    } else {
-      // Error fetching assignments
-      const error = new Error(assignmentsResult.error);
-      error.name = assignmentsResult.code || 'UNKNOWN_ERROR';
-      const errorMessage = mapErrorToMessage(error);
-      useAssignmentsStore.setState({ assignments: [], priorityOrder: [], isLoading: false, error: errorMessage, isEmpty: true });
-    }
-  }).catch((err) => {
-    const errorMessage = mapErrorToMessage(err);
-    useAssignmentsStore.setState({ assignments: [], priorityOrder: [], isLoading: false, error: errorMessage, isEmpty: true });
-  });
+  Promise.all([window.api.db.assignments.list(), window.api.db.priority.list()])
+    .then(([assignmentsResult, priorityResult]) => {
+      if (assignmentsResult.ok && priorityResult.ok) {
+        store.hydrate(assignmentsResult.data, priorityResult.data);
+      } else if (assignmentsResult.ok) {
+        // Fallback: if priority fetch fails, just set assignments
+        store.setAssignments(assignmentsResult.data);
+      } else {
+        // Error fetching assignments
+        const error = new Error(assignmentsResult.error);
+        error.name = assignmentsResult.code || 'UNKNOWN_ERROR';
+        const errorMessage = mapErrorToMessage(error);
+        useAssignmentsStore.setState({
+          assignments: [],
+          priorityOrder: [],
+          isLoading: false,
+          error: errorMessage,
+          isEmpty: true,
+        });
+      }
+    })
+    .catch((err) => {
+      const errorMessage = mapErrorToMessage(err);
+      useAssignmentsStore.setState({
+        assignments: [],
+        priorityOrder: [],
+        isLoading: false,
+        error: errorMessage,
+        isEmpty: true,
+      });
+    });
 
   return () => {};
 }

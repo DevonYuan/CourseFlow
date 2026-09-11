@@ -24,7 +24,12 @@ export function AssignmentListSkeleton({ count = 4 }: AssignmentListSkeletonProp
   const rows = Array.from({ length: count }, (_, i) => i);
 
   return (
-    <div className="assignment-list-skeleton" role="status" aria-live="polite" aria-label="Loading assignments">
+    <div
+      className="assignment-list-skeleton"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading assignments"
+    >
       {rows.map((index) => (
         <div key={index} className="skeleton-row" data-testid="skeleton-row">
           <div className="skeleton-cell skeleton-course">

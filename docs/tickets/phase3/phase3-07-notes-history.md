@@ -40,7 +40,7 @@ Polish the **per-assignment notes feature** with proper ordering, timestamp disp
 - [ ] **Tooltip component**: Reuse or create a simple `Tooltip` component (CSS-only or minimal JS) for hover timestamps. Keep accessible (show on focus too).
 - [ ] **Edited badge style**: Small pill badge, muted color, "Edited" text. ARIA: `aria-label="This note was edited after creation"`.
 - [ ] **Created timestamp style**: Smaller font, muted color, prefixed with "Created ".
-- [ ] **1:1 vs 1:N display**: 
+- [ ] **1:1 vs 1:N display**:
   - If 1:N: List of entries, each with content, updated/created timestamps, edit/delete.
   - If 1:1: Single entry showing current content, with "Last updated" + "Created" timestamps. Edit opens the same editor. History of past versions is NOT stored (out of scope for Phase 3).
 - [ ] **No version history**: Phase 3 does not store edit history (diffs, previous versions). Only `created_at` and `updated_at` are tracked. Full version history can be a future enhancement.
@@ -52,22 +52,22 @@ Polish the **per-assignment notes feature** with proper ordering, timestamp disp
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/hooks/useNotes.ts` | Update: ensure returned `notes` array is sorted by `updated_at` descending. |
+| File                                              | Change                                                                                                                           |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/hooks/useNotes.ts`              | Update: ensure returned `notes` array is sorted by `updated_at` descending.                                                      |
 | `src/frontend/src/components/notes/NoteEntry.tsx` | Update: display relative `updated_at` with tooltip for absolute, "Edited" badge, relative `created_at`. Use `Tooltip` component. |
-| `src/frontend/src/components/notes/NotesList.tsx` | Update: if grouping by date, add date header logic. |
-| `src/frontend/src/utils/timestamp.ts` | **New**. `formatRelative`, `formatAbsolute`, `isEdited`, `formatDateHeader` (for grouping). |
-| `src/frontend/src/components/ui/Tooltip.tsx` | **New or reuse**. Accessible tooltip: shows on hover/focus, keyboard dismissible, portal to body. |
-| `src/frontend/src/utils/date.ts` | Ensure `date-fns` utilities available (already used in 3.5/3.6). |
+| `src/frontend/src/components/notes/NotesList.tsx` | Update: if grouping by date, add date header logic.                                                                              |
+| `src/frontend/src/utils/timestamp.ts`             | **New**. `formatRelative`, `formatAbsolute`, `isEdited`, `formatDateHeader` (for grouping).                                      |
+| `src/frontend/src/components/ui/Tooltip.tsx`      | **New or reuse**. Accessible tooltip: shows on hover/focus, keyboard dismissible, portal to body.                                |
+| `src/frontend/src/utils/date.ts`                  | Ensure `date-fns` utilities available (already used in 3.5/3.6).                                                                 |
 
 ### Backend — No Changes Expected
 
 > Assumes Ticket 3.0 audit confirmed `created_at` and `updated_at` columns exist and are set correctly (triggers or application-layer).
 
-| File | Change |
-|------|--------|
-| *(none expected)* | Verify `db:notes:upsert` sets `updated_at = datetime('now')` (or ISO string) on every save. `created_at` set only on insert. |
+| File              | Change                                                                                                                       |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| _(none expected)_ | Verify `db:notes:upsert` sets `updated_at = datetime('now')` (or ISO string) on every save. `created_at` set only on insert. |
 
 ## Acceptance Criteria
 

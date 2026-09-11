@@ -16,7 +16,7 @@ const __dirname = dirname(__filename);
 // Load migration files
 const migrationsDir = join(__dirname, '../src/backend/main/db/migrations');
 const migrationFiles = readdirSync(migrationsDir)
-  .filter(f => f.endsWith('.sql'))
+  .filter((f) => f.endsWith('.sql'))
   .sort();
 
 async function runMigrations() {
@@ -86,7 +86,9 @@ async function runMigrations() {
     db.exec('BEGIN TRANSACTION;');
     try {
       db.exec(sql);
-      const insertStmt = db.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, datetime(\'now\'))');
+      const insertStmt = db.prepare(
+        "INSERT INTO schema_migrations (version, applied_at) VALUES (?, datetime('now'))",
+      );
       insertStmt.run([version]);
       insertStmt.free();
       db.exec('COMMIT;');
@@ -111,13 +113,17 @@ async function runMigrations() {
     if (info.length > 0 && info[0].values.length > 0) {
       console.log(`\n${table}:`);
       for (const row of info[0].values) {
-        console.log(`  ${row[1]} (${row[2]})${row[3] ? ' NOT NULL' : ''}${row[4] !== null ? ` DEFAULT ${row[4]}` : ''}${row[5] ? ' PK' : ''}`);
+        console.log(
+          `  ${row[1]} (${row[2]})${row[3] ? ' NOT NULL' : ''}${row[4] !== null ? ` DEFAULT ${row[4]}` : ''}${row[5] ? ' PK' : ''}`,
+        );
       }
     }
   }
 
   // Check indexes
-  const indexes = db.exec("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='assignments'");
+  const indexes = db.exec(
+    "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='assignments'",
+  );
   if (indexes.length > 0 && indexes[0].values.length > 0) {
     console.log('\nIndexes on assignments:');
     for (const row of indexes[0].values) {

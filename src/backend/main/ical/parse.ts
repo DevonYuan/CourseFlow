@@ -88,14 +88,11 @@ function unfoldIcalLines(text: string): string {
  * which violates RFC 5545 and causes ical.js to throw "invalid BYDAY value".
  */
 function fixRruleFormatting(text: string): string {
-  return text.replace(
-    /^(RRULE:.*?;BYDAY\s*=)([^\n\r]*)/gim,
-    (match, prefix, bydayValue) => {
-      // Remove spaces from BYDAY value: "SU,MO,TU, TH,FR,SA" -> "SU,MO,TU,TH,FR,SA"
-      const cleaned = bydayValue.replace(/\s+/g, '');
-      return `${prefix}${cleaned}`;
-    }
-  );
+  return text.replace(/^(RRULE:.*?;BYDAY\s*=)([^\n\r]*)/gim, (match, prefix, bydayValue) => {
+    // Remove spaces from BYDAY value: "SU,MO,TU, TH,FR,SA" -> "SU,MO,TU,TH,FR,SA"
+    const cleaned = bydayValue.replace(/\s+/g, '');
+    return `${prefix}${cleaned}`;
+  });
 }
 
 /**
@@ -116,7 +113,8 @@ function stripTrailingGarbage(text: string): string {
   if (endVcalendarIndex === -1) return text;
   // Include the END:VCALENDAR line and everything before it
   const endOfLine = text.indexOf('\n', endVcalendarIndex);
-  if (endOfLine === -1) return text.slice(0, Math.max(0, endVcalendarIndex + 'END:VCALENDAR'.length));
+  if (endOfLine === -1)
+    return text.slice(0, Math.max(0, endVcalendarIndex + 'END:VCALENDAR'.length));
   return text.slice(0, Math.max(0, endOfLine + 1));
 }
 
@@ -129,7 +127,12 @@ function getPropertyValue(component: ICAL.Component, propertyName: string): stri
   if (value === null || value === undefined) return null;
 
   // Handle ICAL.Time objects - convert to UTC ISO 8601 string with milliseconds
-  if (value && typeof value === 'object' && 'icalclass' in value && value.icalclass === 'icaltime') {
+  if (
+    value &&
+    typeof value === 'object' &&
+    'icalclass' in value &&
+    value.icalclass === 'icaltime'
+  ) {
     return icalTimeToUtcIso(value as ICAL.Time);
   }
 
@@ -166,7 +169,7 @@ function extractCategories(component: ICAL.Component): string[] {
   }
 
   // Filter empty strings and deduplicate
-  return [...new Set(categories.filter(c => c.length > 0))];
+  return [...new Set(categories.filter((c) => c.length > 0))];
 }
 
 /**
@@ -194,7 +197,9 @@ function parseVEvent(component: ICAL.Component): ICalEvent | null {
 
   if (!uid || !summary || !dtStart) {
     // Skip events missing required fields
-    console.debug('[iCal Parse] Skipping VEVENT missing required fields (UID, SUMMARY, or DTSTART)');
+    console.debug(
+      '[iCal Parse] Skipping VEVENT missing required fields (UID, SUMMARY, or DTSTART)',
+    );
     return null;
   }
 
@@ -213,7 +218,13 @@ function parseVEvent(component: ICAL.Component): ICalEvent | null {
     if (durationProp) {
       const duration = durationProp.getFirstValue();
       const dtStartProp = component.getFirstProperty('dtstart');
-      if (duration && dtStartProp && typeof duration === 'object' && 'icalclass' in duration && duration.icalclass === 'icalduration') {
+      if (
+        duration &&
+        dtStartProp &&
+        typeof duration === 'object' &&
+        'icalclass' in duration &&
+        duration.icalclass === 'icalduration'
+      ) {
         const dtStartTime = dtStartProp.getFirstValue() as ICAL.Time;
         // ICAL.Duration has addDuration method
         if (dtStartTime && typeof dtStartTime.addDuration === 'function') {
@@ -279,7 +290,7 @@ export function parseICalFeed(icalText: string): ICalEvent[] {
   } catch (error) {
     throw new ICalParseError(
       `Failed to parse iCal feed: ${error instanceof Error ? error.message : String(error)}`,
-      error instanceof Error ? error : undefined
+      error instanceof Error ? error : undefined,
     );
   }
 
@@ -333,7 +344,7 @@ export function parseICalFeedWithMeta(icalText: string): ParseResult {
     if (error instanceof ICalParseError) throw error;
     throw new ICalParseError(
       `Failed to parse iCal feed: ${error instanceof Error ? error.message : String(error)}`,
-      error instanceof Error ? error : undefined
+      error instanceof Error ? error : undefined,
     );
   }
 

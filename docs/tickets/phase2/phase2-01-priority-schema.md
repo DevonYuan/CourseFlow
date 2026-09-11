@@ -88,14 +88,14 @@ CREATE INDEX IF NOT EXISTS idx_priority_order_position ON priority_order(positio
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | `priority_order` table created with correct schema on migration | Integration test |
-| 2 | `getAll()` returns entries ordered by position ASC | Unit test |
-| 3 | `upsert` inserts new or updates existing position | Unit test |
-| 4 | `reorder([id3, id1, id2])` sets positions 0,1,2 respectively in single transaction | Unit test with mock DB |
-| 5 | Deleting assignment cascades to priority_order | Integration test |
-| 6 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                                          | Verification           |
+| --- | ---------------------------------------------------------------------------------- | ---------------------- |
+| 1   | `priority_order` table created with correct schema on migration                    | Integration test       |
+| 2   | `getAll()` returns entries ordered by position ASC                                 | Unit test              |
+| 3   | `upsert` inserts new or updates existing position                                  | Unit test              |
+| 4   | `reorder([id3, id1, id2])` sets positions 0,1,2 respectively in single transaction | Unit test with mock DB |
+| 5   | Deleting assignment cascades to priority_order                                     | Integration test       |
+| 6   | All tests pass (`pnpm test`)                                                       | CI run                 |
 
 ---
 

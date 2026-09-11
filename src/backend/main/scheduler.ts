@@ -12,7 +12,13 @@
 import type { BrowserWindow } from 'electron';
 import { app, powerMonitor } from 'electron';
 
-import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus, ImportResult } from '../shared/types.js';
+import type {
+  Settings,
+  IsoDateTime,
+  SchedulerConfig,
+  SchedulerStatus,
+  ImportResult,
+} from '../shared/types.js';
 
 import { repo } from './db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from './events.js';
@@ -204,7 +210,10 @@ export class Scheduler {
    */
   getStatus(): SchedulerStatus {
     return {
-      running: this.config.enabled && (this.intervalId !== null || this.initialDelayTimer !== null) && !this.isPaused,
+      running:
+        this.config.enabled &&
+        (this.intervalId !== null || this.initialDelayTimer !== null) &&
+        !this.isPaused,
       intervalMinutes: this.config.intervalMinutes,
       lastRun: this.config.lastRun,
       nextRun: this.config.nextRun,
@@ -352,7 +361,11 @@ export class Scheduler {
 
     try {
       // Emit progress: fetching
-      this.emitProgress('fetching', 10, `Fetching calendar... (attempt ${attemptNumber}/${maxAttempts})`);
+      this.emitProgress(
+        'fetching',
+        10,
+        `Fetching calendar... (attempt ${attemptNumber}/${maxAttempts})`,
+      );
 
       // Fetch iCal feed with 30s timeout, no internal retries (scheduler handles retries)
       const icalText = await fetchICalFeed(icalUrl, { timeoutMs: 30_000, maxRetries: 1 });
@@ -491,7 +504,9 @@ export class Scheduler {
       // Schedule retry with exponential backoff
       const delayMs = (this.retryDelaysMs[this.retryCount] ?? this.retryDelaysMs.at(-1)) as number;
       this.retryCount++;
-      console.log(`[Scheduler] Scheduling retry ${this.retryCount}/${this.maxRetries} in ${delayMs / 1000}s`);
+      console.log(
+        `[Scheduler] Scheduling retry ${this.retryCount}/${this.maxRetries} in ${delayMs / 1000}s`,
+      );
 
       this.retryTimer = setTimeout(() => {
         this.retryTimer = null;
@@ -654,9 +669,9 @@ export class Scheduler {
 
     // Calculate when the next run should have occurred
     const elapsedIntervals = Math.floor(timeSinceLastRun / intervalMs);
-    const expectedNextRun = (this.config.lastRun
-      ? new Date(this.config.lastRun).getTime()
-      : Date.now()) + (elapsedIntervals + 1) * intervalMs;
+    const expectedNextRun =
+      (this.config.lastRun ? new Date(this.config.lastRun).getTime() : Date.now()) +
+      (elapsedIntervals + 1) * intervalMs;
 
     const now = Date.now();
     let delay = expectedNextRun - now;
@@ -724,7 +739,10 @@ export class Scheduler {
    * @param message - Error message
    * @param code - Error code category
    */
-  private emitError(message: string, code: 'network' | 'auth' | 'parse' | 'server' | 'unknown'): void {
+  private emitError(
+    message: string,
+    code: 'network' | 'auth' | 'parse' | 'server' | 'unknown',
+  ): void {
     emitSchedulerError(message, code);
   }
 

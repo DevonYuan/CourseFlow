@@ -181,7 +181,11 @@ describe('importAssignments pruning', () => {
   it('prunes stale pending ical rows that are not in the import batch', () => {
     const db = getDatabase();
     // A row that fell outside the mapper window / disappeared from the feed
-    seedRow(db, { id: 'stale-1', icalUid: 'stale@google.com', dueAtMs: Date.now() - 365 * 86_400_000 });
+    seedRow(db, {
+      id: 'stale-1',
+      icalUid: 'stale@google.com',
+      dueAtMs: Date.now() - 365 * 86_400_000,
+    });
 
     const result = repo.importAssignments([makeInput('current-1')]);
 

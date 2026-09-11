@@ -45,7 +45,9 @@ function loadMigrations(): Map<number, string> {
   const versions = [...migrations.keys()].sort((a, b) => a - b);
   for (let i = 0; i < versions.length; i++) {
     if (versions[i] !== i + 1) {
-      throw new Error(`Migration versions must be sequential starting from 1. Found: ${versions.join(', ')}`);
+      throw new Error(
+        `Migration versions must be sequential starting from 1. Found: ${versions.join(', ')}`,
+      );
     }
   }
 
@@ -97,7 +99,7 @@ export function migrate(db: Database): void {
     try {
       db.exec(migrationSql);
       const insertStmt = db.prepare(
-        'INSERT INTO schema_migrations (version, applied_at) VALUES (?, datetime(\'now\'))',
+        "INSERT INTO schema_migrations (version, applied_at) VALUES (?, datetime('now'))",
       );
       insertStmt.run([version]);
       insertStmt.free();

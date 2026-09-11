@@ -8,28 +8,28 @@ This document defines the core data entities and their fields for CourseFlow. Al
 
 Represents an item synced from an **iCal feed** (Google Calendar, Canvas, Outlook, etc.), with user-extensible fields.
 
-| Field              | Type      | Required | Description                                                                      |
-| ------------------ | --------- | -------- | -------------------------------------------------------------------------------- |
-| `id`               | `TEXT`    | Yes      | Primary key (UUID)                                                               |
-| `canvas_id`        | `TEXT`    | No       | Legacy Canvas-style ID (unused by the iCal importer; nullable)                   |
-| `title`            | `TEXT`    | Yes      | Assignment/event title (from `SUMMARY`)                                          |
-| `description`      | `TEXT`    | No       | Full description from the feed (may contain HTML/newlines)                       |
-| `course_name`      | `TEXT`    | Yes      | Course name derived from the feed (CATEGORIES/SUMMARY heuristic or "Unknown Course") |
-| `course_color`     | `TEXT`    | No       | Deterministic hex color derived from `course_name`                                |
-| `due_at`           | `INTEGER` | Yes      | Due/start time — Unix epoch **milliseconds** (UTC)                                |
-| `unlock_at`        | `INTEGER` | No       | Unix epoch milliseconds (UTC)                                                    |
-| `lock_at`          | `INTEGER` | No       | Unix epoch milliseconds (UTC)                                                    |
-| `points_possible`  | `REAL`    | No       | Maximum points (nullable)                                                        |
-| `submission_types` | `TEXT`    | No       | JSON array of strings (unused by the iCal importer; default `[]`)                |
-| `workflow_state`   | `TEXT`    | No       | Feed state (default `published`)                                                 |
-| `html_url`         | `TEXT`    | No       | Event URL when the feed provides one (e.g., `URL:` property)                     |
-| `ical_uid`         | `TEXT`    | No       | iCal UID — dedupe key across syncs (unique; per-occurrence for recurring events) |
+| Field              | Type      | Required | Description                                                                             |
+| ------------------ | --------- | -------- | --------------------------------------------------------------------------------------- |
+| `id`               | `TEXT`    | Yes      | Primary key (UUID)                                                                      |
+| `canvas_id`        | `TEXT`    | No       | Legacy Canvas-style ID (unused by the iCal importer; nullable)                          |
+| `title`            | `TEXT`    | Yes      | Assignment/event title (from `SUMMARY`)                                                 |
+| `description`      | `TEXT`    | No       | Full description from the feed (may contain HTML/newlines)                              |
+| `course_name`      | `TEXT`    | Yes      | Course name derived from the feed (CATEGORIES/SUMMARY heuristic or "Unknown Course")    |
+| `course_color`     | `TEXT`    | No       | Deterministic hex color derived from `course_name`                                      |
+| `due_at`           | `INTEGER` | Yes      | Due/start time — Unix epoch **milliseconds** (UTC)                                      |
+| `unlock_at`        | `INTEGER` | No       | Unix epoch milliseconds (UTC)                                                           |
+| `lock_at`          | `INTEGER` | No       | Unix epoch milliseconds (UTC)                                                           |
+| `points_possible`  | `REAL`    | No       | Maximum points (nullable)                                                               |
+| `submission_types` | `TEXT`    | No       | JSON array of strings (unused by the iCal importer; default `[]`)                       |
+| `workflow_state`   | `TEXT`    | No       | Feed state (default `published`)                                                        |
+| `html_url`         | `TEXT`    | No       | Event URL when the feed provides one (e.g., `URL:` property)                            |
+| `ical_uid`         | `TEXT`    | No       | iCal UID — dedupe key across syncs (unique; per-occurrence for recurring events)        |
 | `status`           | `TEXT`    | No       | User state: `pending` \| `in_progress` \| `completed` \| `archived` (default `pending`) |
-| `source`           | `TEXT`    | No       | `ical` or `manual` (default `manual`)                                            |
-| `source_url`       | `TEXT`    | No       | Feed URL this assignment was imported from                                        |
-| `rrule`            | `TEXT`    | No       | Recurrence rule string, preserved for reference                                   |
-| `created_at`       | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)                                        |
-| `updated_at`       | `INTEGER` | Yes      | Unix epoch milliseconds when last updated (UTC)                                   |
+| `source`           | `TEXT`    | No       | `ical` or `manual` (default `manual`)                                                   |
+| `source_url`       | `TEXT`    | No       | Feed URL this assignment was imported from                                              |
+| `rrule`            | `TEXT`    | No       | Recurrence rule string, preserved for reference                                         |
+| `created_at`       | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)                                              |
+| `updated_at`       | `INTEGER` | Yes      | Unix epoch milliseconds when last updated (UTC)                                         |
 
 **Source:** iCal feed (single feed in the MVP) + user actions
 
@@ -74,12 +74,12 @@ User-created sub-tasks for an assignment.
 
 Free-form notes attached to an assignment (**multiple log entries per assignment**, 1:N model for progress logging).
 
-| Field           | Type      | Required | Description                                   |
-| --------------- | --------- | -------- | --------------------------------------------- |
-| `id`            | `TEXT`    | Yes      | Primary key (UUID)                            |
-| `assignment_id` | `TEXT`    | Yes      | FK → `Assignment.id`                          |
-| `content`       | `TEXT`    | Yes      | Note content (plain text / Markdown-ready)    |
-| `created_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)    |
+| Field           | Type      | Required | Description                                    |
+| --------------- | --------- | -------- | ---------------------------------------------- |
+| `id`            | `TEXT`    | Yes      | Primary key (UUID)                             |
+| `assignment_id` | `TEXT`    | Yes      | FK → `Assignment.id`                           |
+| `content`       | `TEXT`    | Yes      | Note content (plain text / Markdown-ready)     |
+| `created_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)     |
 | `updated_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when last edited (UTC) |
 
 **Source:** User
@@ -92,18 +92,18 @@ Free-form notes attached to an assignment (**multiple log entries per assignment
 
 Standalone pages for the Notes workspace (Notion-style), independent of assignments. Pages can be nested hierarchically to create a personal knowledge base.
 
-| Field           | Type      | Required | Description                                                                    |
-| --------------- | --------- | -------- | ------------------------------------------------------------------------------ |
-| `id`            | `TEXT`    | Yes      | Primary key (UUID)                                                             |
-| `parent_id`     | `TEXT`    | No       | Self-referential FK → `Page.id` for nesting (NULL = root level)                |
-| `title`         | `TEXT`    | Yes      | Page title                                                                     |
-| `content`       | `TEXT`    | No       | Page content — stored as Markdown (MVP) or JSON for block-based editor (future) |
-| `icon`          | `TEXT`    | No       | Emoji or icon identifier for sidebar display                                   |
-| `cover`         | `TEXT`    | No       | Cover image URL or color (future)                                              |
-| `position`      | `INTEGER` | Yes      | Display order among siblings (for drag-drop reordering)                        |
-| `created_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)                                     |
-| `updated_at`    | `INTEGER` | Yes      | Unix epoch milliseconds when last edited (UTC)                                 |
-| `created_by`    | `TEXT`    | No       | User identifier (for future multi-user/collab)                                 |
+| Field        | Type      | Required | Description                                                                     |
+| ------------ | --------- | -------- | ------------------------------------------------------------------------------- |
+| `id`         | `TEXT`    | Yes      | Primary key (UUID)                                                              |
+| `parent_id`  | `TEXT`    | No       | Self-referential FK → `Page.id` for nesting (NULL = root level)                 |
+| `title`      | `TEXT`    | Yes      | Page title                                                                      |
+| `content`    | `TEXT`    | No       | Page content — stored as Markdown (MVP) or JSON for block-based editor (future) |
+| `icon`       | `TEXT`    | No       | Emoji or icon identifier for sidebar display                                    |
+| `cover`      | `TEXT`    | No       | Cover image URL or color (future)                                               |
+| `position`   | `INTEGER` | Yes      | Display order among siblings (for drag-drop reordering)                         |
+| `created_at` | `INTEGER` | Yes      | Unix epoch milliseconds when created (UTC)                                      |
+| `updated_at` | `INTEGER` | Yes      | Unix epoch milliseconds when last edited (UTC)                                  |
+| `created_by` | `TEXT`    | No       | User identifier (for future multi-user/collab)                                  |
 
 **Source:** User
 
@@ -158,18 +158,18 @@ Page 1 ─────── 0..N Page (self-referential for nesting)
 
 ## Indexes
 
-| Table           | Index                                         | Columns                     |
-| --------------- | --------------------------------------------- | --------------------------- |
-| `assignments`   | UNIQUE constraint on `canvas_id`              | `canvas_id`                 |
-| `assignments`   | UNIQUE index `idx_assignments_ical_uid`       | `ical_uid`                  |
-| `assignments`   | `idx_assignments_due_at`                      | `due_at`                    |
-| `assignments`   | `idx_assignments_course`                      | `course_name`               |
-| `sub_tasks`     | `idx_sub_tasks_assignment`                    | `assignment_id`, `position` |
-| `priority_order`| UNIQUE constraint + `idx_priority_order_position` | `position`              |
-| `notes`         | PK + `idx_notes_assignment`                   | `id`, `assignment_id`, `created_at DESC` |
-| `pages`         | PK + `idx_pages_parent` + `idx_pages_position` | `id`, `parent_id`, `position` |
-| `pages`         | FTS5 virtual table `pages_fts`                | `id`, `title`, `content` (for full-text search) |
-| `settings`      | PK                                            | `key`                       |
+| Table            | Index                                             | Columns                                         |
+| ---------------- | ------------------------------------------------- | ----------------------------------------------- |
+| `assignments`    | UNIQUE constraint on `canvas_id`                  | `canvas_id`                                     |
+| `assignments`    | UNIQUE index `idx_assignments_ical_uid`           | `ical_uid`                                      |
+| `assignments`    | `idx_assignments_due_at`                          | `due_at`                                        |
+| `assignments`    | `idx_assignments_course`                          | `course_name`                                   |
+| `sub_tasks`      | `idx_sub_tasks_assignment`                        | `assignment_id`, `position`                     |
+| `priority_order` | UNIQUE constraint + `idx_priority_order_position` | `position`                                      |
+| `notes`          | PK + `idx_notes_assignment`                       | `id`, `assignment_id`, `created_at DESC`        |
+| `pages`          | PK + `idx_pages_parent` + `idx_pages_position`    | `id`, `parent_id`, `position`                   |
+| `pages`          | FTS5 virtual table `pages_fts`                    | `id`, `title`, `content` (for full-text search) |
+| `settings`       | PK                                                | `key`                                           |
 
 ---
 
@@ -177,14 +177,14 @@ Page 1 ─────── 0..N Page (self-referential for nesting)
 
 The following tables/columns are **never modified** by the iCal import/sync process (`importAssignments` in `repository.ts`). They are exclusively user-owned:
 
-| Table / Column | Protection Rule |
-|----------------|-----------------|
-| `sub_tasks` (all columns) | Never touched by iCal import — sub-tasks are user-created only |
-| `notes` (all columns) | Never touched by iCal import — notes are user-created log entries |
-| `pages` (all columns) | Never touched by iCal import — pages are standalone user content |
-| `priority_order` (all columns) | Never touched by iCal import — priority is user-defined drag-drop order |
-| `assignments.status` | Preserved if user set to `completed` or `archived`; only updated from feed if `pending`/`in_progress` |
-| `assignments.course_color` | Never overwritten from feed (user may customize) |
-| `assignments.description` | Updated from feed (Canvas HTML), but user edits not yet supported in Phase 3 |
+| Table / Column                 | Protection Rule                                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `sub_tasks` (all columns)      | Never touched by iCal import — sub-tasks are user-created only                                        |
+| `notes` (all columns)          | Never touched by iCal import — notes are user-created log entries                                     |
+| `pages` (all columns)          | Never touched by iCal import — pages are standalone user content                                      |
+| `priority_order` (all columns) | Never touched by iCal import — priority is user-defined drag-drop order                               |
+| `assignments.status`           | Preserved if user set to `completed` or `archived`; only updated from feed if `pending`/`in_progress` |
+| `assignments.course_color`     | Never overwritten from feed (user may customize)                                                      |
+| `assignments.description`      | Updated from feed (Canvas HTML), but user edits not yet supported in Phase 3                          |
 
 This ensures that a user's productivity data (sub-tasks, notes, pages, priority order) survives calendar re-syncs without data loss.

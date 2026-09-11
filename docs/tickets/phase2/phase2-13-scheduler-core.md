@@ -58,10 +58,10 @@ Implement `src/backend/main/scheduler.ts`: `setInterval`-based background schedu
 
 ```typescript
 interface SchedulerStatus {
-  running: boolean
-  intervalMinutes: number
-  lastRun: string | null      // ISO timestamp
-  nextRun: string | null      // ISO timestamp
+  running: boolean;
+  intervalMinutes: number;
+  lastRun: string | null; // ISO timestamp
+  nextRun: string | null; // ISO timestamp
 }
 ```
 
@@ -104,16 +104,16 @@ App Quit → scheduler.stop()
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Scheduler starts automatically on app ready (if configured) | Manual test |
-| 2 | Interval respects `sync_interval_minutes` setting | Manual test (set to 1 min) |
-| 3 | First run delayed 30s | Manual test (log timestamps) |
-| 4 | Each tick calls fetch → import pipeline | IPC spy / logs |
-| 5 | `scheduler:tick` event emitted with nextRun | Event listener test |
-| 6 | Sleep/wake resyncs next run | Manual test (sleep Mac) |
-| 7 | Stop on quit, no memory leaks | Manual test |
-| 8 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                   | Verification                 |
+| --- | ----------------------------------------------------------- | ---------------------------- |
+| 1   | Scheduler starts automatically on app ready (if configured) | Manual test                  |
+| 2   | Interval respects `sync_interval_minutes` setting           | Manual test (set to 1 min)   |
+| 3   | First run delayed 30s                                       | Manual test (log timestamps) |
+| 4   | Each tick calls fetch → import pipeline                     | IPC spy / logs               |
+| 5   | `scheduler:tick` event emitted with nextRun                 | Event listener test          |
+| 6   | Sleep/wake resyncs next run                                 | Manual test (sleep Mac)      |
+| 7   | Stop on quit, no memory leaks                               | Manual test                  |
+| 8   | All tests pass (`pnpm test`)                                | CI run                       |
 
 ---
 

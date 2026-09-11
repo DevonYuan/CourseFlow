@@ -13,9 +13,8 @@ import type { Settings } from '@backend/shared/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // Type-safe access to window.api
- 
+
 const api = window.api;
- 
 
 /**
  * Custom hook for managing settings state.
@@ -30,14 +29,12 @@ export function useSettings() {
     setIsLoading(true);
     setError(null);
     try {
-       
       const result: IpcResult<Settings> = await api.settings.get();
       if (result.ok) {
         setSettings(result.data);
       } else {
         setError(result.error);
       }
-       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load settings');
     } finally {
@@ -52,23 +49,21 @@ export function useSettings() {
 
   // Listen for external settings changes
   useEffect(() => {
-     
     const unsubscribe = api.onSettingsChanged((newSettings: Settings) => {
       setSettings(newSettings);
     });
-     
+
     return unsubscribe;
   }, []);
 
   const updateSettings = useCallback(async (partial: Partial<Settings>) => {
     setError(null);
     try {
-       
       const result: IpcResult<Settings> = await api.settings.set(partial);
       if (!result.ok) {
         setError(result.error);
       }
-       
+
       // The onSettingsChanged event will update the state
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update settings');
@@ -83,7 +78,7 @@ export function useSettings() {
     () => ({
       settings,
       isLoading,
-       
+
       error,
       updateSettings,
       refetch,

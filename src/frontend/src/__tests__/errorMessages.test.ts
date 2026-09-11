@@ -59,11 +59,17 @@ describe('errorMessages', () => {
 
   describe('getErrorMessage', () => {
     it('returns correct message for known error codes', () => {
-      expect(getErrorMessage('NETWORK_ERROR')).toBe('Network error. Check your internet connection.');
-      expect(getErrorMessage('HTTP_ERROR')).toBe('Failed to fetch calendar. The URL may be incorrect.');
+      expect(getErrorMessage('NETWORK_ERROR')).toBe(
+        'Network error. Check your internet connection.',
+      );
+      expect(getErrorMessage('HTTP_ERROR')).toBe(
+        'Failed to fetch calendar. The URL may be incorrect.',
+      );
       expect(getErrorMessage('TIMEOUT_ERROR')).toBe('Request timed out. Try again.');
       expect(getErrorMessage('PARSE_ERROR')).toBe('Invalid calendar format. Check the iCal URL.');
-      expect(getErrorMessage('VALIDATION_ERROR')).toBe('Invalid URL. Must be a valid http/https URL.');
+      expect(getErrorMessage('VALIDATION_ERROR')).toBe(
+        'Invalid URL. Must be a valid http/https URL.',
+      );
     });
 
     it('returns default message for unknown error codes', () => {
@@ -77,11 +83,15 @@ describe('errorMessages', () => {
     it('maps Error objects by name', () => {
       const networkError = new Error('Network failed');
       networkError.name = 'NetworkError';
-      expect(mapErrorToMessage(networkError)).toBe('Network error. Check your internet connection.');
+      expect(mapErrorToMessage(networkError)).toBe(
+        'Network error. Check your internet connection.',
+      );
 
       const httpError = new Error('HTTP failed');
       httpError.name = 'HttpError';
-      expect(mapErrorToMessage(httpError)).toBe('Failed to fetch calendar. The URL may be incorrect.');
+      expect(mapErrorToMessage(httpError)).toBe(
+        'Failed to fetch calendar. The URL may be incorrect.',
+      );
 
       const timeoutError = new Error('Timeout');
       timeoutError.name = 'TimeoutError';

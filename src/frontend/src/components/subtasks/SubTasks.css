@@ -52,7 +52,9 @@
   background: var(--color-surface, #fff);
   border: 1px solid var(--color-border, #e0e0e0);
   border-radius: var(--radius-md, 8px);
-  transition: background-color var(--transition-fast, 150ms), border-color var(--transition-fast, 150ms);
+  transition:
+    background-color var(--transition-fast, 150ms),
+    border-color var(--transition-fast, 150ms);
 }
 
 .subtask-row:hover {
@@ -159,7 +161,9 @@
   cursor: grab;
   flex-shrink: 0;
   opacity: 0.5;
-  transition: opacity var(--transition-fast, 150ms), color var(--transition-fast, 150ms);
+  transition:
+    opacity var(--transition-fast, 150ms),
+    color var(--transition-fast, 150ms);
 }
 
 .subtask-row__drag-handle:hover {
@@ -267,7 +271,9 @@
   background: var(--color-surface, #fff);
   border: 1px solid var(--color-border, #d0d0d0);
   border-radius: var(--radius-md, 8px);
-  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms);
+  transition:
+    border-color var(--transition-fast, 150ms),
+    box-shadow var(--transition-fast, 150ms);
 }
 
 .subtask-add-input__input:hover {

@@ -42,7 +42,7 @@ export function SearchInput({
   const debouncedSetSearchQuery = useRef(
     debounce((query: string) => {
       setSearchQuery(query);
-    }, debounceMs)
+    }, debounceMs),
   ).current;
 
   // Cleanup debounce on unmount
@@ -57,7 +57,7 @@ export function SearchInput({
       const query = event.target.value;
       debouncedSetSearchQuery(query);
     },
-    [debouncedSetSearchQuery]
+    [debouncedSetSearchQuery],
   );
 
   const handleClear = useCallback(() => {
@@ -74,7 +74,7 @@ export function SearchInput({
         handleClear();
       }
     },
-    [value, handleClear]
+    [value, handleClear],
   );
 
   const handleBlur = useCallback(() => {

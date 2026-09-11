@@ -388,7 +388,9 @@ export const useAssignmentDetailStore = create<AssignmentDetailStore>()((set, ge
     const noteAssignmentMap = new Map<string, EntityId>();
     notes.forEach((n) => noteAssignmentMap.set(n.id, n.assignmentId));
     // Sort by updatedAt descending (newest first)
-    const sortedNotes = [...notes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    const sortedNotes = [...notes].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
     set({ notes: sortedNotes, _noteAssignmentMap: noteAssignmentMap });
   },
 
@@ -405,7 +407,9 @@ export const useAssignmentDetailStore = create<AssignmentDetailStore>()((set, ge
 
   updateSubTask: (subTask: SubTask) => {
     set((state) => ({
-      subTasks: state.subTasks.map((st) => (st.id === subTask.id ? subTask : st)).sort((a, b) => a.order - b.order),
+      subTasks: state.subTasks
+        .map((st) => (st.id === subTask.id ? subTask : st))
+        .sort((a, b) => a.order - b.order),
     }));
   },
 
@@ -425,7 +429,9 @@ export const useAssignmentDetailStore = create<AssignmentDetailStore>()((set, ge
       const newMap = new Map(state._noteAssignmentMap);
       newMap.set(note.id, note.assignmentId);
       return {
-        notes: [note, ...state.notes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+        notes: [note, ...state.notes].sort(
+          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        ),
         _noteAssignmentMap: newMap,
       };
     });
@@ -433,7 +439,9 @@ export const useAssignmentDetailStore = create<AssignmentDetailStore>()((set, ge
 
   updateNote: (note: Note) => {
     set((state) => ({
-      notes: state.notes.map((n) => (n.id === note.id ? note : n)).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+      notes: state.notes
+        .map((n) => (n.id === note.id ? note : n))
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
     }));
   },
 
@@ -505,14 +513,12 @@ export const useAssignmentDetailAssignment = () =>
 export const useAssignmentDetailSubTasks = () =>
   useAssignmentDetailStore((state) => state.subTasks);
 
-export const useAssignmentDetailNotes = () =>
-  useAssignmentDetailStore((state) => state.notes);
+export const useAssignmentDetailNotes = () => useAssignmentDetailStore((state) => state.notes);
 
 export const useAssignmentDetailIsLoading = () =>
   useAssignmentDetailStore((state) => state.isLoading);
 
-export const useAssignmentDetailError = () =>
-  useAssignmentDetailStore((state) => state.error);
+export const useAssignmentDetailError = () => useAssignmentDetailStore((state) => state.error);
 
 export const useAssignmentDetailNotFound = () =>
   useAssignmentDetailStore((state) => state.notFound);

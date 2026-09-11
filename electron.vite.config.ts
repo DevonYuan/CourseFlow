@@ -10,11 +10,11 @@ function copyMigrationsPlugin() {
     writeBundle() {
       const srcDir = resolve(__dirname, 'src/backend/main/db/migrations');
       const destDir = resolve(__dirname, 'dist/backend/main/migrations');
-      
+
       if (!existsSync(destDir)) {
         mkdirSync(destDir, { recursive: true });
       }
-      
+
       const files = readdirSync(srcDir);
       for (const file of files) {
         const srcFile = resolve(srcDir, file);

@@ -16,12 +16,12 @@ The editor must auto-save on change (debounced), support keyboard shortcuts for 
 > Document WHAT is needed and WHY it is needed.
 
 - [ ] **Editor layout**: Split view (default) with markdown source on left, live preview on right. Toggle buttons: "Edit" (source only), "Split" (default), "Preview" (rendered only). Resizable splitter between panes.
-- [ ] **Markdown textarea**: 
+- [ ] **Markdown textarea**:
   - Plain `<textarea>` (no WYSIWYG) for reliability and performance
   - Monospace font, line numbers (optional), syntax highlighting (optional, via CodeMirror 6 or simple tokenization)
   - Tab key inserts 2 spaces (not focus navigation) — configurable
   - Auto-pair brackets, quotes, markdown syntax (**, *, `, [], ())
-- [ ] **Live preview**: 
+- [ ] **Live preview**:
   - Render markdown to HTML using `marked` (or `markdown-it`) + DOMPurify sanitization
   - Update on every keystroke (debounced ~150ms) or on blur
   - Scroll sync: preview scrolls to match editor cursor position (approximate)
@@ -71,24 +71,24 @@ The editor must auto-save on change (debounced), support keyboard shortcuts for 
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/pages/NoteEditorPage.tsx` | **New file**. Page component at `/notes/:pageId`. Fetches page via `db:pages:get`, renders `MarkdownEditor`, handles auto-save, metadata, loading/error states. |
-| `src/frontend/src/components/notes/MarkdownEditor.tsx` | **New file**. Main editor component: toolbar, split view (textarea + preview), keyboard shortcuts, scroll sync, view mode toggle. |
-| `src/frontend/src/components/notes/MarkdownToolbar.tsx` | **New file**. Formatting buttons with icons, keyboard shortcut hints, view mode toggles, save status indicator. |
-| `src/frontend/src/components/notes/MarkdownPreview.tsx` | **New file**. Preview pane: renders sanitized HTML from markdown, handles scroll sync, code highlighting. |
-| `src/frontend/src/hooks/useMarkdownEditor.ts` | **New file**. Hook for editor state: content, view mode, split ratio, auto-save timer, dirty flag, keyboard shortcuts. |
-| `src/frontend/src/hooks/usePageEditor.ts` | **New file**. Hook for page-level logic: fetch page, auto-save via `db:pages:update`, handle `db:changed` events, title/icon updates. |
-| `src/frontend/src/utils/markdown.ts` | **New file**. `parseMarkdown(md: string): string` (HTML), `sanitizeHtml(html: string): string`, `highlightCodeBlocks(html: string): string`. |
-| `src/frontend/src/utils/emojiPicker.ts` | **New file**. Simple emoji picker component for page icon (grid of common emojis + custom input). |
-| `src/frontend/src/stores/notesStore.ts` | Extend with editor state: `content`, `isDirty`, `lastSavedContent`, `viewMode`, `splitRatio`. |
+| File                                                    | Change                                                                                                                                                          |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/pages/NoteEditorPage.tsx`             | **New file**. Page component at `/notes/:pageId`. Fetches page via `db:pages:get`, renders `MarkdownEditor`, handles auto-save, metadata, loading/error states. |
+| `src/frontend/src/components/notes/MarkdownEditor.tsx`  | **New file**. Main editor component: toolbar, split view (textarea + preview), keyboard shortcuts, scroll sync, view mode toggle.                               |
+| `src/frontend/src/components/notes/MarkdownToolbar.tsx` | **New file**. Formatting buttons with icons, keyboard shortcut hints, view mode toggles, save status indicator.                                                 |
+| `src/frontend/src/components/notes/MarkdownPreview.tsx` | **New file**. Preview pane: renders sanitized HTML from markdown, handles scroll sync, code highlighting.                                                       |
+| `src/frontend/src/hooks/useMarkdownEditor.ts`           | **New file**. Hook for editor state: content, view mode, split ratio, auto-save timer, dirty flag, keyboard shortcuts.                                          |
+| `src/frontend/src/hooks/usePageEditor.ts`               | **New file**. Hook for page-level logic: fetch page, auto-save via `db:pages:update`, handle `db:changed` events, title/icon updates.                           |
+| `src/frontend/src/utils/markdown.ts`                    | **New file**. `parseMarkdown(md: string): string` (HTML), `sanitizeHtml(html: string): string`, `highlightCodeBlocks(html: string): string`.                    |
+| `src/frontend/src/utils/emojiPicker.ts`                 | **New file**. Simple emoji picker component for page icon (grid of common emojis + custom input).                                                               |
+| `src/frontend/src/stores/notesStore.ts`                 | Extend with editor state: `content`, `isDirty`, `lastSavedContent`, `viewMode`, `splitRatio`.                                                                   |
 
 ### Dependencies
 
-| Package | Reason |
-|---------|--------|
-| `marked` | Markdown parsing (GFM support) |
-| `dompurify` | HTML sanitization (already added for Ticket 3.1) |
+| Package                   | Reason                                                  |
+| ------------------------- | ------------------------------------------------------- |
+| `marked`                  | Markdown parsing (GFM support)                          |
+| `dompurify`               | HTML sanitization (already added for Ticket 3.1)        |
 | `highlight.js` or `shiki` | Code block syntax highlighting in preview (lightweight) |
 
 ## Acceptance Criteria
@@ -119,11 +119,15 @@ The editor must auto-save on change (debounced), support keyboard shortcuts for 
 > Any additional context, risks, or considerations.
 
 - **Dependency on 3.11 + 3.12**: Needs `db:pages:get`/`update` IPC and sidebar navigation to `/notes/:pageId`.
-- **Marked config**: 
+- **Marked config**:
   ```ts
-  marked.setOptions({ gfm: true, breaks: true, highlight: (code, lang) => hljs.highlightAuto(code, [lang]).value });
+  marked.setOptions({
+    gfm: true,
+    breaks: true,
+    highlight: (code, lang) => hljs.highlightAuto(code, [lang]).value,
+  });
   ```
-- **DOMPurify config**: 
+- **DOMPurify config**:
   ```ts
   DOMPurify.sanitize(html, { ALLOWED_TAGS: [...], ALLOWED_ATTR: [...] });
   ```

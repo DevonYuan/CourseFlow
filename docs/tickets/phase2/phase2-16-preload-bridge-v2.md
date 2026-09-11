@@ -95,15 +95,15 @@ contextBridge.exposeInMainWorld('api', {
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | `window.api.db.priority.list()` returns typed `PriorityOrder[]` | Renderer test |
-| 2 | `window.api.db.priority.reorder(ids)` calls IPC correctly | Renderer test |
-| 3 | `window.api.scheduler.status()` returns `SchedulerStatus` | Renderer test |
-| 4 | `window.api.scheduler.onTick(cb)` receives tick events | Renderer test |
-| 5 | `window.api.scheduler.onError(cb)` receives error events | Renderer test |
-| 6 | TypeScript compiles without errors in renderer | `pnpm typecheck` |
-| 7 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                       | Verification     |
+| --- | --------------------------------------------------------------- | ---------------- |
+| 1   | `window.api.db.priority.list()` returns typed `PriorityOrder[]` | Renderer test    |
+| 2   | `window.api.db.priority.reorder(ids)` calls IPC correctly       | Renderer test    |
+| 3   | `window.api.scheduler.status()` returns `SchedulerStatus`       | Renderer test    |
+| 4   | `window.api.scheduler.onTick(cb)` receives tick events          | Renderer test    |
+| 5   | `window.api.scheduler.onError(cb)` receives error events        | Renderer test    |
+| 6   | TypeScript compiles without errors in renderer                  | `pnpm typecheck` |
+| 7   | All tests pass (`pnpm test`)                                    | CI run           |
 
 ---
 

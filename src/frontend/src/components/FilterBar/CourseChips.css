@@ -59,7 +59,8 @@
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 999px;
   cursor: pointer;
-  transition: background-color var(--transition-fast, 150ms),
+  transition:
+    background-color var(--transition-fast, 150ms),
     border-color var(--transition-fast, 150ms),
     color var(--transition-fast, 150ms);
   white-space: nowrap;
@@ -155,7 +156,9 @@
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: var(--radius-md, 8px);
   cursor: pointer;
-  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms);
+  transition:
+    border-color var(--transition-fast, 150ms),
+    box-shadow var(--transition-fast, 150ms);
   box-sizing: border-box;
   text-align: left;
 }

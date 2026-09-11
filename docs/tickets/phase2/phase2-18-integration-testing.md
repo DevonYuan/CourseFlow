@@ -73,17 +73,17 @@ End-to-end integration testing of all Phase 2 features. Verify full flows: drag-
 
 ```typescript
 // test: priority persists across restart
-await page.goto('/')
-await dragAndDrop(page, 'assignment-1', 'assignment-3')
-await page.reload()
-await expectOrder(page, ['assignment-3', 'assignment-1', 'assignment-2'])
+await page.goto('/');
+await dragAndDrop(page, 'assignment-1', 'assignment-3');
+await page.reload();
+await expectOrder(page, ['assignment-3', 'assignment-1', 'assignment-2']);
 
 // test: background scheduler
-await page.goto('/settings')
-await setSyncInterval(page, 1) // 1 minute
-await page.goto('/')
-await waitForSchedulerTick(page) // verify tick event
-await expectAssignmentsUpdated(page)
+await page.goto('/settings');
+await setSyncInterval(page, 1); // 1 minute
+await page.goto('/');
+await waitForSchedulerTick(page); // verify tick event
+await expectAssignmentsUpdated(page);
 ```
 
 ---
@@ -106,15 +106,15 @@ await expectAssignmentsUpdated(page)
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | All 7 functional test scenarios pass | Test run |
-| 2 | Unit tests cover selectors, grouping, scheduler logic | Coverage >80% |
-| 3 | Playwright E2E tests pass for critical flows | CI run |
-| 4 | Manual accessibility checklist complete | Checklist |
-| 5 | Performance: 500 assignments render <100ms | Manual profile |
-| 6 | No console errors in normal operation | Manual test |
-| 7 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                             | Verification   |
+| --- | ----------------------------------------------------- | -------------- |
+| 1   | All 7 functional test scenarios pass                  | Test run       |
+| 2   | Unit tests cover selectors, grouping, scheduler logic | Coverage >80%  |
+| 3   | Playwright E2E tests pass for critical flows          | CI run         |
+| 4   | Manual accessibility checklist complete               | Checklist      |
+| 5   | Performance: 500 assignments render <100ms            | Manual profile |
+| 6   | No console errors in normal operation                 | Manual test    |
+| 7   | All tests pass (`pnpm test`)                          | CI run         |
 
 ---
 

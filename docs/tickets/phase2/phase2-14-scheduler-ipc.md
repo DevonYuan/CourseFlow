@@ -83,16 +83,16 @@ scheduler: {
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | `scheduler:start` starts scheduler, returns status | IPC test |
-| 2 | `scheduler:stop` stops scheduler, returns status | IPC test |
-| 3 | `scheduler:status` returns current status | IPC test |
-| 4 | `scheduler:trigger` runs immediate fetch/import | IPC test |
-| 5 | `settings:changed` with new interval restarts scheduler | Integration test |
-| 6 | `scheduler:tick` emitted on each interval | Event test |
-| 7 | `scheduler:error` emitted on fetch/import failure | Event test (mock error) |
-| 8 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                               | Verification            |
+| --- | ------------------------------------------------------- | ----------------------- |
+| 1   | `scheduler:start` starts scheduler, returns status      | IPC test                |
+| 2   | `scheduler:stop` stops scheduler, returns status        | IPC test                |
+| 3   | `scheduler:status` returns current status               | IPC test                |
+| 4   | `scheduler:trigger` runs immediate fetch/import         | IPC test                |
+| 5   | `settings:changed` with new interval restarts scheduler | Integration test        |
+| 6   | `scheduler:tick` emitted on each interval               | Event test              |
+| 7   | `scheduler:error` emitted on fetch/import failure       | Event test (mock error) |
+| 8   | All tests pass (`pnpm test`)                            | CI run                  |
 
 ---
 

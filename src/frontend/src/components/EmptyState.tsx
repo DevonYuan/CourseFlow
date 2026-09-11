@@ -33,7 +33,11 @@ export function EmptyState({
 }: EmptyStateProps): JSX.Element {
   return (
     <div className="empty-state" role="status" aria-live="polite">
-      <div className="empty-state__illustration" aria-hidden="true" data-testid="empty-state-illustration">
+      <div
+        className="empty-state__illustration"
+        aria-hidden="true"
+        data-testid="empty-state-illustration"
+      >
         <svg
           viewBox="0 0 120 120"
           width="80"
@@ -46,7 +50,15 @@ export function EmptyState({
           {/* Calendar outline */}
           <rect x="15" y="25" width="90" height="70" rx="8" stroke="currentColor" strokeWidth="2" />
           {/* Calendar header */}
-          <rect x="15" y="25" width="90" height="22" rx="8" fill="currentColor" fillOpacity="0.15" />
+          <rect
+            x="15"
+            y="25"
+            width="90"
+            height="22"
+            rx="8"
+            fill="currentColor"
+            fillOpacity="0.15"
+          />
           {/* Header tabs */}
           <rect x="25" y="30" width="18" height="12" rx="2" fill="currentColor" fillOpacity="0.3" />
           <rect x="48" y="30" width="24" height="12" rx="2" fill="currentColor" fillOpacity="0.3" />

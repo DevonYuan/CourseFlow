@@ -92,8 +92,22 @@ vi.mock('../events.js', () => ({
 // Import mocked modules
 import { repo } from '../db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from '../events.js';
-import { fetchICalFeed, parseICalFeed, mapICalToAssignments, NetworkError, HttpError, TimeoutError, ICalParseError } from '../ical/index.js';
-import { Scheduler, getScheduler, startScheduler, stopScheduler, __resetScheduler } from '../scheduler.js';
+import {
+  fetchICalFeed,
+  parseICalFeed,
+  mapICalToAssignments,
+  NetworkError,
+  HttpError,
+  TimeoutError,
+  ICalParseError,
+} from '../ical/index.js';
+import {
+  Scheduler,
+  getScheduler,
+  startScheduler,
+  stopScheduler,
+  __resetScheduler,
+} from '../scheduler.js';
 
 import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
 
@@ -269,7 +283,7 @@ describe('Scheduler Integration Tests', () => {
 
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'scheduler:coalesced',
-        expect.objectContaining({ message: 'Sync in progress...' })
+        expect.objectContaining({ message: 'Sync in progress...' }),
       );
 
       // Resolve first fetch
@@ -288,7 +302,7 @@ describe('Scheduler Integration Tests', () => {
         expect.objectContaining({
           message: 'No iCal URL configured — check Settings',
           code: 'auth',
-        })
+        }),
       );
     });
 
@@ -312,7 +326,7 @@ describe('Scheduler Integration Tests', () => {
 
       expect(mockEmitSchedulerError).toHaveBeenCalledWith(
         'iCal URL invalid or expired — check Settings',
-        'auth'
+        'auth',
       );
     });
   });
@@ -390,7 +404,9 @@ describe('Scheduler Integration Tests', () => {
       expect(mockParseICalFeed).toHaveBeenCalled();
       expect(mockMapICalToAssignments).toHaveBeenCalled();
       expect(mockImportAssignments).toHaveBeenCalled();
-      expect(mockSetSettings).toHaveBeenCalledWith(expect.objectContaining({ lastSyncAt: expect.any(String) }));
+      expect(mockSetSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ lastSyncAt: expect.any(String) }),
+      );
     });
 
     it('does not retry on auth error (401/403)', async () => {
@@ -407,7 +423,7 @@ describe('Scheduler Integration Tests', () => {
       expect(scheduler.getStatus().running).toBe(false);
       expect(mockEmitSchedulerError).toHaveBeenCalledWith(
         'iCal URL invalid or expired — check Settings',
-        'auth'
+        'auth',
       );
     });
 
@@ -425,10 +441,7 @@ describe('Scheduler Integration Tests', () => {
 
       expect(mockFetchICalFeed).toHaveBeenCalledTimes(1);
       expect(scheduler.getStatus().running).toBe(false);
-      expect(mockEmitSchedulerError).toHaveBeenCalledWith(
-        'Failed to parse calendar feed',
-        'parse'
-      );
+      expect(mockEmitSchedulerError).toHaveBeenCalledWith('Failed to parse calendar feed', 'parse');
     });
   });
 
@@ -439,7 +452,7 @@ describe('Scheduler Integration Tests', () => {
 
       // Get the suspend handler
       const suspendHandler = mockPowerMonitorOn.mock.calls.find(
-        (call) => call[0] === 'suspend'
+        (call) => call[0] === 'suspend',
       )?.[1];
 
       expect(suspendHandler).toBeDefined();
@@ -452,9 +465,7 @@ describe('Scheduler Integration Tests', () => {
       expect(scheduler.getStatus().running).toBe(true);
 
       // Get the resume handler
-      const resumeHandler = mockPowerMonitorOn.mock.calls.find(
-        (call) => call[0] === 'resume'
-      )?.[1];
+      const resumeHandler = mockPowerMonitorOn.mock.calls.find((call) => call[0] === 'resume')?.[1];
 
       expect(resumeHandler).toBeDefined();
 
@@ -469,9 +480,7 @@ describe('Scheduler Integration Tests', () => {
     });
 
     it('handles resume when not suspended', () => {
-      const resumeHandler = mockPowerMonitorOn.mock.calls.find(
-        (call) => call[0] === 'resume'
-      )?.[1];
+      const resumeHandler = mockPowerMonitorOn.mock.calls.find((call) => call[0] === 'resume')?.[1];
 
       expect(resumeHandler).toBeDefined();
 
@@ -569,19 +578,19 @@ describe('Scheduler Integration Tests', () => {
 
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'ical:progress',
-        expect.objectContaining({ stage: 'fetching', progress: 10 })
+        expect.objectContaining({ stage: 'fetching', progress: 10 }),
       );
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'ical:progress',
-        expect.objectContaining({ stage: 'parsing', progress: 30 })
+        expect.objectContaining({ stage: 'parsing', progress: 30 }),
       );
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'ical:progress',
-        expect.objectContaining({ stage: 'importing', progress: 50 })
+        expect.objectContaining({ stage: 'importing', progress: 50 }),
       );
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'ical:progress',
-        expect.objectContaining({ stage: 'complete', progress: 100 })
+        expect.objectContaining({ stage: 'complete', progress: 100 }),
       );
     });
   });

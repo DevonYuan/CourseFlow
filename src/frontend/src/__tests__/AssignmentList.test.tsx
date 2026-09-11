@@ -17,7 +17,6 @@ import { AssignmentList } from '../components/AssignmentList';
 import { ToastProvider } from '../context/ToastContext';
 import { useAssignmentsStore } from '../store/assignmentsStore';
 
-
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
 
@@ -111,8 +110,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading assignments');
@@ -124,8 +126,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {
@@ -140,8 +145,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {
@@ -163,8 +171,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {
@@ -181,8 +192,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {
@@ -199,8 +213,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {
@@ -224,8 +241,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {
@@ -252,8 +272,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {
@@ -296,14 +319,20 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     // Wait for assignment to appear first
-    await waitFor(() => {
-      expect(screen.getByText('Test Assignment 1')).toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Test Assignment 1')).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
 
     // Then check for overdue badge
     expect(screen.getByLabelText('Overdue')).toBeInTheDocument();
@@ -318,8 +347,11 @@ describe('AssignmentList', () => {
 
     render(
       <ToastProvider>
-        <AssignmentList onOpenSettings={mockOnOpenSettings} onAssignmentClick={mockOnAssignmentClick} />
-      </ToastProvider>
+        <AssignmentList
+          onOpenSettings={mockOnOpenSettings}
+          onAssignmentClick={mockOnAssignmentClick}
+        />
+      </ToastProvider>,
     );
 
     await waitFor(() => {

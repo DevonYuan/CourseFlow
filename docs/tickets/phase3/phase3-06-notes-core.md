@@ -21,7 +21,7 @@ Implement the **per-assignment notes editor** in the assignment detail view. Use
 - [ ] **Add note**: Provide an "Add note" button that reveals a `NotesEditor` textarea. Placeholder: "Add a note about this assignment...". Clicking outside or pressing Escape cancels.
 - [ ] **Edit note**: Each note entry has an "Edit" button. Clicking it switches that entry to an inline editor (textarea pre-filled with content). Save (Ctrl+Enter) or cancel (Escape).
 - [ ] **Delete note**: Each note entry has a "Delete" button with confirmation dialog (same pattern as sub-task delete). Confirm → call `db:notes:delete`.
-- [ ] **Save note**: 
+- [ ] **Save note**:
   - New note: Ctrl+Enter in textarea → `db:notes:upsert` with `{ assignment_id, content }`.
   - Edit note: Ctrl+Enter → `db:notes:upsert` with `{ assignment_id, content, id }` (if 1:N) or `{ assignment_id, content }` (if 1:1).
   - On success: close editor, show note in list with updated timestamp.
@@ -41,14 +41,14 @@ Implement the **per-assignment notes editor** in the assignment detail view. Use
 
 > Any non-obvious designs or constraints to the design that MUST be followed.
 
-- [ ] **Note model per 3.0 decision**: 
+- [ ] **Note model per 3.0 decision**:
   - If 1:1 (one note per assignment, `assignment_id` is PK): `db:notes:upsert` takes `{ assignment_id, content }`, `db:notes:delete` takes `assignment_id`. List returns `Note | null`.
   - If 1:N (multiple timestamped entries, own `id` PK): `db:notes:upsert` takes `{ id?, assignment_id, content }`, `db:notes:delete` takes `id`. List returns `Note[]`.
   - **This ticket adapts to whichever model 3.0 finalizes**. The UI for 1:N shows a list of entries; for 1:1 it shows a single editor with history (if `created_at`/`updated_at` tracked).
 - [ ] **Plain text only (MVP)**: No Markdown rendering, no toolbar. Content stored as plain text. Render with whitespace preservation (`white-space: pre-wrap`). Markdown support can be added later.
 - [ ] **Timestamps**: Display `updated_at` (or `created_at` for new entries) in human-readable format: "Updated 2 hours ago", "Created yesterday at 3:45 PM". Use `date-fns` formatDistanceToNow.
 - [ ] **Edited indicator**: If `created_at !== updated_at`, show "Edited" badge next to timestamp.
-- [ ] **Component structure**: 
+- [ ] **Component structure**:
   - `NotesList` — container, renders list + add button + empty state.
   - `NoteEntry` — single note display: content, timestamp, edit/delete buttons.
   - `NotesEditor` — textarea + save/cancel + char count + auto-resize.
@@ -64,25 +64,25 @@ Implement the **per-assignment notes editor** in the assignment detail view. Use
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/components/notes/NotesList.tsx` | **New**. Container: renders `NoteEntry[]` + "Add note" button + empty state. Uses `useNotes` hook. |
-| `src/frontend/src/components/notes/NoteEntry.tsx` | **New**. Display: content (`pre-wrap`), timestamp, "Edited" badge, Edit/Delete buttons. `onEdit`, `onDelete` props. |
+| File                                                | Change                                                                                                                                                     |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/components/notes/NotesList.tsx`   | **New**. Container: renders `NoteEntry[]` + "Add note" button + empty state. Uses `useNotes` hook.                                                         |
+| `src/frontend/src/components/notes/NoteEntry.tsx`   | **New**. Display: content (`pre-wrap`), timestamp, "Edited" badge, Edit/Delete buttons. `onEdit`, `onDelete` props.                                        |
 | `src/frontend/src/components/notes/NotesEditor.tsx` | **New**. Textarea with auto-resize, char count, Ctrl+Enter save, Escape cancel, saving indicator. Props: `initialContent?`, `onSave(content)`, `onCancel`. |
-| `src/frontend/src/components/ui/ConfirmModal.tsx` | **New** (or refactor from `DeleteConfirmModal`). Generic confirmation dialog with focus trap, accessible, reusable. |
-| `src/frontend/src/stores/notesStore.ts` | **New or extend**. Zustand store for notes per assignment. |
-| `src/frontend/src/hooks/useNotes.ts` | **New**. Hook: `fetchNotes(assignmentId)`, `saveNote(assignmentId, content, id?)`, `deleteNote(id)`, `subscribeToChanges(assignmentId)`. |
-| `src/frontend/src/pages/AssignmentDetailPage.tsx` | Update: import and render `NotesList` below sub-tasks (or in a tab). Pass `assignmentId`. |
-| `src/frontend/src/utils/date.ts` | Add `formatRelativeTime(date)` for "2 hours ago", "Edited" badge logic. |
-| `src/frontend/src/utils/sanitize.ts` | Add `escapeHtml(text)` for defense-in-depth rendering. |
+| `src/frontend/src/components/ui/ConfirmModal.tsx`   | **New** (or refactor from `DeleteConfirmModal`). Generic confirmation dialog with focus trap, accessible, reusable.                                        |
+| `src/frontend/src/stores/notesStore.ts`             | **New or extend**. Zustand store for notes per assignment.                                                                                                 |
+| `src/frontend/src/hooks/useNotes.ts`                | **New**. Hook: `fetchNotes(assignmentId)`, `saveNote(assignmentId, content, id?)`, `deleteNote(id)`, `subscribeToChanges(assignmentId)`.                   |
+| `src/frontend/src/pages/AssignmentDetailPage.tsx`   | Update: import and render `NotesList` below sub-tasks (or in a tab). Pass `assignmentId`.                                                                  |
+| `src/frontend/src/utils/date.ts`                    | Add `formatRelativeTime(date)` for "2 hours ago", "Edited" badge logic.                                                                                    |
+| `src/frontend/src/utils/sanitize.ts`                | Add `escapeHtml(text)` for defense-in-depth rendering.                                                                                                     |
 
 ### Backend — No Changes Expected
 
 > Assumes Ticket 3.0 audit confirmed backend has `db:notes:list`, `upsert`, `delete` and emits `db:changed`.
 
-| File | Change |
-|------|--------|
-| *(none expected)* | Verify IPC channels match the note model (1:1 vs 1:N). |
+| File              | Change                                                 |
+| ----------------- | ------------------------------------------------------ |
+| _(none expected)_ | Verify IPC channels match the note model (1:1 vs 1:N). |
 
 ## Acceptance Criteria
 

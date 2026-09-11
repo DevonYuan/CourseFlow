@@ -13,7 +13,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { EmptyState } from '../components/EmptyState';
 
-
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
 
@@ -32,7 +31,9 @@ describe('EmptyState', () => {
     render(<EmptyState onOpenSettings={mockOnOpenSettings} />);
 
     expect(screen.getByText('No assignments yet')).toBeInTheDocument();
-    expect(screen.getByText('Add your Canvas iCal URL in Settings to get started')).toBeInTheDocument();
+    expect(
+      screen.getByText('Add your Canvas iCal URL in Settings to get started'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open Settings' })).toBeInTheDocument();
   });
 
@@ -43,7 +44,7 @@ describe('EmptyState', () => {
         message="Custom message"
         subtext="Custom subtext"
         ctaText="Custom CTA"
-      />
+      />,
     );
 
     expect(screen.getByText('Custom message')).toBeInTheDocument();

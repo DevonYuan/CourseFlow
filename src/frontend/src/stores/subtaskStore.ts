@@ -139,21 +139,23 @@ export const createSubTaskStore = () =>
         subTasks: state.subTasks.map((st) =>
           st.id === subTaskId
             ? { ...st, completed, updatedAt: new Date().toISOString() as IsoDateTime }
-            : st
+            : st,
         ),
       }));
     },
 
     confirmToggle: (subTaskId: EntityId, subTask: SubTask) => {
       set((state) => ({
-        subTasks: state.subTasks.map((st) => (st.id === subTaskId ? subTask : st)).sort((a, b) => a.order - b.order),
+        subTasks: state.subTasks
+          .map((st) => (st.id === subTaskId ? subTask : st))
+          .sort((a, b) => a.order - b.order),
       }));
     },
 
     rollbackToggle: (subTaskId: EntityId, previousCompleted: boolean) => {
       set((state) => ({
         subTasks: state.subTasks.map((st) =>
-          st.id === subTaskId ? { ...st, completed: previousCompleted } : st
+          st.id === subTaskId ? { ...st, completed: previousCompleted } : st,
         ),
       }));
     },
@@ -165,7 +167,8 @@ export const createSubTaskStore = () =>
       ipcCall: () => Promise<IpcResult<SubTask>>,
     ): Promise<IpcResult<SubTask>> => {
       // Get the previous state for potential rollback
-      const previousCompleted = get().subTasks.find((st) => st.id === subTaskId)?.completed ?? !completed;
+      const previousCompleted =
+        get().subTasks.find((st) => st.id === subTaskId)?.completed ?? !completed;
 
       // Optimistic update
       get().optimisticToggle(subTaskId, completed);
@@ -181,7 +184,10 @@ export const createSubTaskStore = () =>
         return result;
       } catch (err) {
         get().rollbackToggle(subTaskId, previousCompleted);
-        return { ok: false, error: err instanceof Error ? err.message : 'Failed to toggle sub-task' };
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : 'Failed to toggle sub-task',
+        };
       }
     },
 

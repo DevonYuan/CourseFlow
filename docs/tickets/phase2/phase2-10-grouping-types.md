@@ -60,10 +60,10 @@ Define `GroupingType` and grouping logic types. Implement pure functions to grou
 
 ```typescript
 interface GroupedAssignments {
-  groupKey: string        // 'this-week', 'overdue', 'upcoming', 'no-due-date', 'completed', or course name
-  groupLabel: string      // 'This Week', 'Overdue', 'Upcoming', 'No Due Date', 'Completed', or course name
-  assignments: Assignment[]
-  count: number           // assignments.length
+  groupKey: string; // 'this-week', 'overdue', 'upcoming', 'no-due-date', 'completed', or course name
+  groupLabel: string; // 'This Week', 'Overdue', 'Upcoming', 'No Due Date', 'Completed', or course name
+  assignments: Assignment[];
+  count: number; // assignments.length
 }
 ```
 
@@ -71,26 +71,37 @@ interface GroupedAssignments {
 
 ```typescript
 function groupByWeek(assignments: Assignment[]): GroupedAssignments {
-  const now = new Date()
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const monday = startOfWeek(now, { weekStartsOn: 1 }) // Monday
-  const sunday = endOfWeek(now, { weekStartsOn: 1 })
-  
+  const now = new Date();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const monday = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+  const sunday = endOfWeek(now, { weekStartsOn: 1 });
+
   // Groups in order
   const groups = [
-    { key: 'this-week', label: 'This Week', filter: (a) => a.due_at && isWithinInterval(parseISO(a.due_at), { start: monday, end: sunday }) },
-    { key: 'overdue', label: 'Overdue', filter: (a) => a.due_at && parseISO(a.due_at) < now && a.status !== 'completed' },
+    {
+      key: 'this-week',
+      label: 'This Week',
+      filter: (a) =>
+        a.due_at && isWithinInterval(parseISO(a.due_at), { start: monday, end: sunday }),
+    },
+    {
+      key: 'overdue',
+      label: 'Overdue',
+      filter: (a) => a.due_at && parseISO(a.due_at) < now && a.status !== 'completed',
+    },
     { key: 'upcoming', label: 'Upcoming', filter: (a) => a.due_at && parseISO(a.due_at) > sunday },
     { key: 'no-due-date', label: 'No Due Date', filter: (a) => !a.due_at },
     { key: 'completed', label: 'Completed', filter: (a) => a.status === 'completed' },
-  ]
-  
-  return groups.map(g => ({
-    groupKey: g.key,
-    groupLabel: g.label,
-    assignments: assignments.filter(g.filter).sort(sortFn),
-    count: assignments.filter(g.filter).length
-  })).filter(g => g.count > 0)
+  ];
+
+  return groups
+    .map((g) => ({
+      groupKey: g.key,
+      groupLabel: g.label,
+      assignments: assignments.filter(g.filter).sort(sortFn),
+      count: assignments.filter(g.filter).length,
+    }))
+    .filter((g) => g.count > 0);
 }
 ```
 
@@ -111,15 +122,15 @@ function groupByWeek(assignments: Assignment[]): GroupedAssignments {
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | `groupByWeek` correctly categorizes assignments by week boundaries | Unit test (multiple TZs) |
-| 2 | `groupByStatus` separates pending/completed correctly | Unit test |
-| 3 | `groupByCourse` groups by course_name A–Z | Unit test |
-| 4 | Null due_at → "No Due Date" group | Unit test |
-| 5 | Completed assignments always in "Completed" group (week/status) | Unit test |
-| 6 | Sort option applied within each group | Unit test |
-| 7 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                                          | Verification             |
+| --- | ------------------------------------------------------------------ | ------------------------ |
+| 1   | `groupByWeek` correctly categorizes assignments by week boundaries | Unit test (multiple TZs) |
+| 2   | `groupByStatus` separates pending/completed correctly              | Unit test                |
+| 3   | `groupByCourse` groups by course_name A–Z                          | Unit test                |
+| 4   | Null due_at → "No Due Date" group                                  | Unit test                |
+| 5   | Completed assignments always in "Completed" group (week/status)    | Unit test                |
+| 6   | Sort option applied within each group                              | Unit test                |
+| 7   | All tests pass (`pnpm test`)                                       | CI run                   |
 
 ---
 

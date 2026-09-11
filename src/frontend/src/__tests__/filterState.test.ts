@@ -26,10 +26,18 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-    removeItem: vi.fn((key: string) => { delete store[key]; }),
-    clear: vi.fn(() => { store = {}; }),
-    get length() { return Object.keys(store).length; },
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
     key: vi.fn((index: number) => Object.keys(store)[index] || null),
   };
 })();
@@ -190,7 +198,10 @@ describe('FilterState', () => {
   describe('setDueDateRange', () => {
     it('sets due date range', () => {
       const { setDueDateRange } = useAssignmentsStore.getState();
-      const range = { start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime };
+      const range = {
+        start: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        end: '2026-12-31T23:59:59.999Z' as IsoDateTime,
+      };
       setDueDateRange(range);
 
       const state = useAssignmentsStore.getState();
@@ -199,7 +210,10 @@ describe('FilterState', () => {
 
     it('clears due date range when null', () => {
       const { setDueDateRange } = useAssignmentsStore.getState();
-      setDueDateRange({ start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime });
+      setDueDateRange({
+        start: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        end: '2026-12-31T23:59:59.999Z' as IsoDateTime,
+      });
       setDueDateRange(null);
 
       const state = useAssignmentsStore.getState();
@@ -208,7 +222,10 @@ describe('FilterState', () => {
 
     it('persists to localStorage with ISO date strings', () => {
       const { setDueDateRange } = useAssignmentsStore.getState();
-      const range = { start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime };
+      const range = {
+        start: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        end: '2026-12-31T23:59:59.999Z' as IsoDateTime,
+      };
       setDueDateRange(range);
 
       const stored = localStorageMock.getItem('courseflow:filters');
@@ -356,11 +373,22 @@ describe('FilterState', () => {
 
   describe('resetFilters', () => {
     it('resets all filters to defaults', () => {
-      const { setCourseFilter, setStatusFilter, setDueDateRange, setSearchQuery, setSortOption, setGroupingType, resetFilters } = useAssignmentsStore.getState();
+      const {
+        setCourseFilter,
+        setStatusFilter,
+        setDueDateRange,
+        setSearchQuery,
+        setSortOption,
+        setGroupingType,
+        resetFilters,
+      } = useAssignmentsStore.getState();
 
       setCourseFilter(['CS101']);
       setStatusFilter('pending');
-      setDueDateRange({ start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime });
+      setDueDateRange({
+        start: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        end: '2026-12-31T23:59:59.999Z' as IsoDateTime,
+      });
       setSearchQuery('homework');
       setSortOption('dueDateAsc');
       setGroupingType('week');
@@ -396,7 +424,10 @@ describe('FilterState', () => {
       const storedState: FilterState = {
         courseFilter: ['CS101', 'MATH200'],
         statusFilter: 'pending',
-        dueDateRange: { start: '2026-01-01T00:00:00.000Z' as IsoDateTime, end: '2026-12-31T23:59:59.999Z' as IsoDateTime },
+        dueDateRange: {
+          start: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+          end: '2026-12-31T23:59:59.999Z' as IsoDateTime,
+        },
         searchQuery: 'homework',
         sortOption: 'dueDateAsc',
         groupingType: 'week',

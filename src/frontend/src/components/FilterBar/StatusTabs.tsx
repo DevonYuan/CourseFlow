@@ -47,18 +47,14 @@ export function StatusTabs(): JSX.Element {
     if (!container) return;
 
     const measure = () => {
-      const tabs = Array.from(
-        container.querySelectorAll<HTMLElement>('.status-tabs__tab'),
-      );
+      const tabs = Array.from(container.querySelectorAll<HTMLElement>('.status-tabs__tab'));
       if (tabs.length === 0) return;
 
       // Equal-width tabs: size every tab to the widest one.
       const widest = Math.max(...tabs.map((tab) => tab.offsetWidth));
       container.style.setProperty('--tab-width', `${widest}px`);
 
-      const activeTab = container.querySelector<HTMLElement>(
-        `#status-tab-${statusFilter}`,
-      );
+      const activeTab = container.querySelector<HTMLElement>(`#status-tab-${statusFilter}`);
       if (activeTab) {
         setIndicator({ left: activeTab.offsetLeft, width: activeTab.offsetWidth });
       }
@@ -115,12 +111,7 @@ export function StatusTabs(): JSX.Element {
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="status-tabs"
-      role="tablist"
-      aria-label="Filter by status"
-    >
+    <div ref={containerRef} className="status-tabs" role="tablist" aria-label="Filter by status">
       {STATUS_TABS.map((tab) => {
         const isActive = statusFilter === tab.value;
         return (

@@ -21,7 +21,7 @@ Implement the sub-task list UI in the assignment detail view. This includes rend
 - [ ] **Optimistic UI**: All mutations (add, delete) update the local Zustand store **immediately** before the IPC call resolves. If the IPC fails, roll back the optimistic update and show an error toast.
 - [ ] **Loading state**: Show skeleton placeholders while sub-tasks are loading (via `db:subtasks:list`).
 - [ ] **Empty state**: When an assignment has no sub-tasks, show a friendly empty message ("No sub-tasks yet — add one below") and the add input.
-- [ ] **Keyboard accessibility**: 
+- [ ] **Keyboard accessibility**:
   - Tab navigates through sub-task rows (checkbox, title, delete button)
   - Enter/Space on checkbox toggles completion (delegates to Ticket 3.4's toggle IPC)
   - Enter in add input saves
@@ -51,24 +51,24 @@ Implement the sub-task list UI in the assignment detail view. This includes rend
 
 ### Frontend (Renderer)
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/components/subtasks/SubTaskList.tsx` | **New**. Container: fetches via `window.api.db.subtasks.list(assignmentId)` on mount, subscribes to `db:changed`, renders list of `SubTaskRow` + `SubTaskAddInput`. Manages local Zustand state for optimistic updates. |
-| `src/frontend/src/components/subtasks/SubTaskRow.tsx` | **New**. Single row: checkbox (read-only for now), title text, drag handle (grip icon, `aria-hidden`), delete button. `onDelete` prop calls parent's delete handler. |
-| `src/frontend/src/components/subtasks/SubTaskAddInput.tsx` | **New**. Input + hidden submit button. `onAdd(title)` prop. Handles Enter to save, Escape to clear, trim + validation (non-empty, max 200 chars). Auto-focus on mount. |
-| `src/frontend/src/components/subtasks/DeleteConfirmModal.tsx` | **New**. Small accessible modal for delete confirmation. Props: `open`, `onConfirm`, `onCancel`, `subTaskTitle` (for message). Focus trap, Escape to close, focus Cancel by default. |
-| `src/frontend/src/stores/subtaskStore.ts` | **New or extend**. Zustand store for sub-tasks per assignment. Exports `useSubTaskStore(assignmentId)` hook returning `{ subTasks, addSubTask, deleteSubTask, optimisticAdd, rollbackAdd, isLoading, error }`. |
-| `src/frontend/src/hooks/useSubTasks.ts` | **New**. Custom hook wrapping the store + IPC calls: `fetchSubTasks(assignmentId)`, `addSubTask(assignmentId, title)`, `deleteSubTask(id)`, `subscribeToChanges(assignmentId)`. Handles `IpcResult` unwrapping, optimistic updates, toast errors. |
-| `src/frontend/src/pages/AssignmentDetailPage.tsx` | Update: import and render `SubTaskList` below the assignment description. Pass `assignmentId` prop. |
-| `src/frontend/src/utils/toast.ts` | Use existing toast utility (from Phase 1) for error/success messages. |
+| File                                                          | Change                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/components/subtasks/SubTaskList.tsx`        | **New**. Container: fetches via `window.api.db.subtasks.list(assignmentId)` on mount, subscribes to `db:changed`, renders list of `SubTaskRow` + `SubTaskAddInput`. Manages local Zustand state for optimistic updates.                           |
+| `src/frontend/src/components/subtasks/SubTaskRow.tsx`         | **New**. Single row: checkbox (read-only for now), title text, drag handle (grip icon, `aria-hidden`), delete button. `onDelete` prop calls parent's delete handler.                                                                              |
+| `src/frontend/src/components/subtasks/SubTaskAddInput.tsx`    | **New**. Input + hidden submit button. `onAdd(title)` prop. Handles Enter to save, Escape to clear, trim + validation (non-empty, max 200 chars). Auto-focus on mount.                                                                            |
+| `src/frontend/src/components/subtasks/DeleteConfirmModal.tsx` | **New**. Small accessible modal for delete confirmation. Props: `open`, `onConfirm`, `onCancel`, `subTaskTitle` (for message). Focus trap, Escape to close, focus Cancel by default.                                                              |
+| `src/frontend/src/stores/subtaskStore.ts`                     | **New or extend**. Zustand store for sub-tasks per assignment. Exports `useSubTaskStore(assignmentId)` hook returning `{ subTasks, addSubTask, deleteSubTask, optimisticAdd, rollbackAdd, isLoading, error }`.                                    |
+| `src/frontend/src/hooks/useSubTasks.ts`                       | **New**. Custom hook wrapping the store + IPC calls: `fetchSubTasks(assignmentId)`, `addSubTask(assignmentId, title)`, `deleteSubTask(id)`, `subscribeToChanges(assignmentId)`. Handles `IpcResult` unwrapping, optimistic updates, toast errors. |
+| `src/frontend/src/pages/AssignmentDetailPage.tsx`             | Update: import and render `SubTaskList` below the assignment description. Pass `assignmentId` prop.                                                                                                                                               |
+| `src/frontend/src/utils/toast.ts`                             | Use existing toast utility (from Phase 1) for error/success messages.                                                                                                                                                                             |
 
 ### Backend — No Changes Expected
 
 > This ticket assumes the backend is complete per Ticket 3.0 audit. If the audit reveals missing IPC channels or repository methods, those must be addressed in 3.0 before this ticket starts.
 
-| File | Change |
-|------|--------|
-| *(none expected)* | Backend IPC (`db:subtasks:list`, `upsert`, `delete`) and repo methods should already exist. Verify in 3.0. |
+| File              | Change                                                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| _(none expected)_ | Backend IPC (`db:subtasks:list`, `upsert`, `delete`) and repo methods should already exist. Verify in 3.0. |
 
 ## Acceptance Criteria
 
@@ -83,7 +83,7 @@ Implement the sub-task list UI in the assignment detail view. This includes rend
 - [ ] **Loading state**: Skeleton rows show while `db:subtasks:list` is pending.
 - [ ] **Empty state**: Assignments with no sub-tasks show the empty message and add input.
 - [ ] **Live updates**: Adding/deleting a sub-task in another window (or via direct DB manipulation) triggers `db:changed` and the list updates without refresh.
-- [ ] **Keyboard navigation**: 
+- [ ] **Keyboard navigation**:
   - Tab moves through checkbox → title → delete button → next row → add input
   - Enter in add input saves
   - Escape in add input clears it
@@ -103,7 +103,7 @@ Implement the sub-task list UI in the assignment detail view. This includes rend
 - **Zustand pattern**: Follow the existing store pattern from Phase 1/2 (e.g., `useAssignmentStore`, `useFilterStore`). Keep sub-task store simple — scoped to one assignment at a time.
 - **Temp ID strategy**: Use `crypto.randomUUID()` for optimistic IDs. The backend returns the real UUID on upsert. Map `tempId -> realId` in the store.
 - **Delete modal**: Reuse the modal/dialog pattern from Phase 1 (Ticket 1.15 error boundary/toast system). If no reusable modal exists yet, create a simple one here and extract to shared later.
-- **Testing**: 
+- **Testing**:
   - Unit: `useSubTasks` hook (mock IPC), `subtaskStore` actions.
   - Component: `SubTaskList`, `SubTaskRow`, `SubTaskAddInput`, `DeleteConfirmModal` (React Testing Library).
   - E2E: Playwright test in `src/frontend/test/subtasks.spec.ts` — add, delete, validation, empty state, keyboard.

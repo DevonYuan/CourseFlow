@@ -51,11 +51,11 @@ function sanitizeUrlForLogging(url: string): string {
  */
 function buildHttpErrorMessage(status: number, statusText: string, url: string): string {
   const base = `HTTP ${status} ${statusText} fetching iCal feed: ${url}`;
-  
+
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
-    
+
     // Google Calendar specific guidance
     if (hostname.includes('calendar.google.com') || hostname.includes('google.com')) {
       if (status === 404) {
@@ -65,7 +65,7 @@ function buildHttpErrorMessage(status: number, statusText: string, url: string):
         return `${base}\n\nAccess forbidden. The calendar may be private or the token expired.\n• Try regenerating the "Secret address in iCal format" in Google Calendar settings`;
       }
     }
-    
+
     // Canvas LMS specific guidance
     if (hostname.includes('instructure.com') || hostname.includes('canvas')) {
       if (status === 404) {
@@ -75,14 +75,19 @@ function buildHttpErrorMessage(status: number, statusText: string, url: string):
         return `${base}\n\nAccess forbidden. The feed token may be invalid or expired.\n• Try regenerating the Calendar Feed URL in Canvas`;
       }
     }
-    
+
     // Outlook/Office 365 specific guidance
-    if (hostname.includes('outlook.office.com') || hostname.includes('outlook.live.com') || hostname.includes('office365') || hostname.includes('exchange')) {
+    if (
+      hostname.includes('outlook.office.com') ||
+      hostname.includes('outlook.live.com') ||
+      hostname.includes('office365') ||
+      hostname.includes('exchange')
+    ) {
       if (status === 401 || status === 403) {
         return `${base}\n\nAuthentication required.\n• Use the "Subscribe to calendar" .ics URL from Outlook Web (not the web calendar link)\n• Make sure the calendar is shared with "Can view all details"`;
       }
     }
-    
+
     // Generic guidance for common status codes
     if (status === 404) {
       return `${base}\n\nFeed not found (404).\n• Double-check the URL is correct and complete\n• Make sure the calendar is shared/enabled for external access`;
@@ -96,7 +101,7 @@ function buildHttpErrorMessage(status: number, statusText: string, url: string):
   } catch {
     // URL parsing failed, fall back to base message
   }
-  
+
   return base;
 }
 
@@ -200,10 +205,7 @@ function parseICalDateTime(value: string): IsoDateTime {
  * @throws {TimeoutError} On request timeout
  * @throws {ICalFetchError} On other unexpected errors
  */
-export async function fetchICalFeed(
-  url: string,
-  options: FetchICalOptions = {}
-): Promise<string> {
+export async function fetchICalFeed(url: string, options: FetchICalOptions = {}): Promise<string> {
   const config = { ...DEFAULT_OPTIONS, ...options };
   const sanitizedUrl = sanitizeUrlForLogging(url);
 
@@ -228,11 +230,12 @@ export async function fetchICalFeed(
       // Handle case where fetch returns undefined (e.g., exhausted mock in tests)
       if (response && typeof response.ok === 'boolean') {
         if (response.ok === false) {
-          const userFriendlyMessage = buildHttpErrorMessage(response.status, response.statusText, sanitizedUrl);
-          const error = new HttpError(
-            userFriendlyMessage,
-            response.status
+          const userFriendlyMessage = buildHttpErrorMessage(
+            response.status,
+            response.statusText,
+            sanitizedUrl,
           );
+          const error = new HttpError(userFriendlyMessage, response.status);
           // Don't retry on 4xx (client errors) - they won't succeed on retry
           if (response.status >= 400 && response.status < 500) {
             throw error;
@@ -244,7 +247,7 @@ export async function fetchICalFeed(
           const contentType = response.headers.get('content-type') ?? '';
           if (!contentType.includes('text/calendar') && !contentType.includes('text/plain')) {
             console.warn(
-              `[iCal Fetch] Unexpected content-type "${contentType}" for ${sanitizedUrl} (attempt ${attempt})`
+              `[iCal Fetch] Unexpected content-type "${contentType}" for ${sanitizedUrl} (attempt ${attempt})`,
             );
           }
 
@@ -263,14 +266,14 @@ export async function fetchICalFeed(
       if (error instanceof DOMException && error.name === 'AbortError') {
         const timeoutError = new TimeoutError(
           `Request timeout after ${config.timeoutMs}ms fetching iCal feed: ${sanitizedUrl} (attempt ${attempt}/${config.maxRetries})`,
-          error
+          error,
         );
         lastError = timeoutError;
       } else if (error instanceof TypeError) {
         // Network error (DNS, connection refused, etc.) or invalid response
         const networkError = new NetworkError(
           `Network error fetching iCal feed: ${sanitizedUrl} (attempt ${attempt}/${config.maxRetries}): ${error.message}`,
-          error
+          error,
         );
         lastError = networkError;
       } else if (error instanceof ICalFetchError) {
@@ -280,7 +283,7 @@ export async function fetchICalFeed(
         // Unexpected error
         const unexpectedError = new ICalFetchError(
           `Unexpected error fetching iCal feed: ${sanitizedUrl} (attempt ${attempt}/${config.maxRetries}): ${error instanceof Error ? error.message : String(error)}`,
-          error instanceof Error ? error : undefined
+          error instanceof Error ? error : undefined,
         );
         lastError = unexpectedError;
       }
@@ -290,7 +293,9 @@ export async function fetchICalFeed(
     // Only retry if we have a retryable error (not 4xx which was thrown above)
     if (attempt < config.maxRetries && lastError) {
       const backoffMs = config.baseRetryDelayMs * 2 ** (attempt - 1);
-      console.warn(`[iCal Fetch] Retrying in ${backoffMs}ms... (attempt ${attempt + 1}/${config.maxRetries})`);
+      console.warn(
+        `[iCal Fetch] Retrying in ${backoffMs}ms... (attempt ${attempt + 1}/${config.maxRetries})`,
+      );
       await delay(backoffMs);
     } else if (attempt < config.maxRetries && !lastError) {
       // No error to retry (shouldn't happen, but safety)
@@ -305,13 +310,13 @@ export async function fetchICalFeed(
   if (lastError instanceof TimeoutError) {
     throw new TimeoutError(
       `Request timeout after ${config.maxRetries} attempts (${config.timeoutMs}ms each) fetching iCal feed: ${sanitizedUrl}`,
-      lastError
+      lastError,
     );
   }
   if (lastError instanceof NetworkError) {
     throw new NetworkError(
       `Network error after ${config.maxRetries} attempts fetching iCal feed: ${sanitizedUrl}`,
-      lastError
+      lastError,
     );
   }
   if (lastError instanceof ICalFetchError) {
@@ -319,7 +324,7 @@ export async function fetchICalFeed(
   }
   throw new ICalFetchError(
     `Failed to fetch iCal feed after ${config.maxRetries} attempts: ${sanitizedUrl}`,
-    lastError
+    lastError,
   );
 }
 
@@ -384,7 +389,10 @@ function flushProperty(
       break;
     }
     case 'CATEGORIES': {
-      currentEvent.categories = value.split(',').map((c) => c.trim()).filter(Boolean);
+      currentEvent.categories = value
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
       break;
     }
   }
@@ -397,9 +405,9 @@ export function parseICalFeed(icalText: string): ICalEvent[] {
   const lines = icalText.split(/\r?\n/);
 
   // During parsing, dtStart can be empty string before being set to a valid ISO date
-type ParsingEvent = Omit<Partial<ICalEvent>, 'dtStart'> & { dtStart: string };
+  type ParsingEvent = Omit<Partial<ICalEvent>, 'dtStart'> & { dtStart: string };
 
-let currentEvent: ParsingEvent | null = null;
+  let currentEvent: ParsingEvent | null = null;
   let inEvent = false;
   let currentProperty = '';
   let currentValue = '';
@@ -470,7 +478,10 @@ let currentEvent: ParsingEvent | null = null;
             break;
           }
           case 'CATEGORIES': {
-            currentEvent.categories = value.split(',').map((c) => c.trim()).filter(Boolean);
+            currentEvent.categories = value
+              .split(',')
+              .map((c) => c.trim())
+              .filter(Boolean);
             break;
           }
         }
@@ -533,7 +544,10 @@ let currentEvent: ParsingEvent | null = null;
           break;
         }
         case 'CATEGORIES': {
-          currentEvent.categories = value.split(',').map((c) => c.trim()).filter(Boolean);
+          currentEvent.categories = value
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean);
           break;
         }
       }
@@ -587,7 +601,10 @@ let currentEvent: ParsingEvent | null = null;
         break;
       }
       case 'CATEGORIES': {
-        currentEvent.categories = value.split(',').map((c) => c.trim()).filter(Boolean);
+        currentEvent.categories = value
+          .split(',')
+          .map((c) => c.trim())
+          .filter(Boolean);
         break;
       }
     }
@@ -605,7 +622,7 @@ let currentEvent: ParsingEvent | null = null;
  */
 export async function fetchAndParseICalFeed(
   url: string,
-  options?: FetchICalOptions
+  options?: FetchICalOptions,
 ): Promise<ICalEvent[]> {
   const text = await fetchICalFeed(url, options);
   return parseICalFeed(text);

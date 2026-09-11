@@ -42,7 +42,9 @@ function dateToIso(date: Date | null): IsoDateTime | null {
 /**
  * Converts a dueDateRange with IsoDateTime to one with Date objects.
  */
-function convertRangeToDate(range: { start: IsoDateTime; end: IsoDateTime } | null): { start: Date; end: Date } | null {
+function convertRangeToDate(
+  range: { start: IsoDateTime; end: IsoDateTime } | null,
+): { start: Date; end: Date } | null {
   if (!range) return null;
   return {
     start: isoToDate(range.start) ?? new Date(),
@@ -53,7 +55,9 @@ function convertRangeToDate(range: { start: IsoDateTime; end: IsoDateTime } | nu
 /**
  * Converts a dueDateRange with Date objects to one with IsoDateTime.
  */
-function convertRangeToIso(range: { start: Date; end: Date } | null): { start: IsoDateTime; end: IsoDateTime } | null {
+function convertRangeToIso(
+  range: { start: Date; end: Date } | null,
+): { start: IsoDateTime; end: IsoDateTime } | null {
   if (!range || !range.start || !range.end) return null;
   return {
     start: dateToIso(range.start) as IsoDateTime,
@@ -71,12 +75,15 @@ export function FilterBar(): JSX.Element {
   const setDueDateRange = useSetDueDateRange();
 
   // Convert store's IsoDateTime range to Date for DateRangePicker
-  const dateRangeForPicker = useMemo(() => convertRangeToDate(filters.dueDateRange), [filters.dueDateRange]);
+  const dateRangeForPicker = useMemo(
+    () => convertRangeToDate(filters.dueDateRange),
+    [filters.dueDateRange],
+  );
 
   // Wrap setDueDateRange to convert Date back to IsoDateTime
   const handleDateRangeChange = useMemo(
     () => (range: { start: Date; end: Date } | null) => setDueDateRange(convertRangeToIso(range)),
-    [setDueDateRange]
+    [setDueDateRange],
   );
 
   // Calculate total active filter count for badge
@@ -112,10 +119,7 @@ export function FilterBar(): JSX.Element {
           <CourseChips />
         </div>
         <div className="filter-bar__date-wrapper">
-          <DateRangePicker
-            value={dateRangeForPicker}
-            onChange={handleDateRangeChange}
-          />
+          <DateRangePicker value={dateRangeForPicker} onChange={handleDateRangeChange} />
         </div>
         <div className="filter-bar__sort-wrapper">
           <SortDropdown />

@@ -38,21 +38,24 @@ export function useAssignmentSubTaskProgress(assignmentIds: EntityId[]): Progres
   }, []);
 
   // Fetch sub-tasks for a single assignment
-  const fetchProgress = useCallback(async (id: EntityId) => {
-    try {
-      const result = await window.api.db.subtasks.list(id);
-      if (result.ok) {
-        const progress = computeProgress(result.data);
-        setProgressMap((prev) => {
-          const next = new Map(prev);
-          next.set(id, progress);
-          return next;
-        });
+  const fetchProgress = useCallback(
+    async (id: EntityId) => {
+      try {
+        const result = await window.api.db.subtasks.list(id);
+        if (result.ok) {
+          const progress = computeProgress(result.data);
+          setProgressMap((prev) => {
+            const next = new Map(prev);
+            next.set(id, progress);
+            return next;
+          });
+        }
+      } catch {
+        // Ignore errors for individual fetches
       }
-    } catch {
-      // Ignore errors for individual fetches
-    }
-  }, [computeProgress]);
+    },
+    [computeProgress],
+  );
 
   // Batch fetch for multiple assignments
   const fetchAllProgress = useCallback(
@@ -76,7 +79,7 @@ export function useAssignmentSubTaskProgress(assignmentIds: EntityId[]): Progres
         setLoadingIds(new Set());
       });
     },
-    [fetchProgress]
+    [fetchProgress],
   );
 
   // Debounced fetch when assignmentIds change

@@ -88,7 +88,15 @@ export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
         showErrorToast('Failed to add sub-task', { duration: 5000 });
       }
     },
-    [assignmentId, subTasks.length, addSubTask, optimisticAdd, rollbackAdd, getTempId, showErrorToast]
+    [
+      assignmentId,
+      subTasks.length,
+      addSubTask,
+      optimisticAdd,
+      rollbackAdd,
+      getTempId,
+      showErrorToast,
+    ],
   );
 
   // Handle delete sub-task - open confirmation modal
@@ -149,14 +157,11 @@ export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
         setTogglingId(null);
       }
     },
-    [toggleSubTask, showErrorToast]
+    [toggleSubTask, showErrorToast],
   );
 
   // Memoize sorted sub-tasks by order
-  const sortedSubTasks = useMemo(
-    () => [...subTasks].sort((a, b) => a.order - b.order),
-    [subTasks]
-  );
+  const sortedSubTasks = useMemo(() => [...subTasks].sort((a, b) => a.order - b.order), [subTasks]);
 
   // Show skeleton while loading
   if (isLoading) {
@@ -173,9 +178,7 @@ export function SubTaskList({ assignmentId }: SubTaskListProps): JSX.Element {
     <div className="subtask-list">
       {sortedSubTasks.length === 0 ? (
         <div className="subtask-list__empty">
-          <p className="subtask-list__empty-message">
-            No sub-tasks yet — add one below
-          </p>
+          <p className="subtask-list__empty-message">No sub-tasks yet — add one below</p>
         </div>
       ) : (
         <ul className="subtask-list__list" role="list" aria-label="Sub-tasks">

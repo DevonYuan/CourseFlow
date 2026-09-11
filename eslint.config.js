@@ -8,7 +8,18 @@ import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default typescriptEslint.config(
-  { ignores: ['dist/', 'node_modules/', '*.config.*', 'config/**', 'scripts/**', '.husky/', 'build/', 'coverage/'] },
+  {
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '*.config.*',
+      'config/**',
+      'scripts/**',
+      '.husky/',
+      'build/',
+      'coverage/',
+    ],
+  },
   js.configs.recommended,
   ...typescriptEslint.configs.recommended,
   // Type-checked config for project source files

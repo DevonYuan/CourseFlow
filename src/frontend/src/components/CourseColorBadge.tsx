@@ -35,12 +35,14 @@ export function CourseColorBadge({
   return (
     <span
       className={className}
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: color,
-        '--badge-size': `${size}px`,
-      } as React.CSSProperties}
+      style={
+        {
+          width: size,
+          height: size,
+          backgroundColor: color,
+          '--badge-size': `${size}px`,
+        } as React.CSSProperties
+      }
       aria-hidden={!ariaLabel}
       aria-label={ariaLabel}
       role={ariaLabel ? 'img' : undefined}

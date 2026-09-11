@@ -55,7 +55,9 @@
   color: var(--accent-ink);
   border: none;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .sync-btn:hover:not(:disabled) {
@@ -75,6 +77,13 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sync-spinner {
+    animation: none;
   }
 }
 
@@ -128,7 +137,9 @@
   border: none;
   border-radius: var(--radius-sm, 4px);
   cursor: pointer;
-  transition: background-color var(--transition-fast, 150ms), opacity var(--transition-fast, 150ms);
+  transition:
+    background-color var(--transition-fast, 150ms),
+    opacity var(--transition-fast, 150ms);
   white-space: nowrap;
 }
 

@@ -61,12 +61,12 @@ Build `FilterBar` component: multi-select course chips, status tabs (All/Pending
 
 ### Date Presets
 
-| Preset | Start | End |
-|--------|-------|-----|
-| This Week | Mon 00:00 (local) | Sun 23:59 (local) |
-| This Month | 1st 00:00 | Last day 23:59 |
-| Overdue | -∞ | Now |
-| Upcoming | Now | +∞ |
+| Preset     | Start             | End               |
+| ---------- | ----------------- | ----------------- |
+| This Week  | Mon 00:00 (local) | Sun 23:59 (local) |
+| This Month | 1st 00:00         | Last day 23:59    |
+| Overdue    | -∞                | Now               |
+| Upcoming   | Now               | +∞                |
 
 ---
 
@@ -91,16 +91,16 @@ Build `FilterBar` component: multi-select course chips, status tabs (All/Pending
 
 ## Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | Course chips toggle filter, show counts | Manual test |
-| 2 | Status tabs switch filter correctly | Manual test |
-| 3 | Date range picker updates filter, presets work | Manual test |
-| 4 | Search input debounced, clears on × | Manual test |
-| 5 | Clear all resets all filters | Manual test |
-| 6 | Responsive layout works <1000px | Manual test (resize) |
-| 7 | Keyboard accessible (tab, enter, escape) | Manual test |
-| 8 | All tests pass (`pnpm test`) | CI run |
+| #   | Criterion                                      | Verification         |
+| --- | ---------------------------------------------- | -------------------- |
+| 1   | Course chips toggle filter, show counts        | Manual test          |
+| 2   | Status tabs switch filter correctly            | Manual test          |
+| 3   | Date range picker updates filter, presets work | Manual test          |
+| 4   | Search input debounced, clears on ×            | Manual test          |
+| 5   | Clear all resets all filters                   | Manual test          |
+| 6   | Responsive layout works <1000px                | Manual test (resize) |
+| 7   | Keyboard accessible (tab, enter, escape)       | Manual test          |
+| 8   | All tests pass (`pnpm test`)                   | CI run               |
 
 ---
 

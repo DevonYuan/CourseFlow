@@ -89,7 +89,7 @@ function isUpcoming(date: Date): boolean {
 function applySortWithinGroup(
   assignments: Assignment[],
   sortOption: SortOption,
-  priorityOrder: string[] = []
+  priorityOrder: string[] = [],
 ): Assignment[] {
   if (assignments.length <= 1) return [...assignments];
 
@@ -122,7 +122,7 @@ function applySortWithinGroup(
  * Assignments not in priorityOrder sort to end (Infinity).
  */
 function createPrioritySortComparator(
-  priorityOrder: string[]
+  priorityOrder: string[],
 ): (a: Assignment, b: Assignment) => number {
   const orderMap = new Map(priorityOrder.map((id, index) => [id, index]));
 
@@ -194,7 +194,7 @@ function sortByCreatedDesc(a: Assignment, b: Assignment): number {
 export function groupByWeek(
   assignments: Assignment[],
   sortOption: SortOption = 'priority',
-  priorityOrder: string[] = []
+  priorityOrder: string[] = [],
 ): GroupedAssignments[] {
   const now = new Date();
 
@@ -255,7 +255,7 @@ export function groupByWeek(
 export function groupByStatus(
   assignments: Assignment[],
   sortOption: SortOption = 'priority',
-  priorityOrder: string[] = []
+  priorityOrder: string[] = [],
 ): GroupedAssignments[] {
   const statusGroups = new Map<Assignment['status'], Assignment[]>([
     ['pending', []],
@@ -273,7 +273,11 @@ export function groupByStatus(
 
   return [
     { groupKey: 'pending', groupLabel: 'Pending', assignments: statusGroups.get('pending')! },
-    { groupKey: 'in_progress', groupLabel: 'In Progress', assignments: statusGroups.get('in_progress')! },
+    {
+      groupKey: 'in_progress',
+      groupLabel: 'In Progress',
+      assignments: statusGroups.get('in_progress')!,
+    },
     { groupKey: 'completed', groupLabel: 'Completed', assignments: statusGroups.get('completed')! },
     { groupKey: 'archived', groupLabel: 'Archived', assignments: statusGroups.get('archived')! },
   ]
@@ -292,7 +296,7 @@ export function groupByStatus(
 export function groupByCourse(
   assignments: Assignment[],
   sortOption: SortOption = 'priority',
-  priorityOrder: string[] = []
+  priorityOrder: string[] = [],
 ): GroupedAssignments[] {
   const courseMap = new Map<string, Assignment[]>();
 
@@ -324,7 +328,7 @@ export function applyGrouping(
   assignments: Assignment[],
   groupingType: GroupingType,
   sortOption: SortOption = 'priority',
-  priorityOrder: string[] = []
+  priorityOrder: string[] = [],
 ): Assignment[] | GroupedAssignments[] {
   if (groupingType === 'none' || assignments.length === 0) {
     return assignments;

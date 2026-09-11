@@ -205,10 +205,10 @@ describe('useAssignmentDetail', () => {
     };
     mockApi.db.assignments.get.mockResolvedValue({ ok: true, data: mockAssignment });
 
-    const { result, rerender } = renderHook(
-      ({ id }: { id: string }) => useAssignmentDetail(id),
-      { initialProps: { id: assignmentId }, wrapper },
-    );
+    const { result, rerender } = renderHook(({ id }: { id: string }) => useAssignmentDetail(id), {
+      initialProps: { id: assignmentId },
+      wrapper,
+    });
 
     await waitFor(() => expect(result.current.assignment?.title).toBe('Essay Draft'));
 

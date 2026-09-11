@@ -79,7 +79,9 @@
   border: none;
   border-radius: var(--radius-md, 8px);
   cursor: pointer;
-  transition: color var(--transition-fast, 150ms), background-color var(--transition-fast, 150ms);
+  transition:
+    color var(--transition-fast, 150ms),
+    background-color var(--transition-fast, 150ms);
 }
 
 .filter-bar__clear-all:hover {

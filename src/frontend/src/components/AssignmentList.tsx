@@ -74,19 +74,29 @@ interface AssignmentListProps {
  * Note: Virtualized list doesn't support drag-and-drop, so this is used only
  * when there are > 100 items (drag-and-drop disabled for virtualized lists).
  */
-function AssignmentRowRenderer(
-  props: {
-    index: number;
-    style: React.CSSProperties;
-    ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' };
-    assignments: Assignment[];
-    onClick?: (assignment: Assignment) => void;
-    onMarkComplete?: (id: string) => Promise<void>;
-    onDelete?: (id: string) => Promise<void>;
-    subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }>;
-  }
-): React.ReactElement | null {
-  const { index, style, ariaAttributes, assignments, onClick, onMarkComplete, onDelete, subTaskProgressMap } = props;
+function AssignmentRowRenderer(props: {
+  index: number;
+  style: React.CSSProperties;
+  ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' };
+  assignments: Assignment[];
+  onClick?: (assignment: Assignment) => void;
+  onMarkComplete?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
+  subTaskProgressMap?: Map<
+    string,
+    { completedCount: number; totalCount: number; percentage: number }
+  >;
+}): React.ReactElement | null {
+  const {
+    index,
+    style,
+    ariaAttributes,
+    assignments,
+    onClick,
+    onMarkComplete,
+    onDelete,
+    subTaskProgressMap,
+  } = props;
   const assignment = assignments[index];
   if (!assignment) {
     return <div style={style} {...ariaAttributes} />;
@@ -99,7 +109,15 @@ function AssignmentRowRenderer(
         onClick={onClick}
         onMarkComplete={onMarkComplete}
         onDelete={onDelete}
-        subTaskProgress={progress ? { completedCount: progress.completedCount, totalCount: progress.totalCount, percentage: progress.percentage } : undefined}
+        subTaskProgress={
+          progress
+            ? {
+                completedCount: progress.completedCount,
+                totalCount: progress.totalCount,
+                percentage: progress.percentage,
+              }
+            : undefined
+        }
       />
     </div>
   );
@@ -126,19 +144,13 @@ export function SortableAssignmentRow({
   id,
   subTaskProgress,
 }: SortableAssignmentRowProps): JSX.Element {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    isDragging,
-  } = useSortable({ id, disabled: assignment.status === 'completed' });
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+    id,
+    disabled: assignment.status === 'completed',
+  });
 
   return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-    >
+    <div ref={setNodeRef} {...attributes} {...listeners}>
       <AssignmentRow
         assignment={assignment}
         onClick={onClick}
@@ -158,7 +170,10 @@ export function SortableAssignmentRow({
  * - Error state with retry button
  * - Assignment rows when data available with drag-and-drop reordering
  */
-export function AssignmentList({ onOpenSettings, onAssignmentClick }: AssignmentListProps): JSX.Element {
+export function AssignmentList({
+  onOpenSettings,
+  onAssignmentClick,
+}: AssignmentListProps): JSX.Element {
   // Initialize store on first mount
   useEffect(() => {
     const cleanup = initializeAssignmentsStore();
@@ -195,7 +210,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
   // Fetch sub-task progress for visible assignments
   const assignmentIds = useMemo(
     () => flatFilteredAssignmentsForProgress.map((a) => a.id),
-    [flatFilteredAssignmentsForProgress]
+    [flatFilteredAssignmentsForProgress],
   );
   const subTaskProgressMap = useAssignmentSubTaskProgress(assignmentIds);
 
@@ -215,27 +230,24 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
   });
 
   // Memoize refetch and clearError from store actions
-  const refetch = useMemo(
-    () => useAssignmentsStore.getState().fetchAssignments,
-    []
-  );
-  const clearError = useMemo(
-    () => useAssignmentsStore.getState().clearError,
-    []
-  );
+  const refetch = useMemo(() => useAssignmentsStore.getState().fetchAssignments, []);
+  const clearError = useMemo(() => useAssignmentsStore.getState().clearError, []);
 
   // Delete assignment handler
-  const deleteAssignment = useCallback(async (id: string) => {
-    try {
-      const result = await window.api.db.assignments.delete(id);
-      if (!result.ok) {
-        throw new Error(result.error);
+  const deleteAssignment = useCallback(
+    async (id: string) => {
+      try {
+        const result = await window.api.db.assignments.delete(id);
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
+        toastError('Assignment deleted');
+      } catch {
+        toastError('Failed to delete assignment');
       }
-      toastError('Assignment deleted');
-    } catch {
-      toastError('Failed to delete assignment');
-    }
-  }, [toastError]);
+    },
+    [toastError],
+  );
 
   // Debounced reorder function for IPC call
   const debouncedReorderRef = useRef(
@@ -252,7 +264,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
         revertPriorityOrder();
         toastError('Failed to save order. Reverting...');
       }
-    }, REORDER_DEBOUNCE_MS)
+    }, REORDER_DEBOUNCE_MS),
   );
 
   // Cleanup debounced function on unmount
@@ -301,7 +313,14 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
       // 2. Debounced IPC call to persist
       debouncedReorderRef.current(orderedIds);
     },
-    [priorityOrder, assignments, reorderOptimistic, setPriorityOrder, revertPriorityOrder, toastError]
+    [
+      priorityOrder,
+      assignments,
+      reorderOptimistic,
+      setPriorityOrder,
+      revertPriorityOrder,
+      toastError,
+    ],
   );
 
   // Set up sensors for drag-and-drop
@@ -319,7 +338,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           y: 0,
         };
       },
-    })
+    }),
   );
 
   // Ref to hold latest sortedAssignments for renderDragOverlay callback
@@ -358,7 +377,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
         />
       );
     },
-    [onAssignmentClick, markComplete]
+    [onAssignmentClick, markComplete],
   );
 
   // Sort assignments by priority order if available (for drag-and-drop)
@@ -398,7 +417,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
       assignmentsToRender: Assignment[],
       onClick?: (assignment: Assignment) => void,
       onMarkComplete?: (id: string) => Promise<void>,
-      onDelete?: (id: string) => Promise<void>
+      onDelete?: (id: string) => Promise<void>,
     ) => {
       if (assignmentsToRender.length > VIRTUALIZATION_THRESHOLD) {
         return (
@@ -420,12 +439,20 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
             onClick={onClick}
             onMarkComplete={onMarkComplete}
             onDelete={onDelete}
-            subTaskProgress={progress ? { completedCount: progress.completedCount, totalCount: progress.totalCount, percentage: progress.percentage } : undefined}
+            subTaskProgress={
+              progress
+                ? {
+                    completedCount: progress.completedCount,
+                    totalCount: progress.totalCount,
+                    percentage: progress.percentage,
+                  }
+                : undefined
+            }
           />
         );
       });
     },
-    [subTaskProgressMap]
+    [subTaskProgressMap],
   );
 
   // Render skeleton while loading
@@ -439,7 +466,14 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
       <div className="assignment-list__error" role="alert" aria-live="assertive">
         <div className="error-banner">
           <div className="error-banner__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -474,27 +508,27 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           <div className="assignment-list__rows" role="list" aria-label="Assignments">
             {Array.isArray(filteredAssignments) &&
             filteredAssignments.length > 0 &&
-            'groupKey' in (filteredAssignments[0] ?? {})
-              ? (
-                <GroupedAssignmentList
-                  groupedAssignments={filteredAssignments as GroupedAssignments[]}
-                  onAssignmentClick={onAssignmentClick}
-                  onMarkComplete={markComplete}
-                  onDelete={deleteAssignment}
-                  groupingType={groupingType}
-                  sortOption={sortOption}
-                  priorityOrder={priorityOrder}
-                  onDragEnd={handleDragEnd}
-                  onOpenSettings={onOpenSettings}
-                  subTaskProgressMap={subTaskProgressMap}
-                />
+            'groupKey' in (filteredAssignments[0] ?? {}) ? (
+              <GroupedAssignmentList
+                groupedAssignments={filteredAssignments as GroupedAssignments[]}
+                onAssignmentClick={onAssignmentClick}
+                onMarkComplete={markComplete}
+                onDelete={deleteAssignment}
+                groupingType={groupingType}
+                sortOption={sortOption}
+                priorityOrder={priorityOrder}
+                onDragEnd={handleDragEnd}
+                onOpenSettings={onOpenSettings}
+                subTaskProgressMap={subTaskProgressMap}
+              />
+            ) : (
+              renderFlatAssignments(
+                flatFilteredAssignments,
+                onAssignmentClick,
+                markComplete,
+                deleteAssignment,
               )
-              : renderFlatAssignments(
-                  flatFilteredAssignments,
-                  onAssignmentClick,
-                  markComplete,
-                  deleteAssignment
-                )}
+            )}
           </div>
         )}
         <PriorityLiveRegion />
@@ -590,15 +624,33 @@ function VirtualizedAssignmentList({
   onAssignmentClick?: (assignment: Assignment) => void;
   onMarkComplete?: (id: string) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
-  subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }>;
+  subTaskProgressMap?: Map<
+    string,
+    { completedCount: number; totalCount: number; percentage: number }
+  >;
 }): JSX.Element {
   const itemData = useMemo(
-    () => ({ assignments, onClick: onAssignmentClick, onMarkComplete, onDelete, subTaskProgressMap }),
-    [assignments, onAssignmentClick, onMarkComplete, onDelete, subTaskProgressMap]
+    () => ({
+      assignments,
+      onClick: onAssignmentClick,
+      onMarkComplete,
+      onDelete,
+      subTaskProgressMap,
+    }),
+    [assignments, onAssignmentClick, onMarkComplete, onDelete, subTaskProgressMap],
   );
 
   return (
-    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void; onMarkComplete?: (id: string) => Promise<void>; onDelete?: (id: string) => Promise<void>; subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }> }>
+    <List<{
+      assignments: Assignment[];
+      onClick?: (assignment: Assignment) => void;
+      onMarkComplete?: (id: string) => Promise<void>;
+      onDelete?: (id: string) => Promise<void>;
+      subTaskProgressMap?: Map<
+        string,
+        { completedCount: number; totalCount: number; percentage: number }
+      >;
+    }>
       className="assignment-list__virtualized"
       style={{ height: 600, width: '100%' }}
       rowCount={assignments.length}

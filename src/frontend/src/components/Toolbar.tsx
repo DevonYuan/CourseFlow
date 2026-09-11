@@ -50,22 +50,38 @@ export function Toolbar({
   viewMode = 'flat',
   onViewModeChange,
 }: ToolbarProps): JSX.Element {
-  const courseLabel = courseFilter.length === 0 ? 'Courses' :
-    courseFilter.length === 1 ? courseFilter[0] :
-    `${courseFilter.length} courses`;
+  const courseLabel =
+    courseFilter.length === 0
+      ? 'Courses'
+      : courseFilter.length === 1
+        ? courseFilter[0]
+        : `${courseFilter.length} courses`;
 
   const dueDateLabel = dueDateFilter === 'any' ? 'Any date' : dueDateFilter;
 
-  const sortLabel = sortOption === 'priority' ? 'Priority' :
-    sortOption === 'dueDateAsc' ? 'Due date (asc)' :
-    sortOption === 'dueDateDesc' ? 'Due date (desc)' :
-    sortOption === 'course' ? 'Course' :
-    sortOption === 'createdDesc' ? 'Created' : sortOption;
+  const sortLabel =
+    sortOption === 'priority'
+      ? 'Priority'
+      : sortOption === 'dueDateAsc'
+        ? 'Due date (asc)'
+        : sortOption === 'dueDateDesc'
+          ? 'Due date (desc)'
+          : sortOption === 'course'
+            ? 'Course'
+            : sortOption === 'createdDesc'
+              ? 'Created'
+              : sortOption;
 
-  const groupLabel = groupOption === 'none' ? 'None' :
-    groupOption === 'course' ? 'Course' :
-    groupOption === 'week' ? 'Week' :
-    groupOption === 'status' ? 'Status' : groupOption;
+  const groupLabel =
+    groupOption === 'none'
+      ? 'None'
+      : groupOption === 'course'
+        ? 'Course'
+        : groupOption === 'week'
+          ? 'Week'
+          : groupOption === 'status'
+            ? 'Status'
+            : groupOption;
 
   return (
     <div className="bar-toolbar" role="toolbar" aria-label="Assignment list controls">
@@ -74,20 +90,38 @@ export function Toolbar({
         <div className="chip">
           <span className="muted">Course</span>
           <span>{courseLabel}</span>
-          <svg className="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 9l6 6 6-6"/>
+          <svg
+            className="chev"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
           </svg>
-          {courseFilter.length > 0 && (
-            <span className="count">{courseFilter.length}</span>
-          )}
+          {courseFilter.length > 0 && <span className="count">{courseFilter.length}</span>}
         </div>
 
         {/* Due Date Filter Chip */}
         <div className="chip">
           <span className="muted">Due</span>
           <span>{dueDateLabel}</span>
-          <svg className="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 9l6 6 6-6"/>
+          <svg
+            className="chev"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
       </div>
@@ -99,8 +133,18 @@ export function Toolbar({
         <div className="chip">
           <span className="muted">Sort</span>
           <span>{sortLabel}</span>
-          <svg className="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 9l6 6 6-6"/>
+          <svg
+            className="chev"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
 
@@ -108,8 +152,18 @@ export function Toolbar({
         <div className="chip">
           <span className="muted">Group</span>
           <span>{groupLabel}</span>
-          <svg className="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 9l6 6 6-6"/>
+          <svg
+            className="chev"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
       </div>
@@ -125,8 +179,17 @@ export function Toolbar({
           aria-pressed={viewMode === 'flat'}
           type="button"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
           </svg>
         </button>
         <button
@@ -136,11 +199,20 @@ export function Toolbar({
           aria-pressed={viewMode === 'grouped'}
           type="button"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <rect x="3" y="4" width="7" height="7" rx="1"/>
-            <rect x="14" y="4" width="7" height="7" rx="1"/>
-            <rect x="3" y="15" width="7" height="7" rx="1"/>
-            <rect x="14" y="15" width="7" height="7" rx="1"/>
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4" width="7" height="7" rx="1" />
+            <rect x="14" y="4" width="7" height="7" rx="1" />
+            <rect x="3" y="15" width="7" height="7" rx="1" />
+            <rect x="14" y="15" width="7" height="7" rx="1" />
           </svg>
         </button>
       </div>

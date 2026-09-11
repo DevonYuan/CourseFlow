@@ -10,11 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import {
-  parseICalFeed,
-  parseICalFeedWithMeta,
-  ICalParseError,
-} from '../parse.js';
+import { parseICalFeed, parseICalFeedWithMeta, ICalParseError } from '../parse.js';
 
 const __dirname = join(fileURLToPath(import.meta.url), '..');
 const FIXTURES_DIR = join(__dirname, 'fixtures');
@@ -98,9 +94,11 @@ describe('iCal Parser (ical.js)', () => {
 
       expect(events[0]!.uid).toBe('multi-event-001@example.com');
       expect(events[0]!.summary).toBe(
-        'This is a very long summary that gets folded across multiple lines as per RFC 5545 line folding specification which requires lines to be no longer than 75 octets'
+        'This is a very long summary that gets folded across multiple lines as per RFC 5545 line folding specification which requires lines to be no longer than 75 octets',
       );
-      expect(events[0]!.description).toContain('This description also gets folded across multiple lines');
+      expect(events[0]!.description).toContain(
+        'This description also gets folded across multiple lines',
+      );
 
       expect(events[1]!.uid).toBe('multi-event-002@example.com');
       expect(events[1]!.summary).toBe('Second Event');

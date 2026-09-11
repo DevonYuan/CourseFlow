@@ -15,17 +15,9 @@ export {
   TimeoutError,
 } from './fetch.js';
 
-export {
-  parseICalFeed,
-  parseICalFeedWithMeta,
-  ICalParseError,
-} from './parse.js';
+export { parseICalFeed, parseICalFeedWithMeta, ICalParseError } from './parse.js';
 
-export {
-  mapICalToAssignments,
-  extractCourseName,
-  generateCourseColor,
-} from './map.js';
+export { mapICalToAssignments, extractCourseName, generateCourseColor } from './map.js';
 
 export type { FetchICalOptions } from './fetch.js';
 export type { ParseResult } from './parse.js';

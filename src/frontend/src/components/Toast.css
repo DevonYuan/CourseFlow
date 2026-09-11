@@ -157,7 +157,9 @@
   border-radius: 4px;
   color: var(--text-tertiary, #999);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .toast__dismiss:hover {
@@ -184,7 +186,9 @@
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .toast__action:hover {

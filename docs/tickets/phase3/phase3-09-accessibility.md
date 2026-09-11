@@ -15,7 +15,7 @@ Ensure all Phase 3 UI (detail view, sub-tasks, notes, progress indicator, all-co
 
 > Document WHAT is needed and WHY it is needed.
 
-- [ ] **Keyboard navigation — Detail view**: 
+- [ ] **Keyboard navigation — Detail view**:
   - Tab order: Back button → Assignment title → Course badge → Due date → Status badge → Description → Progress bar → Sub-task list (each row: checkbox → title → delete) → Add sub-task input → Notes editor → Note entries.
   - Enter/Space activates buttons, links, checkboxes.
   - Escape closes modals (delete confirmation, any dialogs), clears inputs.
@@ -73,41 +73,41 @@ Ensure all Phase 3 UI (detail view, sub-tasks, notes, progress indicator, all-co
 
 ### Frontend (Renderer) — Components
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/pages/AssignmentDetailPage.tsx` | Audit: heading hierarchy, landmarks, skip link, focus on mount, focus restoration on back. Add `autoFocus` to Back button or use `useEffect` to focus. |
-| `src/frontend/src/components/subtasks/SubTaskRow.tsx` | Verify: native checkbox, `aria-label` on delete button, focus styles, keyboard activation. |
-| `src/frontend/src/components/subtasks/SubTaskAddInput.tsx` | Verify: native input, `aria-label`, Enter to save, Escape to clear, focus on mount. |
-| `src/frontend/src/components/subtasks/DeleteConfirmModal.tsx` | Add: `FocusTrap`, initial focus on "Cancel" button, `aria-modal="true"`, `role="dialog"`, `aria-labelledby`, Escape to close, focus restoration. |
-| `src/frontend/src/components/subtasks/AllCompletePrompt.tsx` | Verify: `role="status"` or `aria-live="polite"`, button/link focusable, Escape dismisses. |
-| `src/frontend/src/components/notes/NotesEditor.tsx` | Verify (from 3.6/3.7): `textarea` with `aria-label`, `aria-multiline`, Ctrl+Enter to save, Escape to cancel, focus management. |
-| `src/frontend/src/components/notes/NoteEntry.tsx` | Verify: timestamp focusable, delete button `aria-label`, read-only content announced. |
-| `src/frontend/src/components/ui/ProgressBar.tsx` | Verify (from 3.5): `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-label`, reduced motion. |
-| `src/frontend/src/components/assignments/AssignmentRow.tsx` | Verify: clickable row has `tabIndex=0`, `role="button"` (if not native), focus ring, Enter/Space opens detail. |
-| `src/frontend/src/components/ui/Toast.tsx` | Verify: `role="status"`, `aria-live="polite"`, focusable dismiss button. |
+| File                                                          | Change                                                                                                                                                 |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/frontend/src/pages/AssignmentDetailPage.tsx`             | Audit: heading hierarchy, landmarks, skip link, focus on mount, focus restoration on back. Add `autoFocus` to Back button or use `useEffect` to focus. |
+| `src/frontend/src/components/subtasks/SubTaskRow.tsx`         | Verify: native checkbox, `aria-label` on delete button, focus styles, keyboard activation.                                                             |
+| `src/frontend/src/components/subtasks/SubTaskAddInput.tsx`    | Verify: native input, `aria-label`, Enter to save, Escape to clear, focus on mount.                                                                    |
+| `src/frontend/src/components/subtasks/DeleteConfirmModal.tsx` | Add: `FocusTrap`, initial focus on "Cancel" button, `aria-modal="true"`, `role="dialog"`, `aria-labelledby`, Escape to close, focus restoration.       |
+| `src/frontend/src/components/subtasks/AllCompletePrompt.tsx`  | Verify: `role="status"` or `aria-live="polite"`, button/link focusable, Escape dismisses.                                                              |
+| `src/frontend/src/components/notes/NotesEditor.tsx`           | Verify (from 3.6/3.7): `textarea` with `aria-label`, `aria-multiline`, Ctrl+Enter to save, Escape to cancel, focus management.                         |
+| `src/frontend/src/components/notes/NoteEntry.tsx`             | Verify: timestamp focusable, delete button `aria-label`, read-only content announced.                                                                  |
+| `src/frontend/src/components/ui/ProgressBar.tsx`              | Verify (from 3.5): `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-label`, reduced motion.                              |
+| `src/frontend/src/components/assignments/AssignmentRow.tsx`   | Verify: clickable row has `tabIndex=0`, `role="button"` (if not native), focus ring, Enter/Space opens detail.                                         |
+| `src/frontend/src/components/ui/Toast.tsx`                    | Verify: `role="status"`, `aria-live="polite"`, focusable dismiss button.                                                                               |
 
 ### Frontend — Hooks / Utilities
 
-| File | Change |
-|------|--------|
-| `src/frontend/src/hooks/useFocusRestoration.ts` | **New**. Hook: `const { saveFocus, restoreFocus } = useFocusRestoration()`. Saves `document.activeElement` before navigation/modal, restores after. |
-| `src/frontend/src/hooks/useFocusTrap.ts` | **New or reuse**. Hook/component for focus trapping in modals. |
-| `src/frontend/src/utils/keyboard.ts` | **New or extend**. Key constants, `isActivationKey(event)` (Enter/Space), `isEscapeKey(event)`, `isArrowKey(event)`. |
-| `src/frontend/src/styles/global.css` (or CSS-in-JS theme) | Add global `:focus-visible` style, skip link styles, reduced-motion media query overrides. |
+| File                                                      | Change                                                                                                                                              |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/src/hooks/useFocusRestoration.ts`           | **New**. Hook: `const { saveFocus, restoreFocus } = useFocusRestoration()`. Saves `document.activeElement` before navigation/modal, restores after. |
+| `src/frontend/src/hooks/useFocusTrap.ts`                  | **New or reuse**. Hook/component for focus trapping in modals.                                                                                      |
+| `src/frontend/src/utils/keyboard.ts`                      | **New or extend**. Key constants, `isActivationKey(event)` (Enter/Space), `isEscapeKey(event)`, `isArrowKey(event)`.                                |
+| `src/frontend/src/styles/global.css` (or CSS-in-JS theme) | Add global `:focus-visible` style, skip link styles, reduced-motion media query overrides.                                                          |
 
 ### Frontend — Testing
 
-| File | Change |
-|------|--------|
-| `src/frontend/test/a11y.spec.ts` | **New**. Playwright + `@axe-core/playwright` tests: scan detail page, sub-task list, notes editor, modals. Configure to fail on violations. |
-| `src/frontend/test/keyboard-navigation.spec.ts` | **New**. Playwright tests for Tab order, focus management, keyboard shortcuts, focus restoration. |
+| File                                            | Change                                                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/frontend/test/a11y.spec.ts`                | **New**. Playwright + `@axe-core/playwright` tests: scan detail page, sub-task list, notes editor, modals. Configure to fail on violations. |
+| `src/frontend/test/keyboard-navigation.spec.ts` | **New**. Playwright tests for Tab order, focus management, keyboard shortcuts, focus restoration.                                           |
 
 ### Documentation
 
-| File | Change |
-|------|--------|
+| File                                 | Change                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `docs/architecture/accessibility.md` | **New or update**. Document accessibility standards, focus management patterns, ARIA usage guidelines, keyboard shortcuts reference. |
-| `README.md` (root) | Add accessibility statement / keyboard shortcuts link. |
+| `README.md` (root)                   | Add accessibility statement / keyboard shortcuts link.                                                                               |
 
 ## Acceptance Criteria
 
@@ -145,7 +145,7 @@ Ensure all Phase 3 UI (detail view, sub-tasks, notes, progress indicator, all-co
 - **Focus restoration on browser back**: The browser's back button doesn't fire a React lifecycle event. Use `window.addEventListener('pageshow', ...)` or a router-specific `onBeforeUnload`/`onPopState` to restore focus. Alternatively, accept that browser back may not restore focus perfectly (browser default is often sufficient).
 - **Focus trap library**: `focus-trap-react` is lightweight and well-maintained. Add as dependency if not present.
 - **Axe configuration**: Configure axe to ignore known false positives (e.g., color contrast on disabled elements if intentional). Document ignore rules in test file.
-- **Testing priority**: 
+- **Testing priority**:
   1. Automated axe (catches ~50% of issues)
   2. Keyboard-only navigation test (manual + Playwright)
   3. Screen reader spot-check (manual, per release)

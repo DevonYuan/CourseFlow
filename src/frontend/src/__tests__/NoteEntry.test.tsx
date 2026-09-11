@@ -45,7 +45,13 @@ describe('NoteEntry', () => {
 
   it('does not show the Edited badge for an unedited note (within 5s threshold)', () => {
     // updatedAt is only 1 second after createdAt - below 5s threshold
-    render(<NoteEntry note={makeNote({ updatedAt: '2026-09-05T12:00:01.000Z' as IsoDateTime })} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    render(
+      <NoteEntry
+        note={makeNote({ updatedAt: '2026-09-05T12:00:01.000Z' as IsoDateTime })}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
     expect(screen.queryByTestId('note-edited-badge')).not.toBeInTheDocument();
   });
 
@@ -95,7 +101,9 @@ describe('NoteEntry', () => {
 
   it('renders HTML-looking content as literal text (XSS safe)', () => {
     const malicious = '<script>alert("xss")</script> & <b>bold</b>';
-    render(<NoteEntry note={makeNote({ content: malicious })} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    render(
+      <NoteEntry note={makeNote({ content: malicious })} onEdit={vi.fn()} onDelete={vi.fn()} />,
+    );
 
     const content = screen.getByTestId('note-content');
     // Rendered as plain text, not parsed HTML
@@ -118,7 +126,13 @@ describe('NoteEntry', () => {
 
   it('shows created timestamp with relative format', () => {
     // createdAt is in the past
-    render(<NoteEntry note={makeNote({ createdAt: '2026-09-04T12:00:00.000Z' as IsoDateTime })} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    render(
+      <NoteEntry
+        note={makeNote({ createdAt: '2026-09-04T12:00:00.000Z' as IsoDateTime })}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
     // Should show "Created X ago" format
     expect(screen.getByText(/Created/)).toBeInTheDocument();
   });
