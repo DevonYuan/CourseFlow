@@ -82,10 +82,11 @@ function AssignmentRowRenderer(
     assignments: Assignment[];
     onClick?: (assignment: Assignment) => void;
     onMarkComplete?: (id: string) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>;
     subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }>;
   }
 ): React.ReactElement | null {
-  const { index, style, ariaAttributes, assignments, onClick, onMarkComplete, subTaskProgressMap } = props;
+  const { index, style, ariaAttributes, assignments, onClick, onMarkComplete, onDelete, subTaskProgressMap } = props;
   const assignment = assignments[index];
   if (!assignment) {
     return <div style={style} {...ariaAttributes} />;
@@ -97,6 +98,7 @@ function AssignmentRowRenderer(
         assignment={assignment}
         onClick={onClick}
         onMarkComplete={onMarkComplete}
+        onDelete={onDelete}
         subTaskProgress={progress ? { completedCount: progress.completedCount, totalCount: progress.totalCount, percentage: progress.percentage } : undefined}
       />
     </div>
@@ -107,6 +109,7 @@ interface SortableAssignmentRowProps {
   assignment: Assignment;
   onClick?: (assignment: Assignment) => void;
   onMarkComplete?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   id: string;
   subTaskProgress?: { completedCount: number; totalCount: number; percentage: number };
 }
@@ -119,6 +122,7 @@ export function SortableAssignmentRow({
   assignment,
   onClick,
   onMarkComplete,
+  onDelete,
   id,
   subTaskProgress,
 }: SortableAssignmentRowProps): JSX.Element {
@@ -139,6 +143,7 @@ export function SortableAssignmentRow({
         assignment={assignment}
         onClick={onClick}
         onMarkComplete={onMarkComplete}
+        onDelete={onDelete}
         isDragging={isDragging}
         subTaskProgress={subTaskProgress}
       />
@@ -218,6 +223,19 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
     () => useAssignmentsStore.getState().clearError,
     []
   );
+
+  // Delete assignment handler
+  const deleteAssignment = useCallback(async (id: string) => {
+    try {
+      const result = await window.api.db.assignments.delete(id);
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      toastError('Assignment deleted');
+    } catch {
+      toastError('Failed to delete assignment');
+    }
+  }, [toastError]);
 
   // Debounced reorder function for IPC call
   const debouncedReorderRef = useRef(
@@ -379,7 +397,8 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
     (
       assignmentsToRender: Assignment[],
       onClick?: (assignment: Assignment) => void,
-      onMarkComplete?: (id: string) => Promise<void>
+      onMarkComplete?: (id: string) => Promise<void>,
+      onDelete?: (id: string) => Promise<void>
     ) => {
       if (assignmentsToRender.length > VIRTUALIZATION_THRESHOLD) {
         return (
@@ -387,6 +406,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
             assignments={assignmentsToRender}
             onAssignmentClick={onClick}
             onMarkComplete={onMarkComplete}
+            onDelete={onDelete}
             subTaskProgressMap={subTaskProgressMap}
           />
         );
@@ -399,6 +419,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
             assignment={assignment}
             onClick={onClick}
             onMarkComplete={onMarkComplete}
+            onDelete={onDelete}
             subTaskProgress={progress ? { completedCount: progress.completedCount, totalCount: progress.totalCount, percentage: progress.percentage } : undefined}
           />
         );
@@ -459,6 +480,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
                   groupedAssignments={filteredAssignments as GroupedAssignments[]}
                   onAssignmentClick={onAssignmentClick}
                   onMarkComplete={markComplete}
+                  onDelete={deleteAssignment}
                   groupingType={groupingType}
                   sortOption={sortOption}
                   priorityOrder={priorityOrder}
@@ -470,7 +492,8 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
               : renderFlatAssignments(
                   flatFilteredAssignments,
                   onAssignmentClick,
-                  markComplete
+                  markComplete,
+                  deleteAssignment
                 )}
           </div>
         )}
@@ -493,6 +516,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           assignments={flatFilteredAssignments}
           onAssignmentClick={onAssignmentClick}
           onMarkComplete={markComplete}
+          onDelete={deleteAssignment}
           subTaskProgressMap={subTaskProgressMap}
         />
         <PriorityLiveRegion />
@@ -518,6 +542,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
           groupedAssignments={filteredAssignments as GroupedAssignments[]}
           onAssignmentClick={onAssignmentClick}
           onMarkComplete={markComplete}
+          onDelete={deleteAssignment}
           groupingType={groupingType}
           sortOption={sortOption}
           priorityOrder={priorityOrder}
@@ -537,6 +562,7 @@ export function AssignmentList({ onOpenSettings, onAssignmentClick }: Assignment
         sortedAssignments={sortedAssignments}
         onAssignmentClick={onAssignmentClick}
         onMarkComplete={markComplete}
+        onDelete={deleteAssignment}
         onDragEnd={handleDragEnd}
         sensors={sensors}
         onOpenSettings={onOpenSettings}
@@ -557,20 +583,22 @@ function VirtualizedAssignmentList({
   assignments,
   onAssignmentClick,
   onMarkComplete,
+  onDelete,
   subTaskProgressMap,
 }: {
   assignments: Assignment[];
   onAssignmentClick?: (assignment: Assignment) => void;
   onMarkComplete?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }>;
 }): JSX.Element {
   const itemData = useMemo(
-    () => ({ assignments, onClick: onAssignmentClick, onMarkComplete, subTaskProgressMap }),
-    [assignments, onAssignmentClick, onMarkComplete, subTaskProgressMap]
+    () => ({ assignments, onClick: onAssignmentClick, onMarkComplete, onDelete, subTaskProgressMap }),
+    [assignments, onAssignmentClick, onMarkComplete, onDelete, subTaskProgressMap]
   );
 
   return (
-    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void; onMarkComplete?: (id: string) => Promise<void>; subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }> }>
+    <List<{ assignments: Assignment[]; onClick?: (assignment: Assignment) => void; onMarkComplete?: (id: string) => Promise<void>; onDelete?: (id: string) => Promise<void>; subTaskProgressMap?: Map<string, { completedCount: number; totalCount: number; percentage: number }> }>
       className="assignment-list__virtualized"
       style={{ height: 600, width: '100%' }}
       rowCount={assignments.length}

@@ -29,6 +29,8 @@ interface AssignmentListDragDropProps {
   onAssignmentClick?: (assignment: Assignment) => void;
   /** Callback when mark complete is triggered */
   onMarkComplete?: (id: string) => Promise<void>;
+  /** Callback when delete is triggered */
+  onDelete?: (id: string) => Promise<void>;
   /** Callback when drag ends with new order */
   onDragEnd: (event: import('@dnd-kit/core').DragEndEvent) => void;
   /** Sensors for drag-and-drop */
@@ -60,6 +62,7 @@ export function AssignmentListDragDrop({
   sortedAssignments,
   onAssignmentClick,
   onMarkComplete,
+  onDelete,
   onDragEnd,
   sensors,
   onOpenSettings,
@@ -88,6 +91,7 @@ export function AssignmentListDragDrop({
                   assignment={assignment}
                   onClick={onAssignmentClick}
                   onMarkComplete={onMarkComplete}
+                  onDelete={onDelete}
                   id={assignment.id}
                   subTaskProgress={progress}
                 />

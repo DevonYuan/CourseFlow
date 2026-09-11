@@ -233,6 +233,44 @@
   flex-shrink: 0;
 }
 
+/* Actions container (Complete / Delete) */
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Delete Button */
+.row-delete {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.row-delete:hover {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.row-delete:active {
+  transform: scale(0.95);
+}
+
+.row-delete:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .row {

@@ -30,6 +30,8 @@ interface AssignmentRowProps {
   onClick?: (assignment: Assignment) => void;
   /** Callback when mark complete is triggered */
   onMarkComplete?: (id: string) => Promise<void>;
+  /** Callback when delete is triggered */
+  onDelete?: (id: string) => Promise<void>;
   /** Whether the row is currently being dragged */
   isDragging?: boolean;
   /** Optional sub-task progress data for compact indicator */
@@ -72,12 +74,13 @@ const statusLabels: Record<Assignment['status'], string> = {
 
 /**
  * Individual assignment row with click/keyboard handling and drag support.
- * Design: grip | course (dot + name) | title + progress | due | status badge | checkbox
+ * Design: grip | course (dot + name) | title + progress | due | status badge | checkbox | delete
  */
 export function AssignmentRow({
   assignment,
   onClick,
   onMarkComplete,
+  onDelete,
   isDragging = false,
   subTaskProgress,
   ref,
@@ -101,20 +104,26 @@ export function AssignmentRow({
     }
   };
 
-  const handleMarkComplete = (event: React.MouseEvent) => {
-    // Prevent row click from firing
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.stopPropagation();
     if (onMarkComplete && !isCompleted) {
       void onMarkComplete(assignment.id);
     }
   };
 
-  const handleMarkCompleteKeyDown = (event: React.KeyboardEvent) => {
+  const handleDelete = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (onDelete && window.confirm(`Delete "${assignment.title}"? This will also remove its sub-tasks and notes.`)) {
+      await onDelete(assignment.id);
+    }
+  };
+
+  const handleDeleteKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       event.stopPropagation();
-      if (onMarkComplete && !isCompleted) {
-        void onMarkComplete(assignment.id);
+      if (onDelete && window.confirm(`Delete "${assignment.title}"? This will also remove its sub-tasks and notes.`)) {
+        void onDelete(assignment.id);
       }
     }
   };
@@ -140,7 +149,7 @@ export function AssignmentRow({
       aria-label={`${assignment.title}, ${assignment.courseName}, due ${dueDate}, ${statusLabels[assignment.status]}`}
       data-assignment-id={assignment.id}
     >
-      {/* Grip / Drag Handle */}
+      {/* Grip / Drag Handle (dot logo) */}
       <div className="grip" {...listeners} aria-hidden="true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="8" cy="6" r="1.4"/>
@@ -199,25 +208,35 @@ export function AssignmentRow({
         {statusLabels[assignment.status]}
       </div>
 
-      {/* Checkbox / Complete Button */}
-      <div className="row-check-wrapper">
-        {isCompleted ? (
-          <div className="row-check-completed" aria-label="Completed">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-        ) : (
+      {/* Actions: Checkbox (complete) / Delete (garbage can) */}
+      <div className="row-actions">
+        {/* Completion checkbox - matches SubTaskRow style */}
+        <label className="row-checkbox-wrapper">
+          <input
+            type="checkbox"
+            className="row-checkbox"
+            checked={isCompleted}
+            onChange={handleCheckboxChange}
+            disabled={isCompleted}
+            aria-checked={isCompleted}
+            aria-label={`Assignment: ${assignment.title}, ${isCompleted ? 'completed' : 'incomplete'}`}
+          />
+          <span className="row-checkbox-visual" aria-hidden="true" />
+        </label>
+
+        {/* Delete Button (garbage can logo) */}
+        {onDelete && (
           <button
-            className="row-check"
-            onClick={handleMarkComplete}
-            onKeyDown={handleMarkCompleteKeyDown}
-            aria-label={`Mark ${assignment.title} as complete`}
+            className="row-delete"
+            onClick={handleDelete}
+            onKeyDown={handleDeleteKeyDown}
+            aria-label={`Delete ${assignment.title}`}
             type="button"
             tabIndex={0}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
             </svg>
           </button>
         )}

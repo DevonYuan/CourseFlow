@@ -86,8 +86,10 @@ function runMigrations(db: Database): void {
       updated_at INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS notes (
-      assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
+      id TEXT PRIMARY KEY,
+      assignment_id TEXT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
       content TEXT NOT NULL DEFAULT '',
+      created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS settings (
@@ -642,6 +644,219 @@ describe('importAssignments', () => {
       expect(typeof result.updated).toBe('number');
       expect(typeof result.skipped).toBe('number');
       expect(result.imported + result.updated + result.skipped).toBe(inputs.length);
+    });
+  });
+
+  describe('Cascade delete safety', () => {
+    it('should cascade delete sub_tasks when assignment is deleted', async () => {
+      const baseTime = Date.now();
+
+      // Create an assignment
+      const assignment = createAssignment({
+        icalUid: 'cascade-test@example.com',
+        title: 'Assignment with sub-tasks',
+        updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
+      });
+      await importAssignments([assignment]);
+
+      // Get the assignment ID
+      const rows1 = testDb!.exec('SELECT id FROM assignments WHERE ical_uid = "cascade-test@example.com"');
+      const assignmentId = rows1[0]?.values?.[0]?.[0] as string;
+
+      // Add sub-tasks
+      testDb!.run(
+        'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['subtask-1', assignmentId, 'Sub-task 1', 0, 0, baseTime, baseTime]
+      );
+      testDb!.run(
+        'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['subtask-2', assignmentId, 'Sub-task 2', 1, 1, baseTime, baseTime]
+      );
+
+      // Verify sub-tasks exist
+      let subTaskRows = testDb!.exec('SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?', [assignmentId]);
+      expect(subTaskRows[0]?.values?.[0]?.[0]).toBe(2);
+
+      // Add notes
+      testDb!.run(
+        'INSERT INTO notes (id, assignment_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+        ['note-1', assignmentId, 'Test note', baseTime, baseTime]
+      );
+
+      // Verify notes exist
+      let noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [assignmentId]);
+      expect(noteRows[0]?.values?.[0]?.[0]).toBe(1);
+
+      // Delete the assignment (simulating repo.deleteAssignment)
+      testDb!.exec('BEGIN TRANSACTION');
+      testDb!.run('DELETE FROM sub_tasks WHERE assignment_id = ?', [assignmentId]);
+      testDb!.run('DELETE FROM notes WHERE assignment_id = ?', [assignmentId]);
+      testDb!.run('DELETE FROM assignments WHERE id = ?', [assignmentId]);
+      testDb!.exec('COMMIT');
+
+      // Verify assignment is deleted
+      const assignmentRows = testDb!.exec('SELECT COUNT(*) as count FROM assignments WHERE id = ?', [assignmentId]);
+      expect(assignmentRows[0]?.values?.[0]?.[0]).toBe(0);
+
+      // Verify sub-tasks are cascade deleted (via explicit delete in repo)
+      subTaskRows = testDb!.exec('SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?', [assignmentId]);
+      expect(subTaskRows[0]?.values?.[0]?.[0]).toBe(0);
+
+      // Verify notes are cascade deleted (via explicit delete in repo)
+      noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [assignmentId]);
+      expect(noteRows[0]?.values?.[0]?.[0]).toBe(0);
+    });
+
+    it('should preserve sub_tasks and notes during iCal re-import', async () => {
+      const baseTime = Date.now();
+
+      // Create an assignment via iCal import
+      const assignment = createAssignment({
+        icalUid: 'preserve-test@example.com',
+        title: 'Original Title',
+        updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
+      });
+      await importAssignments([assignment]);
+
+      // Get the assignment ID
+      const rows1 = testDb!.exec('SELECT id FROM assignments WHERE ical_uid = "preserve-test@example.com"');
+      const assignmentId = rows1[0]?.values?.[0]?.[0] as string;
+
+      // Add sub-tasks (user-created)
+      testDb!.run(
+        'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['subtask-1', assignmentId, 'User sub-task 1', 0, 0, baseTime, baseTime]
+      );
+      testDb!.run(
+        'INSERT INTO sub_tasks (id, assignment_id, title, completed, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['subtask-2', assignmentId, 'User sub-task 2', 1, 1, baseTime, baseTime]
+      );
+
+      // Add notes (user-created)
+      testDb!.run(
+        'INSERT INTO notes (id, assignment_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+        ['note-1', assignmentId, 'User note content', baseTime, baseTime]
+      );
+
+      // Re-import with newer updatedAt (simulating iCal sync)
+      const updated = createAssignment({
+        icalUid: 'preserve-test@example.com',
+        title: 'Updated Title from Canvas',
+        updatedAt: new Date(baseTime + 3_600_000).toISOString() as IsoDateTime,
+      });
+
+      const result = await importAssignments([updated]);
+
+      expect(result.updated).toBe(1);
+
+      // Verify assignment title was updated
+      const assignmentRows = testDb!.exec('SELECT title FROM assignments WHERE id = ?', [assignmentId]);
+      expect(assignmentRows[0]?.values?.[0]?.[0]).toBe('Updated Title from Canvas');
+
+      // Verify sub-tasks are preserved
+      const subTaskRows = testDb!.exec('SELECT COUNT(*) as count FROM sub_tasks WHERE assignment_id = ?', [assignmentId]);
+      expect(subTaskRows[0]?.values?.[0]?.[0]).toBe(2);
+
+      // Verify sub-task content is preserved
+      const subTaskContent = testDb!.exec('SELECT title, completed FROM sub_tasks WHERE assignment_id = ? ORDER BY position', [assignmentId]);
+      expect(subTaskContent[0]?.values?.[0]?.[0]).toBe('User sub-task 1');
+      expect(subTaskContent[0]?.values?.[0]?.[1]).toBe(0);
+      expect(subTaskContent[0]?.values?.[1]?.[0]).toBe('User sub-task 2');
+      expect(subTaskContent[0]?.values?.[1]?.[1]).toBe(1);
+
+      // Verify notes are preserved
+      const noteRows = testDb!.exec('SELECT COUNT(*) as count FROM notes WHERE assignment_id = ?', [assignmentId]);
+      expect(noteRows[0]?.values?.[0]?.[0]).toBe(1);
+
+      // Verify note content is preserved
+      const noteContent = testDb!.exec('SELECT content FROM notes WHERE assignment_id = ?', [assignmentId]);
+      expect(noteContent[0]?.values?.[0]?.[0]).toBe('User note content');
+    });
+
+    it('should not deduplicate manual assignments against iCal imports', async () => {
+      const baseTime = Date.now();
+
+      // Create a manual assignment directly (not through importAssignments, which skips non-ical_uid)
+      const manualAssignment = createAssignment({
+        icalUid: '', // Manual assignments have empty ical_uid
+        title: 'Manual Assignment',
+        source: 'manual',
+        updatedAt: new Date(baseTime).toISOString() as IsoDateTime,
+      });
+      manualAssignment.icalUid = ''; // Ensure empty
+
+      // Insert manual assignment directly
+      const manualId = manualAssignment.id;
+      const dbRow = {
+        id: manualId,
+        canvas_id: manualAssignment.courseId ?? null,
+        title: manualAssignment.title ?? '',
+        description: manualAssignment.description ?? '',
+        course_name: manualAssignment.courseName ?? '',
+        course_color: manualAssignment.courseColor ?? '#6366f1',
+        due_at: manualAssignment.dueAt ? new Date(manualAssignment.dueAt).getTime() : baseTime,
+        unlock_at: manualAssignment.unlockAt ? new Date(manualAssignment.unlockAt).getTime() : null,
+        lock_at: manualAssignment.lockAt ? new Date(manualAssignment.lockAt).getTime() : null,
+        points_possible: manualAssignment.pointsPossible ?? null,
+        submission_types: manualAssignment.submissionTypes ? JSON.stringify(manualAssignment.submissionTypes) : '[]',
+        workflow_state: manualAssignment.workflowState ?? 'published',
+        html_url: manualAssignment.htmlUrl ?? '',
+        ical_uid: manualAssignment.icalUid ?? '',
+        status: manualAssignment.status ?? 'pending',
+        source: manualAssignment.source ?? 'manual',
+        source_url: manualAssignment.sourceUrl ?? null,
+        rrule: manualAssignment.rrule ?? null,
+        created_at: manualAssignment.createdAt ? new Date(manualAssignment.createdAt).getTime() : baseTime,
+        updated_at: manualAssignment.updatedAt ? new Date(manualAssignment.updatedAt).getTime() : baseTime,
+      };
+      testDb!.run(
+        'INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at, unlock_at, lock_at, points_possible, submission_types, workflow_state, html_url, ical_uid, status, source, source_url, rrule, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          dbRow.id,
+          dbRow.canvas_id,
+          dbRow.title,
+          dbRow.description,
+          dbRow.course_name,
+          dbRow.course_color,
+          dbRow.due_at,
+          dbRow.unlock_at,
+          dbRow.lock_at,
+          dbRow.points_possible,
+          dbRow.submission_types,
+          dbRow.workflow_state,
+          dbRow.html_url,
+          dbRow.ical_uid,
+          dbRow.status,
+          dbRow.source,
+          dbRow.source_url,
+          dbRow.rrule,
+          dbRow.created_at,
+          dbRow.updated_at,
+        ]
+      );
+
+      // Import iCal assignment with same title
+      const icalAssignment = createAssignment({
+        icalUid: 'ical-same-title@example.com',
+        title: 'Manual Assignment', // Same title
+        source: 'ical',
+        updatedAt: new Date(baseTime + 1000).toISOString() as IsoDateTime,
+      });
+
+      const result = await importAssignments([icalAssignment]);
+
+      // Should import as new, not update manual
+      expect(result.imported).toBe(1);
+      expect(result.updated).toBe(0);
+
+      // Both assignments should exist
+      const allAssignments = testDb!.exec('SELECT COUNT(*) as count FROM assignments WHERE title = "Manual Assignment"');
+      expect(allAssignments[0]?.values?.[0]?.[0]).toBe(2);
+
+      // Manual assignment should be unchanged
+      const manualCheck = testDb!.exec('SELECT source, ical_uid FROM assignments WHERE id = ?', [manualId]);
+      expect(manualCheck[0]?.values?.[0]?.[0]).toBe('manual');
+      expect(manualCheck[0]?.values?.[0]?.[1]).toBe('');
     });
   });
 });

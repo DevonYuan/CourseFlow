@@ -45,6 +45,8 @@ interface GroupedAssignmentListProps {
   onAssignmentClick?: (assignment: Assignment) => void;
   /** Optional callback to mark assignment as complete */
   onMarkComplete?: (id: string) => Promise<void>;
+  /** Optional callback to delete an assignment */
+  onDelete?: (id: string) => Promise<void>;
   /** Current grouping type for determining drag behavior */
   groupingType: GroupingType;
   /** Current sort option for within-group ordering */
@@ -166,6 +168,7 @@ interface GroupItemProps {
   onToggle: (groupKey: string) => void;
   onAssignmentClick?: (assignment: Assignment) => void;
   onMarkComplete?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   sortOption: SortOption;
   priorityOrder: string[];
   isDragEnabled: boolean;
@@ -198,6 +201,7 @@ function GroupItem({
   onDragEnd,
   renderDragOverlay,
   subTaskProgressMap,
+  onDelete,
 }: GroupItemProps): JSX.Element {
   const groupId = `${group.groupKey}-${index}`;
   const controlsId = `group-${groupId}`;
@@ -262,6 +266,7 @@ function GroupItem({
                     assignment={assignment}
                     onClick={onAssignmentClick}
                     onMarkComplete={onMarkComplete}
+                    onDelete={onDelete}
                     id={assignment.id}
                     subTaskProgress={progress}
                   />
@@ -291,6 +296,7 @@ function GroupItem({
                 assignment={assignment}
                 onClick={onAssignmentClick}
                 onMarkComplete={onMarkComplete}
+                onDelete={onDelete}
                 subTaskProgress={progress}
               />
             );
@@ -309,6 +315,7 @@ export function GroupedAssignmentList({
   groupedAssignments,
   onAssignmentClick,
   onMarkComplete,
+  onDelete,
   groupingType,
   sortOption,
   priorityOrder,
@@ -398,6 +405,7 @@ export function GroupedAssignmentList({
           onToggle={toggleGroup}
           onAssignmentClick={onAssignmentClick}
           onMarkComplete={onMarkComplete}
+          onDelete={onDelete}
           sortOption={sortOption}
           priorityOrder={priorityOrder}
           isDragEnabled={isDragEnabled}

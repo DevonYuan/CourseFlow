@@ -245,9 +245,27 @@ export const repo = {
 
   /**
    * Delete an assignment (cascades to sub_tasks, notes, priority_order).
+   * Explicitly deletes child records first to emit db:changed events for each table.
+   * This ensures the frontend can react to the deletion of sub-tasks and notes.
    */
   deleteAssignment(id: string): void {
+    // First, delete sub-tasks and emit events
+    const subTaskRows = all<DbSubTask>('SELECT id FROM sub_tasks WHERE assignment_id = ?', [id]);
+    for (const subTask of subTaskRows) {
+      run('DELETE FROM sub_tasks WHERE id = ?', [subTask.id]);
+      sendEventToRenderers('db:changed', { table: 'sub_tasks', action: 'delete', id: subTask.id });
+    }
+
+    // Then, delete notes and emit events
+    const noteRows = all<DbNote>('SELECT id FROM notes WHERE assignment_id = ?', [id]);
+    for (const note of noteRows) {
+      run('DELETE FROM notes WHERE id = ?', [note.id]);
+      sendEventToRenderers('db:changed', { table: 'notes', action: 'delete', id: note.id });
+    }
+
+    // Finally, delete the assignment (priority_order cascades via FK)
     run('DELETE FROM assignments WHERE id = ?', [id]);
+    sendEventToRenderers('db:changed', { table: 'assignments', action: 'delete', id });
   },
 
   /**
