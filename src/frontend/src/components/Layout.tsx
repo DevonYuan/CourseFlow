@@ -9,6 +9,8 @@
  * @module @frontend/components/Layout
  */
 
+import { useLocation } from 'react-router-dom';
+
 import { Toolbar } from './Toolbar';
 import { TopBar } from './TopBar';
 import './Layout.css';
@@ -19,6 +21,9 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps): JSX.Element {
+  const { pathname } = useLocation();
+  const isNotesView = pathname.startsWith('/notes');
+
   return (
     <div className="layout">
       {/* Skip link must be the first focusable element in the document */}
@@ -30,8 +35,8 @@ export function Layout({ children }: LayoutProps): JSX.Element {
         {/* Primary Bar: Brand, Tabs, Search, Sync, Settings */}
         <TopBar />
 
-        {/* Toolbar: Filters, Sort, Group, View Toggle */}
-        <Toolbar />
+        {/* Toolbar: Filters, Sort, Group, View Toggle (assignment list only) */}
+        {!isNotesView && <Toolbar />}
 
         {/* Content Area */}
         <main id="main-content" className="layout__main" role="main" tabIndex={-1}>

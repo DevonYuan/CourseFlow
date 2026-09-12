@@ -1,0 +1,225 @@
+/**
+ * PageTreeNode.css — Styles for Page Tree Node Component
+ *
+ * @module @frontend/components/notes/PageTreeNode
+ */
+
+.page-tree-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-text-primary, #1a1a2e);
+}
+
+.page-tree-node.focused > .page-tree-node__content {
+  background-color: var(--color-focus-bg, #e8eaff);
+  outline: none;
+}
+
+.page-tree-node.focused > .page-tree-node__content::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--color-focus, #3b82f6);
+  border-radius: 0 2px 2px 0;
+}
+
+.page-tree-node.active > .page-tree-node__content {
+  background-color: var(--color-active-bg, #dbeafe);
+}
+
+.page-tree-node.active > .page-tree-node__content .page-tree-node__title {
+  font-weight: 600;
+  color: var(--color-active-text, #1e40af);
+}
+
+.page-tree-node.dragging {
+  opacity: 0.5;
+}
+
+.page-tree-node.drop-target.drop-inside > .page-tree-node__content {
+  background-color: var(--color-drop-target-bg, #fef3c7);
+  outline: 2px dashed var(--color-drop-target-border, #f59e0b);
+  outline-offset: -2px;
+}
+
+.page-tree-node.drop-target:not(.drop-inside) > .page-tree-node__content::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--indent-base, 16px) + 20px);
+  right: 4px;
+  height: 2px;
+  background-color: var(--color-drop-target-border, #3b82f6);
+  transform: translateY(-50%);
+}
+
+.page-tree-node.drop-target.drop-position-before > .page-tree-node__content::after {
+  top: 0;
+}
+
+.page-tree-node.drop-target.drop-position-after > .page-tree-node__content::after {
+  bottom: 0;
+}
+
+/* Drag Handle */
+.page-tree-node__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--color-drag-handle, #9ca3af);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 3px;
+}
+
+.page-tree-node:hover .page-tree-node__drag-handle,
+.page-tree-node.focused .page-tree-node__drag-handle,
+.page-tree-node.dragging .page-tree-node__drag-handle {
+  opacity: 1;
+}
+
+.page-tree-node__drag-handle:hover {
+  background-color: var(--color-drag-handle-hover, #e5e7eb);
+  color: var(--color-drag-handle-hover-text, #6b7280);
+}
+
+.page-tree-node__drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Chevron */
+.page-tree-node__chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--color-chevron, #9ca3af);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.page-tree-node__chevron:hover {
+  background-color: var(--color-chevron-hover-bg, #e5e7eb);
+  color: var(--color-chevron-hover, #6b7280);
+}
+
+.page-tree-node__chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.page-tree-node__chevron:focus-visible {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 1px;
+}
+
+/* Content */
+.page-tree-node__content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  user-select: none;
+}
+
+.page-tree-node__content:hover {
+  background-color: var(--color-hover-bg, #f3f4f6);
+}
+
+.page-tree-node__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.page-tree-node__title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+}
+
+.page-tree-node__input {
+  flex: 1;
+  min-width: 80px;
+  max-width: 200px;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--color-text-primary, #1a1a2e);
+  background-color: var(--color-input-bg, #ffffff);
+  border: 1px solid var(--color-focus, #3b82f6);
+  border-radius: 3px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-focus-light, #dbeafe);
+}
+
+.page-tree-node__input:focus {
+  border-color: var(--color-focus, #3b82f6);
+  box-shadow: 0 0 0 3px var(--color-focus-light, #dbeafe);
+}
+
+/* Children */
+.page-tree-node__children {
+  margin-left: var(--indent-base, 16px);
+  border-left: 1px solid var(--color-tree-line, #e5e7eb);
+  padding-left: 4px;
+}
+
+/* Responsive - icon only on narrow */
+@media (max-width: 1000px) {
+  .page-tree-node__title {
+    display: none;
+  }
+
+  .page-tree-node__content {
+    padding: 4px;
+    justify-content: center;
+  }
+
+  .page-tree-node__icon {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+  }
+}
+
+/* Animation for expand/collapse */
+.page-tree-node__children {
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

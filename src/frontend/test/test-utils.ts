@@ -19,6 +19,9 @@ import type {
   ICalEvent,
   ImportResult,
   Settings,
+  Page,
+  PageTreeNode,
+  PageSearchResult,
 } from '@backend/shared/types';
 import { vi } from 'vitest';
 
@@ -158,6 +161,39 @@ export function createMockNoteInput(overrides: Partial<NoteInput> = {}): NoteInp
 }
 
 /**
+ * Creates a mock Page object (Notes workspace) for testing.
+ * @param overrides - Partial fields to override defaults
+ */
+export function createMockPage(overrides: Partial<Page> = {}): Page {
+  const now = new Date().toISOString() as IsoDateTime;
+  const id = `page-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` as EntityId;
+
+  return {
+    id,
+    parentId: null,
+    title: 'Test Page',
+    content: 'Test page content',
+    icon: '📄',
+    cover: null,
+    position: 0,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Builds a PageTreeNode from a page and optional children.
+ */
+export function createMockPageNode(
+  page: Page = createMockPage(),
+  children: PageTreeNode[] = [],
+): PageTreeNode {
+  return { page, children };
+}
+
+/**
  * Creates a mock ICalEvent for testing iCal operations.
  * @param overrides - Partial fields to override defaults
  */
@@ -253,6 +289,16 @@ export function createMockApi(overrides: Record<string, unknown> = {}) {
         list: async () => ({ ok: true, data: [] as unknown[] }),
         reorder: async () => ({ ok: true, data: undefined }),
         upsert: async () => ({ ok: true, data: {} as unknown }),
+      },
+      pages: {
+        list: async () => ({ ok: true, data: [] as Page[] }),
+        get: async () => ({ ok: true, data: null as Page | null }),
+        tree: async () => ({ ok: true, data: [] as PageTreeNode[] }),
+        create: async () => ({ ok: true, data: createMockPage() }),
+        update: async () => ({ ok: true, data: createMockPage() }),
+        delete: async () => ({ ok: true, data: undefined }),
+        move: async () => ({ ok: true, data: createMockPage() }),
+        search: async () => ({ ok: true, data: [] as PageSearchResult[] }),
       },
     },
     settings: {

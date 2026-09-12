@@ -3,11 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
+import { PageEditor } from './components/notes/PageEditor';
 import { FocusRestorationProvider } from './context/FocusRestorationContext';
 import { ToastProvider } from './context/ToastContext';
 import { useSettings } from './hooks/useSettings';
 import { AssignmentDetailPage } from './pages/AssignmentDetailPage';
 import { AssignmentListPage } from './pages/AssignmentListPage';
+import { NotesWorkspace, NotesWelcome } from './pages/NotesWorkspace';
 import { SettingsPage } from './pages/SettingsPage';
 import { applyTheme } from './utils/theme';
 
@@ -30,6 +32,11 @@ export function ThemedApp(): JSX.Element {
                 <Route path="/" element={<AssignmentListPage />} />
                 <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                {/* Notes Workspace */}
+                <Route path="/notes" element={<NotesWorkspace />}>
+                  <Route index element={<NotesWelcome />} />
+                  <Route path=":pageId" element={<PageEditor />} />
+                </Route>
                 {/* In production the app is served from file:// so the initial
                   location is the index.html path (not "/"). Redirect anything
                   unmatched to the assignment list. */}

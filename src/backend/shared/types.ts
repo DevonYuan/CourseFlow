@@ -172,8 +172,8 @@ export interface PageTreeNode {
  */
 export interface PageSearchResult {
   page: Page;
-  rank: number; // FTS5 bm25() score (lower = more relevant)
-  snippet: string; // Highlighted snippet from FTS5 snippet() function
+  rank: number; // Relevance rank (lower = more relevant; 0 = title match, 1 = content match)
+  snippet: string; // Highlighted snippet with <mark> around the matched text
 }
 
 /**

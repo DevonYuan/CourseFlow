@@ -109,6 +109,32 @@ function toNullable(v: unknown): string | number | null {
   return v === undefined ? null : (v as string | number | null);
 }
 
+/** Escape text so it can be embedded inside a snippet's `<mark>` markup. */
+function escapeSnippetText(value: string): string {
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/**
+ * Build a short, highlighted snippet around the first case-insensitive match
+ * of `query` in `text`. Stands in for SQLite's `snippet()` function, which is
+ * unavailable without the FTS5 module.
+ */
+function buildSearchSnippet(text: string, query: string): string {
+  const source = text || '';
+  const index = source.toLowerCase().indexOf(query.toLowerCase());
+  if (index === -1) {
+    return escapeSnippetText(source.slice(0, 80));
+  }
+  const start = Math.max(0, index - 30);
+  const end = Math.min(source.length, index + query.length + 30);
+  const before = escapeSnippetText(source.slice(start, index));
+  const match = escapeSnippetText(source.slice(index, index + query.length));
+  const after = escapeSnippetText(source.slice(index + query.length, end));
+  const prefix = start > 0 ? '…' : '';
+  const suffix = end < source.length ? '…' : '';
+  return `${prefix}${before}<mark>${match}</mark>${after}${suffix}`;
+}
+
 // ============================================================================
 // Repository API
 // ============================================================================
@@ -1150,8 +1176,7 @@ export const repo = {
 
   /**
    * Delete a page by ID.
-   * Cascades to children via FK ON DELETE CASCADE.
-   * Also cleans up FTS5 entries via triggers.
+   * Cascades to children via the self-referential FK ON DELETE CASCADE.
    */
   deletePage(id: string): void {
     run('DELETE FROM pages WHERE id = ?', [id]);
@@ -1244,40 +1269,36 @@ export const repo = {
   },
 
   /**
-   * Full-text search across pages using FTS5.
-   * Returns ranked results with snippets.
+   * Search pages by title or content using a `LIKE` query.
+   *
+   * This is a no-FTS5 substitute for full-text search: the sql.js WASM build
+   * does not compile in the `fts5` module, so matching is substring-based
+   * (case-insensitive for ASCII via `LIKE`). Results are ranked with title
+   * matches first (rank 0) ahead of content-only matches (rank 1), then by
+   * most recently updated.
    */
   searchPages(query: string, limit: number = 20): PageSearchResult[] {
-    // Sanitize query for FTS5 (escape special characters)
-    const sanitizedQuery = query.replaceAll(/["*]/g, ' ').trim();
-    if (!sanitizedQuery) return [];
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    // Escape LIKE wildcards so the user's input is matched literally.
+    // '!' is used as the ESCAPE character (backslashes are awkward in SQL strings).
+    const like = `%${trimmed.replaceAll(/[%_!]/g, '!$&')}%`;
 
     const sql = `
-      SELECT
-        p.id,
-        p.parent_id,
-        p.title,
-        p.content,
-        p.icon,
-        p.cover,
-        p.position,
-        p.created_at,
-        p.updated_at,
-        p.created_by,
-        bm25(pages_fts) as rank,
-        snippet(pages_fts, 1, '<mark>', '</mark>', '...', 32) as snippet
-      FROM pages_fts
-      JOIN pages p ON p.rowid = pages_fts.rowid
-      WHERE pages_fts MATCH ?
-      ORDER BY rank
+      SELECT *,
+        (CASE WHEN title LIKE ? ESCAPE '!' THEN 0 ELSE 1 END) AS rank
+      FROM pages
+      WHERE title LIKE ? ESCAPE '!' OR COALESCE(content, '') LIKE ? ESCAPE '!'
+      ORDER BY rank ASC, updated_at DESC
       LIMIT ?
     `;
 
-    const rows = all<DbPage & { rank: number; snippet: string }>(sql, [sanitizedQuery, limit]);
+    const rows = all<DbPage & { rank: number }>(sql, [like, like, like, limit]);
     return rows.map((row) => ({
       page: mapDbPageToPage(row),
       rank: row.rank,
-      snippet: row.snippet,
+      snippet: buildSearchSnippet(row.content ?? row.title, trimmed),
     }));
   },
 

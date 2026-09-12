@@ -1,0 +1,170 @@
+/**
+ * PageTree.css — Styles for Page Tree Component
+ *
+ * @module @frontend/components/notes/PageTree
+ */
+
+.page-tree {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  background-color: var(--color-sidebar-bg, #ffffff);
+  border-right: 1px solid var(--color-sidebar-border, #e5e7eb);
+}
+
+/* Loading Skeleton */
+.page-tree--loading {
+  padding: 16px;
+}
+
+.page-tree__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.page-tree__skeleton-item {
+  height: 32px;
+  background: linear-gradient(
+    90deg,
+    var(--color-skeleton-base, #f3f4f6) 25%,
+    var(--color-skeleton-highlight, #e5e7eb) 50%,
+    var(--color-skeleton-base, #f3f4f6) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error State */
+.page-tree--error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  height: 100%;
+}
+
+.page-tree__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--color-error-text, #dc2626);
+}
+
+.page-tree__error-icon {
+  font-size: 24px;
+}
+
+.page-tree__error-text {
+  font-size: 13px;
+}
+
+.page-tree__retry-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-btn-primary-text, #ffffff);
+  background-color: var(--color-btn-primary, #3b82f6);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.page-tree__retry-btn:hover {
+  background-color: var(--color-btn-primary-hover, #2563eb);
+}
+
+.page-tree__retry-btn:focus-visible {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Empty State */
+.page-tree--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  height: 100%;
+}
+
+.page-tree__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.page-tree__empty-icon {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
+.page-tree__empty-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+.page-tree__empty-hint {
+  font-size: 12px;
+  margin: 0;
+}
+
+/* Scrollbar styling */
+.page-tree::-webkit-scrollbar {
+  width: 8px;
+}
+
+.page-tree::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page-tree::-webkit-scrollbar-thumb {
+  background-color: var(--color-scrollbar-thumb, #d1d5db);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.page-tree::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-scrollbar-thumb-hover, #9ca3af);
+}
+
+/* Firefox */
+.page-tree {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar-thumb, #d1d5db) transparent;
+}
+
+/* Focus visible for the tree container */
+.page-tree:focus-within {
+  outline: none;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .page-tree {
+    border-right: none;
+    border-bottom: 1px solid var(--color-sidebar-border, #e5e7eb);
+  }
+}

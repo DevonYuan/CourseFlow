@@ -24,6 +24,11 @@ import type {
   SchedulerStatus,
   EntityId,
   IsoDateTime,
+  Page,
+  PageInput,
+  PageUpdateInput,
+  PageTreeNode,
+  PageSearchResult,
 } from '@backend/shared/types';
 
 // In-memory mock database
@@ -31,6 +36,7 @@ const mockAssignments: Map<string, Assignment> = new Map();
 const mockSubTasks: Map<string, SubTask[]> = new Map();
 const mockNotes: Map<string, Note[]> = new Map();
 const mockPriorityOrders: Map<string, PriorityOrder> = new Map();
+const mockPages: Map<string, Page> = new Map();
 let mockSettings: Settings = {
   theme: 'system',
   autoFetchIcal: false,
@@ -307,6 +313,111 @@ mockNotes.set('3', [
   },
 ]);
 
+// ---------------------------------------------------------------------------
+// Pages (Notes workspace)
+// ---------------------------------------------------------------------------
+
+/** Collect the ids of every descendant of a page (excluding the page itself). */
+function collectPageDescendants(pageId: string): string[] {
+  const result: string[] = [];
+  for (const page of mockPages.values()) {
+    if ((page.parentId ?? null) === pageId) {
+      result.push(page.id, ...collectPageDescendants(page.id));
+    }
+  }
+  return result;
+}
+
+/** Next position for a new sibling under `parentId`. */
+function nextPagePosition(parentId: string | null): number {
+  const siblings = [...mockPages.values()].filter((p) => (p.parentId ?? null) === parentId);
+  return siblings.length === 0 ? 0 : Math.max(...siblings.map((p) => p.position)) + 1;
+}
+
+/** Build the hierarchical page tree from the flat mock store. */
+function buildPageTree(): PageTreeNode[] {
+  const childrenMap = new Map<string | null, Page[]>();
+  for (const page of mockPages.values()) {
+    const key = page.parentId ?? null;
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(page);
+  }
+  const build = (parentId: string | null): PageTreeNode[] =>
+    (childrenMap.get(parentId) ?? [])
+      .sort((a, b) => a.position - b.position)
+      .map((page) => ({ page, children: build(page.id) }));
+  return build(null);
+}
+
+/** Seed a small deterministic page tree for browser dev + e2e tests. */
+function seedMockPages(): void {
+  const now = new Date(MOCK_NOW).toISOString() as IsoDateTime;
+  const pages: Page[] = [
+    {
+      id: 'page-1' as EntityId,
+      parentId: null,
+      title: 'Class Notes',
+      content: '# Class Notes\n\nWelcome to your notebook.',
+      icon: '📚',
+      cover: null,
+      position: 0,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: null,
+    },
+    {
+      id: 'page-2' as EntityId,
+      parentId: 'page-1' as EntityId,
+      title: 'Lecture 1',
+      content: '# Lecture 1\n\nVariables and types.',
+      icon: '📄',
+      cover: null,
+      position: 0,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: null,
+    },
+    {
+      id: 'page-3' as EntityId,
+      parentId: 'page-1' as EntityId,
+      title: 'Lecture 2',
+      content: null,
+      icon: '📄',
+      cover: null,
+      position: 1,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: null,
+    },
+    {
+      id: 'page-4' as EntityId,
+      parentId: null,
+      title: 'Ideas',
+      content: null,
+      icon: '📁',
+      cover: null,
+      position: 1,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: null,
+    },
+    {
+      id: 'page-5' as EntityId,
+      parentId: 'page-4' as EntityId,
+      title: 'Project Sketch',
+      content: 'A rough sketch of the project.',
+      icon: '📝',
+      cover: null,
+      position: 0,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: null,
+    },
+  ];
+  for (const page of pages) mockPages.set(page.id, page);
+}
+seedMockPages();
+
 // Generate UUID
 function generateId(): EntityId {
   return (Math.random().toString(36).slice(2, 15) +
@@ -530,6 +641,129 @@ const mockApi = {
           id: input.assignmentId,
         });
         return createMockResult(order);
+      },
+    },
+    pages: {
+      list: async (parentId?: string): Promise<IpcResult<Page[]>> => {
+        await new Promise((r) => setTimeout(r, 30));
+        const pages = [...mockPages.values()]
+          .filter((p) => (p.parentId ?? null) === (parentId ?? null))
+          .sort((a, b) => a.position - b.position);
+        return createMockResult(pages);
+      },
+      get: async (id: string): Promise<IpcResult<Page | null>> => {
+        await new Promise((r) => setTimeout(r, 30));
+        return createMockResult(mockPages.get(id) ?? null);
+      },
+      tree: async (): Promise<IpcResult<PageTreeNode[]>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        return createMockResult(buildPageTree());
+      },
+      create: async (input: PageInput): Promise<IpcResult<Page>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        const now = new Date().toISOString() as IsoDateTime;
+        const parentId = input.parentId ?? null;
+        const page: Page = {
+          id: generateId(),
+          parentId,
+          title: input.title || 'Untitled',
+          content: input.content ?? null,
+          icon: input.icon ?? '📄',
+          cover: input.cover ?? null,
+          position: input.position ?? nextPagePosition(parentId),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: null,
+        };
+        mockPages.set(page.id, page);
+        emitEvent('db:changed', { table: 'pages', action: 'insert', id: page.id });
+        return createMockResult(page);
+      },
+      update: async (input: PageUpdateInput): Promise<IpcResult<Page>> => {
+        await new Promise((r) => setTimeout(r, 40));
+        const existing = mockPages.get(input.id);
+        if (!existing) return createMockError('Page not found', 'NOT_FOUND');
+        const updated: Page = {
+          ...existing,
+          title: input.title ?? existing.title,
+          content: input.content === undefined ? existing.content : input.content,
+          parentId: input.parentId === undefined ? existing.parentId : input.parentId,
+          position: input.position ?? existing.position,
+          icon: input.icon === undefined ? existing.icon : input.icon,
+          cover: input.cover === undefined ? existing.cover : input.cover,
+          updatedAt: new Date().toISOString() as IsoDateTime,
+        };
+        mockPages.set(updated.id, updated);
+        emitEvent('db:changed', { table: 'pages', action: 'update', id: updated.id });
+        return createMockResult(updated);
+      },
+      delete: async (id: string): Promise<IpcResult<void>> => {
+        await new Promise((r) => setTimeout(r, 40));
+        for (const pageId of [id, ...collectPageDescendants(id)]) {
+          mockPages.delete(pageId);
+        }
+        emitEvent('db:changed', { table: 'pages', action: 'delete', id });
+        return createMockResult(undefined);
+      },
+      move: async (input: {
+        id: string;
+        parentId: string | null;
+        position: number;
+      }): Promise<IpcResult<Page>> => {
+        await new Promise((r) => setTimeout(r, 40));
+        const page = mockPages.get(input.id);
+        if (!page) return createMockError('Page not found', 'NOT_FOUND');
+        const parentId = (input.parentId ?? null) as EntityId | null;
+        if (
+          parentId === input.id ||
+          (parentId !== null && collectPageDescendants(input.id).includes(parentId))
+        ) {
+          return createMockError(
+            'Cannot move a page into its own descendant (circular reference)',
+            'VALIDATION_ERROR',
+          );
+        }
+        const now = new Date().toISOString() as IsoDateTime;
+        const oldParentId = page.parentId ?? null;
+
+        // Renumber the remaining old siblings.
+        const oldSiblings = [...mockPages.values()]
+          .filter((p) => p.id !== input.id && (p.parentId ?? null) === oldParentId)
+          .sort((a, b) => a.position - b.position);
+        oldSiblings.forEach((p, index) => mockPages.set(p.id, { ...p, position: index }));
+
+        // Insert at the requested position among the new siblings.
+        const newSiblings = [...mockPages.values()]
+          .filter((p) => p.id !== input.id && (p.parentId ?? null) === parentId)
+          .sort((a, b) => a.position - b.position);
+        const clamped = Math.max(0, Math.min(input.position, newSiblings.length));
+        const ordered = [
+          ...newSiblings.slice(0, clamped),
+          { ...page, parentId, updatedAt: now },
+          ...newSiblings.slice(clamped),
+        ];
+        ordered.forEach((p, index) => mockPages.set(p.id, { ...p, position: index }));
+
+        const moved = mockPages.get(input.id) as Page;
+        emitEvent('db:changed', { table: 'pages', action: 'reorder', id: input.id });
+        return createMockResult(moved);
+      },
+      search: async (input: {
+        query: string;
+        limit?: number;
+      }): Promise<IpcResult<PageSearchResult[]>> => {
+        await new Promise((r) => setTimeout(r, 30));
+        const query = input.query.trim().toLowerCase();
+        if (!query) return createMockResult([]);
+        const results = [...mockPages.values()]
+          .filter(
+            (p) =>
+              p.title.toLowerCase().includes(query) ||
+              (p.content ?? '').toLowerCase().includes(query),
+          )
+          .slice(0, input.limit ?? 20)
+          .map((page) => ({ page, rank: 0, snippet: page.title }));
+        return createMockResult(results);
       },
     },
   },

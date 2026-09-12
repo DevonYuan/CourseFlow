@@ -7,7 +7,7 @@
  * @module @frontend/components/TopBar
  */
 
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   useStatusFilter,
@@ -26,6 +26,8 @@ function handleSyncClick(): void {
 
 export function TopBar(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isNotesView = location.pathname.startsWith('/notes');
   const statusFilter = useStatusFilter();
   const setStatusFilter = useSetStatusFilter();
   const searchQuery = useSearchQuery();
@@ -69,7 +71,35 @@ export function TopBar(): JSX.Element {
       {/* Brand */}
       <div className="brand">CourseFlow</div>
 
+      {/* Workspace view switcher */}
+      <div className="view-switch" role="tablist" aria-label="Workspace view">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!isNotesView}
+          className={`view-switch__btn ${isNotesView ? '' : 'active'}`}
+          onClick={() => {
+            void navigate('/');
+          }}
+        >
+          Assignments
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isNotesView}
+          className={`view-switch__btn ${isNotesView ? 'active' : ''}`}
+          onClick={() => {
+            void navigate('/notes');
+          }}
+        >
+          Notes
+        </button>
+      </div>
+
       {/* Status Tabs */}
+      {!isNotesView && (
+      <>
       <div className="tabs" role="tablist" aria-label="Assignment status">
         <button
           className={`tab ${statusFilter === 'all' ? 'active' : ''}`}
@@ -124,6 +154,8 @@ export function TopBar(): JSX.Element {
           aria-label="Search assignments"
         />
       </div>
+      </>
+      )}
 
       <div className="spacer" />
 

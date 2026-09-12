@@ -1,0 +1,134 @@
+/**
+ * PageActions.css — Styles for Page Actions Context Menu
+ *
+ * @module @frontend/components/notes/PageActions
+ */
+
+.page-actions-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--color-actions-trigger, #9ca3af);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  margin-left: auto;
+  padding: 0;
+}
+
+.page-tree-node:hover .page-actions-trigger,
+.page-tree-node.focused .page-actions-trigger {
+  opacity: 1;
+}
+
+.page-actions-trigger:hover {
+  background-color: var(--color-actions-trigger-hover-bg, #e5e7eb);
+  color: var(--color-actions-trigger-hover, #6b7280);
+}
+
+.page-actions-trigger:focus-visible {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+/* Context Menu */
+.page-actions-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 180px;
+  max-width: 240px;
+  background-color: var(--color-menu-bg, #ffffff);
+  border: 1px solid var(--color-menu-border, #e5e7eb);
+  border-radius: 6px;
+  box-shadow: var(--shadow-menu, 0 4px 12px rgba(0, 0, 0, 0.1));
+  padding: 4px 0;
+  animation: fadeIn 0.1s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-actions-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-menu-text, #1a1a2e);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  white-space: nowrap;
+}
+
+.page-actions-menu__item:hover,
+.page-actions-menu__item:focus {
+  background-color: var(--color-menu-hover-bg, #f3f4f6);
+  outline: none;
+}
+
+.page-actions-menu__item:focus-visible {
+  background-color: var(--color-focus-bg, #e8eaff);
+}
+
+.page-actions-menu__item--destructive {
+  color: var(--color-destructive, #dc2626);
+}
+
+.page-actions-menu__item--destructive:hover,
+.page-actions-menu__item--destructive:focus {
+  background-color: var(--color-destructive-hover-bg, #fef2f2);
+}
+
+.page-actions-menu__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.page-actions-menu__shortcut {
+  margin-left: auto;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  color: var(--color-shortcut, #9ca3af);
+  background-color: var(--color-shortcut-bg, #f3f4f6);
+  border-radius: 3px;
+}
+
+.page-actions-menu__separator {
+  margin: 4px 0;
+  border: none;
+  border-top: 1px solid var(--color-menu-border, #e5e7eb);
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .page-actions-trigger {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,289 @@
+/**
+ * NotesSidebar.css — Styles for Notes Sidebar Component
+ *
+ * @module @frontend/components/notes/NotesSidebar
+ */
+
+.notes-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width, 280px);
+  min-width: var(--sidebar-min-width, 200px);
+  max-width: var(--sidebar-max-width, 400px);
+  background-color: var(--color-sidebar-bg, #ffffff);
+  border-right: 1px solid var(--color-sidebar-border, #e5e7eb);
+  transition: width 0.2s ease, min-width 0.2s ease, max-width 0.2s ease;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+/* Collapsed state */
+.notes-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width, 56px);
+  min-width: var(--sidebar-collapsed-width, 56px);
+  max-width: var(--sidebar-collapsed-width, 56px);
+}
+
+.notes-sidebar.collapsed .notes-sidebar__title,
+.notes-sidebar.collapsed .notes-sidebar__btn-text,
+.notes-sidebar.collapsed .notes-sidebar__footer,
+.notes-sidebar.collapsed .page-tree-node__title,
+.notes-sidebar.collapsed .page-tree-node__children {
+  display: none;
+}
+
+.notes-sidebar.collapsed .notes-sidebar__title-tooltip {
+  display: block;
+}
+
+.notes-sidebar.collapsed .notes-sidebar__header {
+  justify-content: center;
+  padding: 8px;
+}
+
+.notes-sidebar.collapsed .notes-sidebar__btn {
+  justify-content: center;
+  padding: 8px;
+}
+
+.notes-sidebar.collapsed .notes-sidebar__divider {
+  display: none;
+}
+
+/* Header */
+.notes-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-sidebar-border, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.notes-sidebar__title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.notes-sidebar__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1a1a2e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notes-sidebar__title-tooltip {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-tooltip-text, #ffffff);
+  background-color: var(--color-tooltip-bg, #1a1a2e);
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.notes-sidebar:hover .notes-sidebar__title-tooltip {
+  display: block;
+}
+
+.notes-sidebar__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.notes-sidebar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-btn-secondary-text, #374151);
+  background-color: var(--color-btn-secondary-bg, #f3f4f6);
+  border: 1px solid var(--color-btn-secondary-border, #d1d5db);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.notes-sidebar__btn:hover {
+  background-color: var(--color-btn-secondary-hover-bg, #e5e7eb);
+  border-color: var(--color-btn-secondary-hover-border, #9ca3af);
+}
+
+.notes-sidebar__btn:focus-visible {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+.notes-sidebar__btn--primary {
+  color: var(--color-btn-primary-text, #ffffff);
+  background-color: var(--color-btn-primary, #3b82f6);
+  border-color: var(--color-btn-primary, #3b82f6);
+}
+
+.notes-sidebar__btn--primary:hover {
+  background-color: var(--color-btn-primary-hover, #2563eb);
+  border-color: var(--color-btn-primary-hover, #2563eb);
+}
+
+.notes-sidebar__btn--collapse {
+  padding: 6px;
+  color: var(--color-icon-muted, #9ca3af);
+  background-color: transparent;
+  border: none;
+}
+
+.notes-sidebar__btn--collapse:hover {
+  color: var(--color-icon, #6b7280);
+  background-color: var(--color-hover-bg, #f3f4f6);
+}
+
+.notes-sidebar__btn--collapse svg {
+  transition: transform 0.2s ease;
+}
+
+.notes-sidebar__btn--collapse svg.rotated {
+  transform: rotate(180deg);
+}
+
+.notes-sidebar__btn-text {
+  display: inline-block;
+}
+
+/* Divider */
+.notes-sidebar__divider {
+  height: 1px;
+  background-color: var(--color-sidebar-border, #e5e7eb);
+}
+
+/* Tree Wrapper */
+.notes-sidebar__tree-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Footer */
+.notes-sidebar__footer {
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-sidebar-border, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.notes-sidebar__shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.notes-sidebar__kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  color: var(--color-kbd-text, #6b7280);
+  background-color: var(--color-kbd-bg, #f3f4f6);
+  border: 1px solid var(--color-kbd-border, #d1d5db);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* Resizable handle */
+.notes-sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  background-color: transparent;
+  z-index: 1;
+}
+
+.notes-sidebar:hover::after {
+  background-color: var(--color-resize-handle, #e5e7eb);
+}
+
+.notes-sidebar.collapsed::after {
+  display: none;
+}
+
+/* Focus visible for sidebar */
+.notes-sidebar:focus-within {
+  outline: none;
+}
+
+/* Responsive - mobile first collapse */
+@media (max-width: 1000px) {
+  .notes-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease, width 0.2s ease;
+    box-shadow: var(--shadow-sidebar, 4px 0 16px rgba(0, 0, 0, 0.1));
+  }
+
+  .notes-sidebar.collapsed {
+    transform: translateX(0);
+    width: var(--sidebar-collapsed-width, 56px);
+  }
+
+  .notes-sidebar:not(.collapsed) {
+    transform: translateX(0);
+    width: var(--sidebar-width, 280px);
+  }
+
+  .notes-sidebar::after {
+    display: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .notes-sidebar {
+    border-right-width: 2px;
+  }
+
+  .notes-sidebar__btn {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .notes-sidebar,
+  .notes-sidebar__btn,
+  .notes-sidebar__btn--collapse svg {
+    transition: none;
+  }
+}

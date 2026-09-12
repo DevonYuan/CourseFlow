@@ -13,6 +13,11 @@ import type {
   SubTaskInput,
   NoteInput,
   PriorityOrderInput,
+  Page,
+  PageInput,
+  PageUpdateInput,
+  PageTreeNode,
+  PageSearchResult,
 } from '@backend/shared/types';
 
 declare global {
@@ -40,6 +45,22 @@ declare global {
           list: () => Promise<IpcResult<PriorityOrder[]>>;
           reorder: (ids: string[]) => Promise<IpcResult<void>>;
           upsert: (input: PriorityOrderInput) => Promise<IpcResult<PriorityOrder>>;
+        };
+        pages: {
+          list: (parentId?: string) => Promise<IpcResult<Page[]>>;
+          get: (id: string) => Promise<IpcResult<Page | null>>;
+          tree: () => Promise<IpcResult<PageTreeNode[]>>;
+          create: (input: PageInput) => Promise<IpcResult<Page>>;
+          update: (input: PageUpdateInput) => Promise<IpcResult<Page>>;
+          delete: (id: string) => Promise<IpcResult<void>>;
+          move: (input: {
+            id: string;
+            parentId: string | null;
+            position: number;
+          }) => Promise<IpcResult<Page>>;
+          search: (input: { query: string; limit?: number }) => Promise<
+            IpcResult<PageSearchResult[]>
+          >;
         };
       };
       ical: {
