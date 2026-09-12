@@ -20,7 +20,7 @@ Unlike Canvas, which crams the to-do list into a small sidebar component, Course
 
 Go beyond simple tracking. Break assignments into sub-tasks and add detailed notes about your progress. Use CourseFlow as a productivity app to log what you've been working on, not just what's due.
 
-> **Status:** In progress (Phase 3). The database + IPC layer already exist; the assignment detail view and sub-task/note UI are being built.
+> **Status:** Complete (Phase 3). Sub-tasks and notes are fully integrated into the assignment detail view with full CRUD support.
 
 ### 4. Standalone Notes & Pages (Notion-style)
 
@@ -77,7 +77,7 @@ flowchart TB
 
 ## Roadmap
 
-> **Status:** Phases 1–2 shipped and verified as an MVP. Phase 3 (sub-tasks + notes UI) is in progress.
+> **Status:** Phases 1–3 shipped and verified. Phase 4 (Launch) in progress.
 
 ### ✅ v0.1 — MVP (done)
 
@@ -91,12 +91,13 @@ flowchart TB
 - Filter, sort, and group views (This Week / Overdue / Upcoming / Completed / By Course)
 - Background auto-sync scheduler with manual "Sync Now"
 
-### 🚧 v0.3 — Productivity Depth (in progress)
+### ✅ v0.3 — Productivity Depth (done)
 
-- Assignment detail view
-- Break assignments into sub-tasks
-- Add notes and log your progress (per-assignment)
-- **Standalone Notes & Pages workspace** (Notion-style): create pages, nest hierarchically, rich text/markdown editing, full-text search, wiki-style linking
+- Assignment detail view with expandable cards
+- Break assignments into sub-tasks with full CRUD support
+- Add notes and log progress per assignment with timestamps
+- Progress indicators showing sub-task completion status
+- Fully keyboard-accessible detail view — see [docs/architecture/accessibility.md](docs/architecture/accessibility.md)
 
 ### v1.0 — Launch
 
@@ -106,6 +107,7 @@ flowchart TB
 
 ### Later
 
+- Standalone Notes & Pages workspace (Notion-style)
 - Due-date reminders and notifications
 - Multiple calendar feeds (Phase 6)
 - Optional cloud backup *
@@ -143,6 +145,25 @@ pnpm format
 # Run tests
 pnpm test
 ```
+
+### Testing
+
+```bash
+# Unit / component tests (single fork per the project test guidelines)
+pnpm test -- --pool=forks --poolOptions.forks.singleFork
+
+# Unit / component tests in watch mode
+pnpm test:watch
+
+# End-to-end tests (Playwright; starts the dev server automatically)
+pnpm test:e2e
+
+# Accessibility-only E2E scan
+pnpm test:e2e -- accessibility.playwright.ts
+```
+
+> Always run tests with limited concurrency (`--pool=forks --poolOptions.forks.singleFork`)
+> and clean up any orphaned processes afterwards. See `.github/copilot-instructions.md`.
 
 ### Building
 

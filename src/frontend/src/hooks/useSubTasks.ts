@@ -87,15 +87,25 @@ export function useSubTasks(assignmentId: EntityId): UseSubTasksReturn {
   );
 
   // Add sub-task
-  const addSubTask = useCallback(async (id: EntityId, title: string) => {
-    const result = await window.api.db.subtasks.upsert({
-      assignmentId: id,
-      title,
-      completed: false,
-      order: 0, // Backend will determine position
-    });
-    return result;
-  }, []);
+  const addSubTask = useCallback(
+    async (id: EntityId, title: string): Promise<IpcResult<SubTask>> => {
+      try {
+        const result = await window.api.db.subtasks.upsert({
+          assignmentId: id,
+          title,
+          completed: false,
+          order: 0, // Backend will determine position
+        });
+        return result;
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : 'Failed to add sub-task',
+        };
+      }
+    },
+    [],
+  );
 
   // Delete sub-task (optimistic + IPC with rollback on error)
   const deleteSubTask = useCallback(

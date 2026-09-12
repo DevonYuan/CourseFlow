@@ -21,6 +21,10 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps): JSX.Element {
   return (
     <div className="layout">
+      {/* Skip link must be the first focusable element in the document */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       {/* Window Chrome */}
       <div className="window">
         {/* Primary Bar: Brand, Tabs, Search, Sync, Settings */}
@@ -30,7 +34,7 @@ export function Layout({ children }: LayoutProps): JSX.Element {
         <Toolbar />
 
         {/* Content Area */}
-        <main className="layout__main" role="main" tabIndex={-1}>
+        <main id="main-content" className="layout__main" role="main" tabIndex={-1}>
           <div className="layout__content">{children}</div>
         </main>
       </div>

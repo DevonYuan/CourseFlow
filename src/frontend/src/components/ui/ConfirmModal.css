@@ -109,12 +109,12 @@
 }
 
 .modal__button--delete {
-  background: var(--color-error, #ef4444);
-  color: white;
+  background: #b91c1c;
+  color: #ffffff;
 }
 
 .modal__button--delete:hover:not(:disabled) {
-  background: var(--color-error-dark, #dc2626);
+  background: #991b1b;
 }
 
 .modal__button--primary {

@@ -67,7 +67,6 @@ export function ConfirmModal({
     isActive: open,
     onEscape: onCancel,
     initialFocusRef: cancelButtonRef,
-    clickOutsideToClose: true,
   });
 
   if (!open) return null;

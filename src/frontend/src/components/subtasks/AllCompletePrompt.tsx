@@ -40,11 +40,6 @@ export function AllCompletePrompt({
   dismissed,
   onDismissChange,
 }: AllCompletePromptProps): JSX.Element | null {
-  // Don't render if dismissed
-  if (dismissed) {
-    return null;
-  }
-
   const handleMarkComplete = useCallback(async () => {
     await onMarkComplete();
     // The assignment status change will cause a re-render
@@ -56,8 +51,10 @@ export function AllCompletePrompt({
     onDismissChange(true);
   }, [assignmentId, onDismissChange]);
 
-  // Handle Escape key to dismiss
+  // Handle Escape key to dismiss (only while visible)
   useEffect(() => {
+    if (dismissed) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -67,7 +64,12 @@ export function AllCompletePrompt({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleDismiss]);
+  }, [dismissed, handleDismiss]);
+
+  // Don't render if dismissed (after hooks, so hook order is stable)
+  if (dismissed) {
+    return null;
+  }
 
   return (
     <div className="all-complete-prompt" role="status" aria-live="polite" aria-atomic="true">

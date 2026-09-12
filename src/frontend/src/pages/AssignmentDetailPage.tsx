@@ -208,11 +208,7 @@ export function AssignmentDetailPage(): JSX.Element {
   const showAllCompletePrompt = isAllComplete && assignment.status === 'pending' && !dismissed;
 
   return (
-    <article className="assignment-detail" role="main" aria-label={assignment.title}>
-      {/* Skip link for keyboard users */}
-      <a href="#assignment-detail-content" className="skip-link" tabIndex={0}>
-        Skip to main content
-      </a>
+    <article className="assignment-detail" aria-label={assignment.title}>
       {/* Header Section */}
       <AssignmentHeader
         assignment={assignment}

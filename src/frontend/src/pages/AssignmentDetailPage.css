@@ -361,7 +361,7 @@
 }
 
 .assignment-detail__meta-label {
-  color: var(--text-tertiary, #9ca3af);
+  color: var(--color-text-tertiary, #5b655f);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

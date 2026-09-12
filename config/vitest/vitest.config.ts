@@ -14,7 +14,16 @@ export default defineConfig({
     passWithNoTests: true,
     coverage: {
       provider: 'v8',
-      thresholds: { lines: 0, branches: 0, functions: 0, statements: 0 },
+      reporter: ['text', 'html', 'lcov'],
+      // Repo-wide floors that prevent coverage regressions. The Phase 3 test
+      // suites additionally target >80% lines on the sub-task/note repository
+      // code and >70% on the sub-task/note React components.
+      thresholds: {
+        lines: 40,
+        statements: 40,
+        branches: 65,
+        functions: 55,
+      },
     },
     projects: [
       {

@@ -16,6 +16,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { FocusRestorationProvider } from '../context/FocusRestorationContext';
 import { AssignmentDetailPage } from '../pages/AssignmentDetailPage';
 import { useAssignmentDetailStore } from '../stores/assignmentDetailStore';
 import { ToastProvider } from '../context/ToastContext';
@@ -90,13 +91,15 @@ function resetStore(): void {
 function renderDetailPage(path = `/assignments/${assignmentId}`): void {
   render(
     <ErrorBoundary>
-      <ToastProvider>
-        <MemoryRouter initialEntries={[path]}>
-          <Routes>
-            <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
-          </Routes>
-        </MemoryRouter>
-      </ToastProvider>
+      <FocusRestorationProvider>
+        <ToastProvider>
+          <MemoryRouter initialEntries={[path]}>
+            <Routes>
+              <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </FocusRestorationProvider>
     </ErrorBoundary>,
   );
 }
