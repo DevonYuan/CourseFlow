@@ -8,14 +8,10 @@
  * @module @frontend/components/subtasks/AllCompletePrompt
  */
 
-import React, { useCallback, useEffect } from 'react';
 import type { EntityId } from '@backend/shared/types';
+import React, { useCallback, useEffect } from 'react';
 
-import {
-  isPromptDismissed,
-  setPromptDismissed,
-  clearPromptDismissed,
-} from '../../utils/localStorage';
+import { setPromptDismissed } from '../../utils/localStorage';
 
 import './AllCompletePrompt.css';
 
@@ -95,7 +91,7 @@ export function AllCompletePrompt({
         <button
           type="button"
           className="all-complete-prompt__btn all-complete-prompt__btn--primary"
-          onClick={handleMarkComplete}
+          onClick={() => void handleMarkComplete()}
         >
           Mark Complete
         </button>

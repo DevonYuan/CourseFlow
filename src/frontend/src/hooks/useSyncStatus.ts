@@ -7,7 +7,6 @@
  * @module @frontend/hooks/useSyncStatus
  */
 
-import type { Settings } from '@backend/shared/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useToast } from '../context/ToastContext';

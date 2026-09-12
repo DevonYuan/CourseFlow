@@ -767,12 +767,22 @@ export const repo = {
     const now = Date.now();
     exec('BEGIN IMMEDIATE TRANSACTION', false);
     try {
+      // Phase 1: move affected rows to temporary (negative) positions so the
+      // UNIQUE position constraint is never violated mid-reorder.
       for (let i = 0; i < orderedAssignmentIds.length; i++) {
-        run('UPDATE priority_order SET position = ?, updated_at = ? WHERE assignment_id = ?', [
-          i,
-          now,
-          orderedAssignmentIds[i]!,
-        ]);
+        run(
+          'UPDATE priority_order SET position = ? WHERE assignment_id = ?',
+          [-(i + 1), orderedAssignmentIds[i]!],
+          false,
+        );
+      }
+      // Phase 2: assign the final contiguous positions starting at 0.
+      for (let i = 0; i < orderedAssignmentIds.length; i++) {
+        run(
+          'UPDATE priority_order SET position = ?, updated_at = ? WHERE assignment_id = ?',
+          [i, now, orderedAssignmentIds[i]!],
+          false,
+        );
       }
       exec('COMMIT', false);
     } catch (e) {

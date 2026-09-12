@@ -15,8 +15,8 @@ import { AssignmentHeader } from '../components/assignments/AssignmentHeader';
 import { NotesList } from '../components/notes/NotesList';
 import { AllCompletePrompt } from '../components/subtasks/AllCompletePrompt';
 import { SubTaskList } from '../components/subtasks/SubTaskList';
-import { useAssignmentDetail } from '../hooks/useAssignmentDetail';
 import { useFocusRestorationContext } from '../context/FocusRestorationContext';
+import { useAssignmentDetail } from '../hooks/useAssignmentDetail';
 import { isPromptDismissed, setPromptDismissed } from '../utils/localStorage';
 
 import './AssignmentDetailPage.css';

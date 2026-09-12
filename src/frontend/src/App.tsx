@@ -3,22 +3,22 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
-import { ToastProvider } from './context/ToastContext';
 import { FocusRestorationProvider } from './context/FocusRestorationContext';
+import { ToastProvider } from './context/ToastContext';
 import { useSettings } from './hooks/useSettings';
 import { AssignmentDetailPage } from './pages/AssignmentDetailPage';
 import { AssignmentListPage } from './pages/AssignmentListPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { applyTheme } from './utils/theme';
 
-function ThemedApp(): JSX.Element {
+export function ThemedApp(): JSX.Element {
   const { settings } = useSettings();
 
   useEffect(() => {
     if (settings) {
       applyTheme(settings.theme);
     }
-  }, [settings?.theme]);
+  }, [settings]);
 
   return (
     <ErrorBoundary>
@@ -42,5 +42,3 @@ function ThemedApp(): JSX.Element {
     </ErrorBoundary>
   );
 }
-
-export default ThemedApp;

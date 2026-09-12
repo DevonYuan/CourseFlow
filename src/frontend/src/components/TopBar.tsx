@@ -19,6 +19,11 @@ import {
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import './TopBar.css';
 
+function handleSyncClick(): void {
+  // Trigger manual sync via IPC
+  void window.api.scheduler.trigger?.();
+}
+
 export function TopBar(): JSX.Element {
   const navigate = useNavigate();
   const statusFilter = useStatusFilter();
@@ -28,12 +33,23 @@ export function TopBar(): JSX.Element {
 
   const handleTabChange = (event: React.MouseEvent<HTMLButtonElement>) => {
     const tab = event.currentTarget.textContent?.toLowerCase() || 'all';
-    if (tab === 'all') {
-      setStatusFilter('all');
-    } else if (tab === 'pending') {
-      setStatusFilter('pending');
-    } else if (tab === 'completed') {
-      setStatusFilter('completed');
+    switch (tab) {
+      case 'all': {
+        setStatusFilter('all');
+
+        break;
+      }
+      case 'pending': {
+        setStatusFilter('pending');
+
+        break;
+      }
+      case 'completed': {
+        setStatusFilter('completed');
+
+        break;
+      }
+      // No default
     }
   };
 
@@ -41,13 +57,8 @@ export function TopBar(): JSX.Element {
     setSearchQuery(event.target.value);
   };
 
-  const handleSyncClick = () => {
-    // Trigger manual sync via IPC
-    window.api.scheduler.trigger?.();
-  };
-
   const handleOpenSettings = () => {
-    navigate('/settings');
+    void navigate('/settings');
   };
 
   // We don't have isLoading here since filters are loaded from localStorage

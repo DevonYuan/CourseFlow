@@ -10,8 +10,6 @@
 import type { Assignment } from '@backend/shared/types';
 import React from 'react';
 
-import { CourseColorBadge } from './CourseColorBadge';
-import { ProgressBar } from './ui/ProgressBar';
 import './AssignmentRow.css';
 
 interface SubTaskProgress {
@@ -287,7 +285,7 @@ export function AssignmentRow({
         {onDelete && (
           <button
             className="row-delete"
-            onClick={handleDelete}
+            onClick={(event) => void handleDelete(event)}
             onKeyDown={handleDeleteKeyDown}
             aria-label={`Delete ${assignment.title}`}
             type="button"

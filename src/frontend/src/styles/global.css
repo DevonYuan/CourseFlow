@@ -33,7 +33,7 @@
   --surface: #ffffff; /* Cards, windows, inputs */
   --ink: #1c2420; /* Primary text */
   --ink-soft: #66716b; /* Secondary text */
-  --ink-faint: #9aa39d; /* Muted/placeholder text */
+  --ink-faint: #5f6b64; /* Muted/placeholder text (AA on light backgrounds) */
   --line: #e4e1d5; /* Borders, dividers */
   --line-strong: #d3cfc1; /* Stronger borders, hover states */
 
@@ -107,6 +107,7 @@
   /* Accessible muted-text tokens (WCAG AA on light backgrounds) */
   --color-text-secondary: #4b5563; /* ~7.6:1 on #ffffff */
   --color-text-tertiary: #5b655f; /* ~5.6:1 on #ffffff */
+  --color-text-quaternary: #5b655f; /* ~5.6:1 on #ffffff */
   --scrollbar-thumb: var(--line);
   --scrollbar-thumb-hover: var(--line-strong);
 }
@@ -166,6 +167,7 @@ html.dark {
   /* Accessible muted-text tokens (WCAG AA on dark backgrounds) */
   --color-text-secondary: #b6c0ba;
   --color-text-tertiary: #9aa39d;
+  --color-text-quaternary: #9aa39d;
   --scrollbar-thumb: var(--line-strong);
   --scrollbar-thumb-hover: var(--ink-faint);
 }

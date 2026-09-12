@@ -11,6 +11,7 @@
  * @module @backend/main/__tests__/scheduler.integration
  */
 
+import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
 import { BrowserWindow, powerMonitor, ipcMain, app } from 'electron';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
@@ -108,8 +109,6 @@ import {
   stopScheduler,
   __resetScheduler,
 } from '../scheduler.js';
-
-import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
 
 const mockFetchICalFeed = fetchICalFeed as Mock;
 const mockParseICalFeed = parseICalFeed as Mock;

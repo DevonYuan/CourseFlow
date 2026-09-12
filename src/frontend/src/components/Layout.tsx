@@ -9,8 +9,8 @@
  * @module @frontend/components/Layout
  */
 
-import { TopBar } from './TopBar';
 import { Toolbar } from './Toolbar';
+import { TopBar } from './TopBar';
 import './Layout.css';
 
 interface LayoutProps {

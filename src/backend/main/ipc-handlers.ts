@@ -618,9 +618,9 @@ export function registerIpcHandlers(): void {
   });
 
   // Listen for settings changes to restart scheduler when sync_interval_minutes changes
-  ipcMain.on('settings:changed', async (_event, settings: Settings) => {
-    const { getScheduler } = await import('./scheduler.js');
-    const scheduler = getScheduler();
-    scheduler.updateSettings(settings);
+  ipcMain.on('settings:changed', (_event, settings: Settings) => {
+    void import('./scheduler.js').then(({ getScheduler }) => {
+      getScheduler().updateSettings(settings);
+    });
   });
 }

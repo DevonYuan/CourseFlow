@@ -78,7 +78,7 @@ function unfoldIcalLines(text: string): string {
   // Replace CRLF + single space/tab with just a space
   // This preserves the space as content per RFC 5545
   // Handle both \n and \r\n line endings
-  return text.replace(/\r?\n([ \t])/g, ' ');
+  return text.replaceAll(/\r?\n([ \t])/g, ' ');
 }
 
 /**
@@ -88,9 +88,9 @@ function unfoldIcalLines(text: string): string {
  * which violates RFC 5545 and causes ical.js to throw "invalid BYDAY value".
  */
 function fixRruleFormatting(text: string): string {
-  return text.replace(/^(RRULE:.*?;BYDAY\s*=)([^\n\r]*)/gim, (match, prefix, bydayValue) => {
+  return text.replaceAll(/^(RRULE:.*?;BYDAY\s*=)([^\n\r]*)/gim, (match, prefix, bydayValue) => {
     // Remove spaces from BYDAY value: "SU,MO,TU, TH,FR,SA" -> "SU,MO,TU,TH,FR,SA"
-    const cleaned = bydayValue.replace(/\s+/g, '');
+    const cleaned = bydayValue.replaceAll(/\s+/g, '');
     return `${prefix}${cleaned}`;
   });
 }

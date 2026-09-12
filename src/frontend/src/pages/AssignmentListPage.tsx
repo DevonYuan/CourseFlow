@@ -8,6 +8,7 @@
  * @module @frontend/pages/AssignmentListPage
  */
 
+import type { Assignment } from '@backend/shared/types';
 import { useNavigate } from 'react-router-dom';
 
 import { AssignmentList } from '../components/AssignmentList';
@@ -15,7 +16,7 @@ import { useFocusRestorationContext } from '../context/FocusRestorationContext';
 
 interface AssignmentListPageProps {
   /** Optional callback when an assignment is clicked (for future detail view) */
-  onAssignmentClick?: (assignment: import('@backend/shared/types').Assignment) => void;
+  onAssignmentClick?: (assignment: Assignment) => void;
 }
 
 /**
@@ -26,10 +27,10 @@ export function AssignmentListPage({ onAssignmentClick }: AssignmentListPageProp
   const navigate = useNavigate();
   const { saveFocus } = useFocusRestorationContext();
 
-  const handleAssignmentClick = (assignment: import('@backend/shared/types').Assignment) => {
+  const handleAssignmentClick = (assignment: Assignment) => {
     // Save focus on the row before navigating
     saveFocus();
-    navigate(`/assignments/${assignment.id}`);
+    void navigate(`/assignments/${assignment.id}`);
     onAssignmentClick?.(assignment);
   };
 

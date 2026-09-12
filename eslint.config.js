@@ -257,6 +257,30 @@ export default typescriptEslint.config(
       'unicorn/no-array-for-each': 'off',
     },
   },
+  // Test files: mocks and fixtures legitimately use `any`, loose function types,
+  // intentionally-unused imports, and fire-and-forget promises.
+  {
+    files: [
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'src/**/__tests__/**/*.ts',
+      'src/**/__tests__/**/*.tsx',
+      'src/**/*.playwright.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
+  },
+  // The backend main process logs to stdout/stderr directly.
+  {
+    files: ['src/backend/main/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
   // Prettier compat (turn off conflicting rules)
   prettierConfig,
 );

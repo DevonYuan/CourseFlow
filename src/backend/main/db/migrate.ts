@@ -33,7 +33,7 @@ function loadMigrations(): Map<number, string> {
       throw new Error(`Invalid migration filename: ${file}. Expected format: NNN_name.sql`);
     }
     const version = Number.parseInt(match[1], 10);
-    const sql = readFileSync(join(migrationsDir, file), 'utf-8');
+    const sql = readFileSync(join(migrationsDir, file), 'utf8');
     migrations.set(version, sql);
   }
 

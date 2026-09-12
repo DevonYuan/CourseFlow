@@ -67,12 +67,11 @@ const defaultSettings: Settings = {
 let progressCallback: ((payload: IpcEvents['ical:progress']) => void) | null = null;
 let settingsUnsubscribe: (() => void) | null = null;
 
-function renderSettingsModal(
-  props: { isOpen: boolean; onClose: () => void } = { isOpen: true, onClose: vi.fn() },
-) {
+function renderSettingsModal(props?: { isOpen: boolean; onClose: () => void }) {
+  const resolved = props ?? { isOpen: true, onClose: vi.fn() };
   return render(
     <ToastProvider>
-      <SettingsModal {...props} />
+      <SettingsModal {...resolved} />
     </ToastProvider>,
   );
 }

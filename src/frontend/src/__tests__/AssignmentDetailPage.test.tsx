@@ -17,9 +17,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FocusRestorationProvider } from '../context/FocusRestorationContext';
+import { ToastProvider } from '../context/ToastContext';
 import { AssignmentDetailPage } from '../pages/AssignmentDetailPage';
 import { useAssignmentDetailStore } from '../stores/assignmentDetailStore';
-import { ToastProvider } from '../context/ToastContext';
 
 expect.extend(matchers);
 

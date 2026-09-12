@@ -8,9 +8,10 @@
  * @module @frontend/hooks/useSubTaskProgress
  */
 
-import { useMemo } from 'react';
-import { useSubTaskStore } from '../stores/subtaskStore';
 import type { EntityId } from '@backend/shared/types';
+import { useMemo } from 'react';
+
+import { useSubTaskStore } from '../stores/subtaskStore';
 
 interface SubTaskProgress {
   /** Number of completed sub-tasks */
@@ -30,7 +31,7 @@ interface SubTaskProgress {
  * @param assignmentId - The assignment ID to get progress for
  * @returns Progress metrics object
  */
-export function useSubTaskProgress(assignmentId: EntityId): SubTaskProgress {
+export function useSubTaskProgress(_assignmentId: EntityId): SubTaskProgress {
   // The subtask store is created per assignment via the hook in useSubTasks
   // We need to access the store for this specific assignment
   // Since the store is created dynamically, we'll use a selector pattern

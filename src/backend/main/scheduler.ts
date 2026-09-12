@@ -10,15 +10,9 @@
  */
 
 import type { BrowserWindow } from 'electron';
-import { app, powerMonitor } from 'electron';
+import { powerMonitor } from 'electron';
 
-import type {
-  Settings,
-  IsoDateTime,
-  SchedulerConfig,
-  SchedulerStatus,
-  ImportResult,
-} from '../shared/types.js';
+import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus } from '../shared/types.js';
 
 import { repo } from './db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from './events.js';
@@ -155,12 +149,14 @@ export class Scheduler {
     // Wait 30 seconds before first fetch to avoid startup contention
     this.initialDelayTimer = setTimeout(() => {
       this.initialDelayTimer = null;
-      this.runFetchCycle();
+      void this.runFetchCycle();
 
       // Set up recurring interval after first run
       if (this.config.enabled && !this.intervalId) {
         const intervalMs = intervalMinutes * 60 * 1000;
-        this.intervalId = setInterval(() => this.runFetchCycle(), intervalMs);
+        this.intervalId = setInterval(() => {
+          void this.runFetchCycle();
+        }, intervalMs);
         if (this.intervalId.unref) {
           this.intervalId.unref();
         }
@@ -511,7 +507,7 @@ export class Scheduler {
       this.retryTimer = setTimeout(() => {
         this.retryTimer = null;
         if (!this.isPaused && this.isRunning) {
-          this.fetchAndImport(icalUrl, syncIntervalMinutes);
+          void this.fetchAndImport(icalUrl, syncIntervalMinutes);
         }
       }, delayMs);
 
@@ -657,7 +653,7 @@ export class Scheduler {
    *
    * @param suspendedDurationMs - Duration of suspend in milliseconds
    */
-  private rescheduleAfterWake(suspendedDurationMs: number): void {
+  private rescheduleAfterWake(_suspendedDurationMs: number): void {
     if (!this.currentSettings || this.intervalId === null) {
       return;
     }
@@ -691,10 +687,12 @@ export class Scheduler {
     // Run once after the calculated delay, then resume regular interval
     this.initialDelayTimer = setTimeout(() => {
       this.initialDelayTimer = null;
-      this.runFetchCycle();
+      void this.runFetchCycle();
 
       if (this.config.enabled && !this.intervalId) {
-        this.intervalId = setInterval(() => this.runFetchCycle(), intervalMs);
+        this.intervalId = setInterval(() => {
+          void this.runFetchCycle();
+        }, intervalMs);
         if (this.intervalId.unref) {
           this.intervalId.unref();
         }

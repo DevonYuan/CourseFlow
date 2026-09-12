@@ -10,7 +10,6 @@
 
 import React from 'react';
 import { forwardRef } from 'react';
-import type { SyntheticEvent } from 'react';
 
 import './DragHandle.css';
 

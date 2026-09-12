@@ -23,7 +23,7 @@ export function SettingsPage(): JSX.Element {
   // Navigate back to assignments list when modal closes
   useEffect(() => {
     if (!isOpen) {
-      navigate('/');
+      void navigate('/');
     }
   }, [isOpen, navigate]);
 

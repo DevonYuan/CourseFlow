@@ -78,14 +78,13 @@ function buildHttpErrorMessage(status: number, statusText: string, url: string):
 
     // Outlook/Office 365 specific guidance
     if (
-      hostname.includes('outlook.office.com') ||
-      hostname.includes('outlook.live.com') ||
-      hostname.includes('office365') ||
-      hostname.includes('exchange')
+      (hostname.includes('outlook.office.com') ||
+        hostname.includes('outlook.live.com') ||
+        hostname.includes('office365') ||
+        hostname.includes('exchange')) &&
+      (status === 401 || status === 403)
     ) {
-      if (status === 401 || status === 403) {
-        return `${base}\n\nAuthentication required.\n• Use the "Subscribe to calendar" .ics URL from Outlook Web (not the web calendar link)\n• Make sure the calendar is shared with "Can view all details"`;
-      }
+      return `${base}\n\nAuthentication required.\n• Use the "Subscribe to calendar" .ics URL from Outlook Web (not the web calendar link)\n• Make sure the calendar is shared with "Can view all details"`;
     }
 
     // Generic guidance for common status codes
@@ -336,70 +335,6 @@ export async function fetchICalFeed(url: string, options: FetchICalOptions = {})
  * @param icalText - Raw iCal feed text
  * @returns Array of parsed ICalEvent objects
  */
-/**
- * Flushes the current property value into the current event.
- * Returns the updated currentProperty and currentValue (both reset to empty).
- */
-function flushProperty(
-  currentEvent: Partial<ICalEvent> | null,
-  currentProperty: string,
-  currentValue: string,
-): { currentProperty: string; currentValue: string } {
-  if (!currentEvent || !currentProperty) {
-    return { currentProperty: '', currentValue: '' };
-  }
-
-  const value = currentValue.trim();
-
-  switch (currentProperty.toUpperCase()) {
-    case 'UID': {
-      currentEvent.uid = value;
-      break;
-    }
-    case 'SUMMARY': {
-      currentEvent.summary = value;
-      break;
-    }
-    case 'DESCRIPTION': {
-      currentEvent.description = value || null;
-      break;
-    }
-    case 'LOCATION': {
-      currentEvent.location = value || null;
-      break;
-    }
-    case 'DTSTART':
-    case 'DTSTART;VALUE=DATE-TIME':
-    case 'DTSTART;VALUE=DATE': {
-      currentEvent.dtStart = parseICalDateTime(value);
-      break;
-    }
-    case 'DTEND':
-    case 'DTEND;VALUE=DATE-TIME':
-    case 'DTEND;VALUE=DATE': {
-      currentEvent.dtEnd = value ? parseICalDateTime(value) : null;
-      break;
-    }
-    case 'RRULE': {
-      currentEvent.rrule = value;
-      break;
-    }
-    case 'URL': {
-      currentEvent.url = value || null;
-      break;
-    }
-    case 'CATEGORIES': {
-      currentEvent.categories = value
-        .split(',')
-        .map((c) => c.trim())
-        .filter(Boolean);
-      break;
-    }
-  }
-
-  return { currentProperty: '', currentValue: '' };
-}
-
 export function parseICalFeed(icalText: string): ICalEvent[] {
   const events: ICalEvent[] = [];
   const lines = icalText.split(/\r?\n/);

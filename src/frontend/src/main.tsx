@@ -11,16 +11,15 @@ if (import.meta.env.DEV && typeof window !== 'undefined' && !window.api) {
   const installMock = async () => {
     try {
       await import('./mocks/mockApi');
-      console.log('[Mock API] Ready');
     } catch (e) {
       console.error('[Mock API] Failed to load:', e);
     }
   };
-  installMock();
+  void installMock();
 }
 
 // Lazy load App to give mock API time to install
-const App = lazy(() => import('./App'));
+const App = lazy(() => import('./App').then((m) => ({ default: m.ThemedApp })));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

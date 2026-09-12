@@ -3,7 +3,7 @@
 // Provides TypeScript types for the Electron contextBridge API exposed
 // as `window.api` in the renderer process.
 
-import type { IpcResult, IpcChannels, IpcEvents } from '@backend/shared/ipc';
+import type { IpcResult, IpcEvents } from '@backend/shared/ipc';
 import type {
   Assignment,
   PriorityOrder,

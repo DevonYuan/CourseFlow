@@ -15,14 +15,36 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      // Repo-wide floors that prevent coverage regressions. The Phase 3 test
-      // suites additionally target >80% lines on the sub-task/note repository
-      // code and >70% on the sub-task/note React components.
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+        'src/**/__tests__/**',
+        'src/**/*.playwright.ts',
+        'src/frontend/test/**',
+        'src/backend/shared/types.ts',
+        'src/backend/shared/ipc.ts',
+        'src/backend/shared/index.ts',
+        'src/backend/shared/types/**',
+        'src/frontend/src/mocks/**',
+      ],
+      // Repo-wide floors plus per-glob targets for the Phase 3 modules:
+      // backend data layer >80% lines, sub-task/note UI + ProgressBar >70%.
       thresholds: {
-        lines: 40,
-        statements: 40,
-        branches: 65,
-        functions: 55,
+        lines: 50,
+        statements: 50,
+        branches: 70,
+        functions: 65,
+        'src/backend/main/db/repository.ts': {
+          lines: 80,
+          statements: 80,
+          branches: 55,
+          functions: 90,
+        },
+        'src/frontend/src/components/subtasks/**': { lines: 70 },
+        'src/frontend/src/components/notes/**': { lines: 70 },
+        'src/frontend/src/components/ui/ProgressBar.tsx': { lines: 90 },
       },
     },
     projects: [

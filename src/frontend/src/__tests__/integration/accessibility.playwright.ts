@@ -15,18 +15,17 @@ const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 /**
  * Axe builder scoped to the app's structural accessibility invariants.
- *
- * `color-contrast` is disabled because the current design tokens have a known,
- * separately-tracked contrast backlog that predates Phase 3 and is out of scope
- * for this tests-and-docs ticket. Landmark, name/role, ARIA, id, and heading
- * rules still run.
  */
 function axe(page: Page): AxeBuilder {
-  return new AxeBuilder({ page }).withTags(WCAG_TAGS).disableRules(['color-contrast']);
+  return new AxeBuilder({ page }).withTags(WCAG_TAGS);
 }
 
 async function openFirstAssignment(page: Page): Promise<void> {
   await page.goto('/');
+  // Freeze animations/transitions so contrast is computed on settled styles.
+  await page.addStyleTag({
+    content: '*,*::before,*::after{animation:none!important;transition:none!important}',
+  });
   await expect(page.locator('[aria-label="Assignments"]').first()).toBeVisible();
   await page.locator('[data-assignment-id]').first().click();
   await expect(page.locator('article.assignment-detail')).toBeVisible();

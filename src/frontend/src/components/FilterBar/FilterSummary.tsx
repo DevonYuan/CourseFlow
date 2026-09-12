@@ -38,7 +38,7 @@ interface ActiveFilter {
 function isoToDate(iso: IsoDateTime | null | undefined): Date | null {
   if (!iso) return null;
   const date = new Date(iso);
-  return isNaN(date.getTime()) ? null : date;
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 /**

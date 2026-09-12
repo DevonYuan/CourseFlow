@@ -8,7 +8,13 @@
  */
 
 import type { Assignment } from '@backend/shared/types';
-import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
+import {
+  DndContext,
+  closestCenter,
+  DragOverlay,
+  type DragEndEvent,
+  type useSensors,
+} from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import React from 'react';
 
@@ -32,9 +38,9 @@ interface AssignmentListDragDropProps {
   /** Callback when delete is triggered */
   onDelete?: (id: string) => Promise<void>;
   /** Callback when drag ends with new order */
-  onDragEnd: (event: import('@dnd-kit/core').DragEndEvent) => void;
+  onDragEnd: (event: DragEndEvent) => void;
   /** Sensors for drag-and-drop */
-  sensors: ReturnType<typeof import('@dnd-kit/core').useSensors>;
+  sensors: ReturnType<typeof useSensors>;
   /** Callback to open settings from empty state */
   onOpenSettings: () => void;
   /** Render prop for DragOverlay */

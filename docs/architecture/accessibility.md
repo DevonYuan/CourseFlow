@@ -70,6 +70,6 @@ Accessibility is covered by:
 pnpm test:e2e -- accessibility.playwright.ts
 ```
 
-> **Note:** the automated scans run the structural WCAG rules. Colour-contrast is
-> tracked separately, as the current design palette has a pre-existing contrast
-> backlog that predates the Phase 3 work.
+> The automated scans run the full WCAG 2.1 A/AA rule set, including
+> colour-contrast. Animations are frozen before scanning so contrast is measured
+> on settled styles.

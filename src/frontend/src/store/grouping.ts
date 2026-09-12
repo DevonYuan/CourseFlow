@@ -74,15 +74,6 @@ function isOverdue(date: Date): boolean {
 }
 
 /**
- * Checks if a date is upcoming (after this week) in local timezone.
- * Compares UTC timestamps directly.
- */
-function isUpcoming(date: Date): boolean {
-  const endOfWeek = getEndOfWeekTimestamp();
-  return date.getTime() > endOfWeek;
-}
-
-/**
  * Applies sort within a group based on sortOption.
  * For 'priority' sort, requires priorityOrder array.
  */
@@ -196,8 +187,6 @@ export function groupByWeek(
   sortOption: SortOption = 'priority',
   priorityOrder: string[] = [],
 ): GroupedAssignments[] {
-  const now = new Date();
-
   // Initialize groups in the required order
   const groups: GroupedAssignments[] = [
     { groupKey: 'this-week', groupLabel: 'This Week', assignments: [], count: 0 },

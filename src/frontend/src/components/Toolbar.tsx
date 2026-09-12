@@ -39,14 +39,9 @@ interface ToolbarProps {
 
 export function Toolbar({
   courseFilter = [],
-  onCourseFilterChange,
-  availableCourses = [],
   dueDateFilter = 'any',
-  onDueDateFilterChange,
   sortOption = 'priority',
-  onSortChange,
   groupOption = 'none',
-  onGroupChange,
   viewMode = 'flat',
   onViewModeChange,
 }: ToolbarProps): JSX.Element {

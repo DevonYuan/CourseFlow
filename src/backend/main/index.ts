@@ -6,7 +6,7 @@ import { initializeDatabase, closeDatabase } from './db/connection.js';
 import { migrate } from './db/migrate.js';
 import { repo } from './db/repository.js';
 import { registerIpcHandlers } from './ipc-handlers.js';
-import { getScheduler, startScheduler, stopScheduler, updateScheduler } from './scheduler.js';
+import { getScheduler, startScheduler, stopScheduler } from './scheduler.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -51,7 +51,7 @@ void app.whenReady().then(async () => {
   void createWindow();
 
   // Initialize scheduler with main window reference
-  const scheduler = getScheduler(mainWindow);
+  getScheduler(mainWindow);
 
   // Apply theme to main window and emit settings:changed event
   if (mainWindow) {

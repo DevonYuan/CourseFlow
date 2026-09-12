@@ -68,7 +68,7 @@ export function SyncStatusIndicator({
   const nextSyncDisplay = countdown || (nextAutoSyncAt ? formatNextSync(nextAutoSyncAt) : '');
 
   const handleSyncNow = () => {
-    syncNow().then(() => {
+    void syncNow().then(() => {
       onSync?.();
     });
   };

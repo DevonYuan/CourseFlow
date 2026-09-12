@@ -178,8 +178,7 @@
 /* Created timestamp (secondary) */
 .note-entry__timestamp--created {
   font-size: var(--font-size-xs, 11px);
-  color: var(--color-text-quaternary, #aaa);
-  opacity: 0.8;
+  color: var(--color-text-quaternary, #5b655f);
 }
 
 .note-entry__timestamp--created:hover,

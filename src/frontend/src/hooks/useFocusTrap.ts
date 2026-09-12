@@ -39,11 +39,11 @@ export function useFocusTrap({
   // Get all focusable elements within the container
   const getFocusableElements = useCallback(() => {
     if (!containerRef.current) return [];
-    const elements = Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(
+    const elements = [
+      ...containerRef.current.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]',
       ),
-    ).filter((el) => {
+    ].filter((el) => {
       // Filter out hidden/disabled elements
       const style = window.getComputedStyle(el);
       return (
@@ -66,7 +66,7 @@ export function useFocusTrap({
       if (focusableElements.length === 0) return;
 
       const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
+      const lastElement = focusableElements.at(-1);
 
       if (event.shiftKey && document.activeElement === firstElement) {
         event.preventDefault();
@@ -105,6 +105,7 @@ export function useFocusTrap({
     if (isActive) {
       // Save current active element
       previousActiveElement.current = document.activeElement as HTMLElement;
+      const returnElement = returnFocusRef?.current;
 
       // Add event listeners
       document.addEventListener('keydown', handleKeyDown);
@@ -134,9 +135,9 @@ export function useFocusTrap({
 
         // Restore focus to return element or previously focused element
         setTimeout(() => {
-          const returnElement = returnFocusRef?.current ?? previousActiveElement.current;
-          if (returnElement && typeof returnElement.focus === 'function') {
-            returnElement.focus({ preventScroll: true });
+          const element = returnElement ?? previousActiveElement.current;
+          if (element && typeof element.focus === 'function') {
+            element.focus({ preventScroll: true });
           }
         }, 0);
       };

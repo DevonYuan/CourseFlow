@@ -64,16 +64,16 @@ export function StatusBadge({
 function getStatusColor(status: AssignmentStatus): string {
   switch (status) {
     case 'pending': {
-      return '#f59e0b';
+      return '#b45309';
     }
     case 'in_progress': {
-      return '#3b82f6';
+      return '#1d4ed8';
     }
     case 'completed': {
-      return '#10b981';
+      return '#047857';
     }
     case 'archived': {
-      return '#9ca3af';
+      return '#4b5563';
     }
   }
 }

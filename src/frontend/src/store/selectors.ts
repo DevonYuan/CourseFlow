@@ -7,17 +7,11 @@
  * @module @frontend/store/selectors
  */
 
-import type { Assignment, SortOption, GroupingType, IsoDateTime } from '@backend/shared/types';
+import type { Assignment, SortOption } from '@backend/shared/types';
 import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
 import type { FilterState } from './assignmentsStore';
-import {
-  type GroupedAssignments,
-  applyGrouping,
-  groupByWeek,
-  groupByStatus,
-  groupByCourse,
-} from './grouping';
+import { type GroupedAssignments, applyGrouping } from './grouping';
 
 /**
  * Type for grouped assignments returned by grouping functions.

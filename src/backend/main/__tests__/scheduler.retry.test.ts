@@ -6,6 +6,7 @@
  * @module @backend/main/__tests__/scheduler.retry
  */
 
+import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
 import { BrowserWindow, powerMonitor, ipcMain } from 'electron';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
@@ -95,8 +96,6 @@ import {
   HttpError,
 } from '../ical/index.js';
 import { Scheduler, __resetScheduler } from '../scheduler.js';
-
-import type { Settings, ImportResult, IsoDateTime } from '@backend/shared/types';
 
 const mockFetchICalFeed = fetchICalFeed as Mock;
 const mockParseICalFeed = parseICalFeed as Mock;

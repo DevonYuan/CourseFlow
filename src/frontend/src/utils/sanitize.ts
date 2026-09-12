@@ -108,9 +108,9 @@ function normalizeCanvasHtml(html: string): string {
   return (
     html
       // Convert Canvas-specific classes to generic ones
-      .replace(/\s+class="[^"]*"/g, '')
+      .replaceAll(/\s+class="[^"]*"/g, '')
       // Ensure links open in new tab for security
-      .replace(/<a\s+/gi, '<a target="_blank" rel="noopener noreferrer" ')
+      .replaceAll(/<a\s+/gi, '<a target="_blank" rel="noopener noreferrer" ')
   );
   // Remove inline styles that could be problematic (keep simple ones)
   // Note: We allow style attribute in ALLOWED_ATTR so simple styles pass through

@@ -47,7 +47,7 @@ export function StatusTabs(): JSX.Element {
     if (!container) return;
 
     const measure = () => {
-      const tabs = Array.from(container.querySelectorAll<HTMLElement>('.status-tabs__tab'));
+      const tabs = [...container.querySelectorAll<HTMLElement>('.status-tabs__tab')];
       if (tabs.length === 0) return;
 
       // Equal-width tabs: size every tab to the widest one.

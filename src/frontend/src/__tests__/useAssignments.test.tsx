@@ -7,7 +7,7 @@
 // @vitest-environment jsdom
 
 import type { IpcEvents } from '@backend/shared/ipc';
-import type { Assignment, IsoDateTime } from '@backend/shared/types';
+import type { Assignment, IsoDateTime, PriorityOrder } from '@backend/shared/types';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -20,8 +20,7 @@ import { useAssignmentsStore } from '../store/assignmentsStore';
 type AssignmentsListResult =
   { ok: true; data: Assignment[] } | { ok: false; error: string; code?: string };
 type PriorityListResult =
-  | { ok: true; data: import('@backend/shared/types').PriorityOrder[] }
-  | { ok: false; error: string; code?: string };
+  { ok: true; data: PriorityOrder[] } | { ok: false; error: string; code?: string };
 
 const mockApi = {
   db: {

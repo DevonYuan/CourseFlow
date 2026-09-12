@@ -7,7 +7,7 @@
  * @module @frontend/utils/date
  */
 
-import { format, isToday, isTomorrow, isPast, differenceInCalendarDays } from 'date-fns';
+import { format, isToday, isTomorrow, differenceInCalendarDays } from 'date-fns';
 
 /**
  * Checks if a due date is an all-day event.
@@ -129,9 +129,9 @@ export function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  const diffMins = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
 
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins}m ago`;

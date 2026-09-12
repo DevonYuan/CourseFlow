@@ -16,7 +16,7 @@ const __dirname = join(fileURLToPath(import.meta.url), '..');
 const FIXTURES_DIR = join(__dirname, 'fixtures');
 
 function loadFixture(name: string): string {
-  return readFileSync(join(FIXTURES_DIR, name), 'utf-8');
+  return readFileSync(join(FIXTURES_DIR, name), 'utf8');
 }
 
 describe('iCal Parser (ical.js)', () => {

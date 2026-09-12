@@ -12,13 +12,11 @@ import type { Assignment } from '@backend/shared/types';
 import {
   PointerSensor,
   KeyboardSensor,
-  closestCenter,
   type DragEndEvent,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import React from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { List } from 'react-window';
@@ -32,7 +30,6 @@ import {
   useAssignments,
   useAssignmentsLoading,
   useAssignmentsError,
-  useAssignmentsEmpty,
   usePriorityOrder,
   useSetPriorityOrder,
   useReorderOptimistic,
@@ -184,7 +181,6 @@ export function AssignmentList({
   const assignments = useAssignments();
   const isLoading = useAssignmentsLoading();
   const error = useAssignmentsError();
-  const isEmpty = useAssignmentsEmpty();
   const priorityOrder = usePriorityOrder();
   const setPriorityOrder = useSetPriorityOrder();
   const reorderOptimistic = useReorderOptimistic();
@@ -223,7 +219,7 @@ export function AssignmentList({
   // Priority keyboard shortcuts (Alt+Up/Down, Alt+Shift+Up/Down)
   usePriorityKeyboard({
     enabled: !isLoading && !error,
-    onAnnounce: (message) => {
+    onAnnounce: () => {
       // The announcement is handled by the PriorityLiveRegion component
       // which reads from a global ref. We could also use a context here.
     },
@@ -269,8 +265,9 @@ export function AssignmentList({
 
   // Cleanup debounced function on unmount
   useEffect(() => {
+    const debouncedReorder = debouncedReorderRef.current;
     return () => {
-      debouncedReorderRef.current.cancel();
+      debouncedReorder.cancel();
     };
   }, []);
 
@@ -313,14 +310,7 @@ export function AssignmentList({
       // 2. Debounced IPC call to persist
       debouncedReorderRef.current(orderedIds);
     },
-    [
-      priorityOrder,
-      assignments,
-      reorderOptimistic,
-      setPriorityOrder,
-      revertPriorityOrder,
-      toastError,
-    ],
+    [priorityOrder, assignments, reorderOptimistic],
   );
 
   // Set up sensors for drag-and-drop
@@ -331,7 +321,7 @@ export function AssignmentList({
       },
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: (event) => {
+      coordinateGetter: () => {
         // Use the sortable keyboard coordinates
         return {
           x: 0,

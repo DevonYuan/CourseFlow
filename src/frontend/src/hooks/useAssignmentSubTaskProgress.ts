@@ -8,8 +8,8 @@
  * @module @frontend/hooks/useAssignmentSubTaskProgress
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EntityId, SubTask } from '@backend/shared/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface SubTaskProgress {
   completedCount: number;
@@ -25,7 +25,7 @@ type ProgressMap = Map<EntityId, SubTaskProgress>;
  */
 export function useAssignmentSubTaskProgress(assignmentIds: EntityId[]): ProgressMap {
   const [progressMap, setProgressMap] = useState<ProgressMap>(new Map());
-  const [loadingIds, setLoadingIds] = useState<Set<EntityId>>(new Set());
+  const [, setLoadingIds] = useState<Set<EntityId>>(new Set());
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,7 +75,7 @@ export function useAssignmentSubTaskProgress(assignmentIds: EntityId[]): Progres
 
       // Fetch in parallel (with concurrency limit)
       const promises = ids.map((id) => fetchProgress(id));
-      Promise.allSettled(promises).finally(() => {
+      void Promise.allSettled(promises).finally(() => {
         setLoadingIds(new Set());
       });
     },

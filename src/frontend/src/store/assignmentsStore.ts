@@ -14,14 +14,13 @@ import type {
   SortOption,
   GroupingType,
   IsoDateTime,
-  FilterState as SharedFilterState,
 } from '@backend/shared/types';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
 import { mapErrorToMessage } from '../utils/errorMessages';
 
-import { selectFilteredAssignments, type GroupedAssignments } from './selectors';
+import { selectFilteredAssignments } from './selectors';
 
 /**
  * Filter state for assignment list — persisted to localStorage.
@@ -248,7 +247,7 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
   handleDbChanged: (payload: IpcEvents['db:changed']) => {
     if (payload.table === 'assignments') {
       // Re-fetch on any assignment change
-      get().fetchAssignments();
+      void get().fetchAssignments();
     }
   },
 

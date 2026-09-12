@@ -1,6 +1,6 @@
 import type { Settings } from '@backend/shared/types';
 import React, { useState } from 'react';
-import { useState as useReactState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 
 import { useToast } from '../context/ToastContext';
 import { useIcalSync } from '../hooks/useIcalSync';
@@ -101,7 +101,7 @@ function IcalUrlHelp() {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [, setSettings] = useState<Settings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Settings>>({});
@@ -118,7 +118,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     error: syncError,
     lastResult,
     fetchAndImport,
-    reset: resetSync,
   } = useIcalSync();
 
   // Apply theme immediately when it changes in form
@@ -154,7 +153,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      loadSettings();
+      void loadSettings();
     }
   }, [isOpen, loadSettings]);
 
@@ -271,7 +270,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSave();
+              void handleSave();
             }}
           >
             <div className="form-group">
@@ -530,7 +529,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </details>
 
             <div className="modal-actions">
-              <button type="button" className="secondary" onClick={handleReset} disabled={isSaving}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => void handleReset()}
+                disabled={isSaving}
+              >
                 Reset to Defaults
               </button>
               <button type="button" className="secondary" onClick={onClose} disabled={isSaving}>
