@@ -18,12 +18,18 @@ import type {
   SubTaskInput,
   Note,
   NoteInput,
+  Page,
+  PageInput,
+  PageUpdateInput,
+  PageTreeNode,
+  PageSearchResult,
   PriorityOrder,
   PriorityOrderInput,
   Settings,
   DbAssignment,
   DbSubTask,
   DbNote,
+  DbPage,
   DbPriorityOrder,
   DbSettings,
   ImportResult,
@@ -39,6 +45,9 @@ import {
   mapSubTaskInputToDb,
   mapDbNoteToNote,
   mapNoteInputToDb,
+  mapDbPageToPage,
+  mapPageInputToDb,
+  mapPageUpdateInputToDb,
   mapDbSettingsToSettings,
   mapPriorityOrderRow,
   mapPriorityOrderInputToDb,
@@ -977,6 +986,299 @@ export const repo = {
     const row = get<DbNote>('SELECT * FROM notes WHERE id = ?', [id]);
     if (!row) throw new Error(`Note not found: ${id}`);
     return mapDbNoteToNote(row);
+  },
+
+  // --- Pages ---
+
+  /**
+   * List all pages, optionally filtered by parentId.
+   * If parentId is provided, returns children of that parent.
+   * If parentId is null/undefined, returns root pages (parent_id IS NULL).
+   * Ordered by position.
+   */
+  listPages(parentId?: string | null): Page[] {
+    let sql = 'SELECT * FROM pages WHERE ';
+    const params: (string | number | null)[] = [];
+
+    if (parentId === undefined || parentId === null) {
+      sql += 'parent_id IS NULL';
+    } else {
+      sql += 'parent_id = ?';
+      params.push(parentId);
+    }
+
+    sql += ' ORDER BY position ASC';
+
+    const rows = all<DbPage>(sql, params);
+    return rows.map(mapDbPageToPage);
+  },
+
+  /**
+   * Get a single page by ID.
+   */
+  getPage(id: string): Page | null {
+    const row = get<DbPage>('SELECT * FROM pages WHERE id = ?', [id]);
+    return row ? mapDbPageToPage(row) : null;
+  },
+
+  /**
+   * Get the full page tree for sidebar rendering.
+   * Uses recursive CTE to fetch all pages with hierarchy info.
+   * Assembles the tree in TypeScript for simplicity.
+   */
+  getPageTree(): PageTreeNode[] {
+    // Fetch all pages ordered by parent_id, position
+    const rows = all<DbPage>(
+      'SELECT * FROM pages ORDER BY parent_id, position ASC',
+    );
+
+    // Build a map of parentId -> child pages
+    const childrenMap = new Map<string | null, DbPage[]>();
+    for (const row of rows) {
+      const key = row.parent_id ?? null;
+      if (!childrenMap.has(key)) {
+        childrenMap.set(key, []);
+      }
+      childrenMap.get(key)!.push(row);
+    }
+
+    // Recursive function to build tree
+    const buildTree = (parentId: string | null): PageTreeNode[] => {
+      const children = childrenMap.get(parentId) ?? [];
+      return children.map((child) => ({
+        page: mapDbPageToPage(child),
+        children: buildTree(child.id),
+      }));
+    };
+
+    // Return root-level tree
+    return buildTree(null);
+  },
+
+  /**
+   * Create a new page.
+   * If position is not specified, assigns next available position for the parent.
+   */
+  createPage(input: PageInput): Page {
+    const now = Date.now();
+    const dbInput = mapPageInputToDb(input, now);
+    const id = randomUUID();
+
+    // If position not specified, compute next position for this parent
+    let position = input.position ?? 0;
+    if (input.position === undefined) {
+      const maxPosRow = get<{ max_pos: number }>(
+        'SELECT COALESCE(MAX(position), -1) + 1 as max_pos FROM pages WHERE parent_id IS ?',
+        [input.parentId ?? null],
+      );
+      position = maxPosRow?.max_pos ?? 0;
+    }
+
+    run(
+      `
+      INSERT INTO pages (id, parent_id, title, content, icon, cover, position, created_at, updated_at, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      [
+        id,
+        dbInput.parent_id,
+        dbInput.title,
+        dbInput.content,
+        dbInput.icon,
+        dbInput.cover,
+        position,
+        now,
+        now,
+        null, // created_by - can be extended for multi-user
+      ],
+    );
+
+    const row = get<DbPage>('SELECT * FROM pages WHERE id = ?', [id]);
+    if (!row) throw new Error('Failed to retrieve inserted page');
+    return mapDbPageToPage(row);
+  },
+
+  /**
+   * Update a page by ID.
+   * Only updates fields provided in the input.
+   */
+  updatePage(input: PageUpdateInput): Page {
+    const now = Date.now();
+    const dbUpdates = mapPageUpdateInputToDb(input, now);
+
+    const setParts: string[] = [];
+    const params: (string | number | null)[] = [];
+
+    if (dbUpdates.title !== undefined) {
+      setParts.push('title = ?');
+      params.push(dbUpdates.title);
+    }
+    if (dbUpdates.content !== undefined) {
+      setParts.push('content = ?');
+      params.push(dbUpdates.content);
+    }
+    if (dbUpdates.parent_id !== undefined) {
+      setParts.push('parent_id = ?');
+      params.push(dbUpdates.parent_id);
+    }
+    if (dbUpdates.position !== undefined) {
+      setParts.push('position = ?');
+      params.push(dbUpdates.position);
+    }
+    if (dbUpdates.icon !== undefined) {
+      setParts.push('icon = ?');
+      params.push(dbUpdates.icon);
+    }
+    if (dbUpdates.cover !== undefined) {
+      setParts.push('cover = ?');
+      params.push(dbUpdates.cover);
+    }
+    setParts.push('updated_at = ?');
+    params.push(now, input.id);
+
+    if (setParts.length <= 1) {
+      // Only updated_at was added, no actual changes
+      return this.getPage(input.id) as Page;
+    }
+
+    run(`UPDATE pages SET ${setParts.join(', ')} WHERE id = ?`, params);
+
+    const row = get<DbPage>('SELECT * FROM pages WHERE id = ?', [input.id]);
+    if (!row) throw new Error(`Page not found: ${input.id}`);
+    return mapDbPageToPage(row);
+  },
+
+  /**
+   * Delete a page by ID.
+   * Cascades to children via FK ON DELETE CASCADE.
+   * Also cleans up FTS5 entries via triggers.
+   */
+  deletePage(id: string): void {
+    run('DELETE FROM pages WHERE id = ?', [id]);
+  },
+
+  /**
+   * Move a page to a new parent and/or position.
+   * Validates that the move doesn't create a circular reference.
+   * Renumbers positions for affected siblings.
+   */
+  movePage(id: string, parentId: string | null, position: number): Page {
+    const now = Date.now();
+
+    // Check for circular reference: page cannot be moved under its own descendant
+    if (parentId !== null) {
+      // Check if parentId is a descendant of id
+      const isDescendant = this.isDescendantOf(parentId, id);
+      if (isDescendant) {
+        throw new Error('Cannot move a page into its own descendant (circular reference)');
+      }
+    }
+
+    exec('BEGIN TRANSACTION', false);
+    try {
+      // Get current parent and position
+      const current = get<DbPage>('SELECT parent_id, position FROM pages WHERE id = ?', [id]);
+      if (!current) throw new Error(`Page not found: ${id}`);
+
+      const oldParentId = current.parent_id;
+      const oldPosition = current.position;
+
+      // If moving within the same parent and position is after current, adjust
+      let newPosition = position;
+      if (oldParentId === parentId && oldPosition < position) {
+        newPosition = position - 1;
+      }
+
+      // Shift siblings in old parent (if parent changed or position changed)
+      if (oldParentId !== parentId || oldPosition !== newPosition) {
+        // Shift down siblings after old position in old parent
+        run(
+          'UPDATE pages SET position = position - 1, updated_at = ? WHERE parent_id IS ? AND position > ?',
+          [now, oldParentId, oldPosition],
+          false,
+        );
+
+        // Shift up siblings at/before new position in new parent
+        run(
+          'UPDATE pages SET position = position + 1, updated_at = ? WHERE parent_id IS ? AND position >= ?',
+          [now, parentId, newPosition],
+          false,
+        );
+      }
+
+      // Update the page
+      run(
+        'UPDATE pages SET parent_id = ?, position = ?, updated_at = ? WHERE id = ?',
+        [parentId, newPosition, now, id],
+        false,
+      );
+
+      exec('COMMIT', false);
+    } catch (e) {
+      exec('ROLLBACK', false);
+      throw e;
+    }
+
+    const row = get<DbPage>('SELECT * FROM pages WHERE id = ?', [id]);
+    if (!row) throw new Error(`Page not found after move: ${id}`);
+    return mapDbPageToPage(row);
+  },
+
+  /**
+   * Check if a page is a descendant of another page (recursive CTE).
+   * Used to prevent circular references on move.
+   */
+  isDescendantOf(pageId: string, ancestorId: string): boolean {
+    // Recursive CTE to find all descendants of ancestorId
+    const sql = `
+      WITH RECURSIVE descendants AS (
+        SELECT id FROM pages WHERE parent_id = ?
+        UNION ALL
+        SELECT p.id FROM pages p JOIN descendants d ON p.parent_id = d.id
+      )
+      SELECT 1 FROM descendants WHERE id = ? LIMIT 1
+    `;
+
+    const row = get<{ '1': number }>(sql, [ancestorId, pageId]);
+    return !!row;
+  },
+
+  /**
+   * Full-text search across pages using FTS5.
+   * Returns ranked results with snippets.
+   */
+  searchPages(query: string, limit: number = 20): PageSearchResult[] {
+    // Sanitize query for FTS5 (escape special characters)
+    const sanitizedQuery = query.replaceAll(/["*]/g, ' ').trim();
+    if (!sanitizedQuery) return [];
+
+    const sql = `
+      SELECT
+        p.id,
+        p.parent_id,
+        p.title,
+        p.content,
+        p.icon,
+        p.cover,
+        p.position,
+        p.created_at,
+        p.updated_at,
+        p.created_by,
+        bm25(pages_fts) as rank,
+        snippet(pages_fts, 1, '<mark>', '</mark>', '...', 32) as snippet
+      FROM pages_fts
+      JOIN pages p ON p.rowid = pages_fts.rowid
+      WHERE pages_fts MATCH ?
+      ORDER BY rank
+      LIMIT ?
+    `;
+
+    const rows = all<DbPage & { rank: number; snippet: string }>(sql, [sanitizedQuery, limit]);
+    return rows.map((row) => ({
+      page: mapDbPageToPage(row),
+      rank: row.rank,
+      snippet: row.snippet,
+    }));
   },
 
   // --- Settings ---

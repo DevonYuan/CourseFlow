@@ -53,6 +53,20 @@ const api = {
         invoke('db:notes:upsert', input),
       delete: (id: string) => invoke('db:notes:delete', id),
     },
+    pages: {
+      list: (parentId?: string) => invoke('db:pages:list', { parentId }),
+      get: (id: string) => invoke('db:pages:get', id),
+      tree: () => invoke('db:pages:tree', undefined),
+      create: (input: IpcChannels['db:pages:create']['request']) =>
+        invoke('db:pages:create', input),
+      update: (input: IpcChannels['db:pages:update']['request']) =>
+        invoke('db:pages:update', input),
+      delete: (id: string) => invoke('db:pages:delete', id),
+      move: (input: IpcChannels['db:pages:move']['request']) =>
+        invoke('db:pages:move', input),
+      search: (input: IpcChannels['db:pages:search']['request']) =>
+        invoke('db:pages:search', input),
+    },
     priority: {
       list: () => invoke('db:priority:list', undefined),
       reorder: (ids: string[]) => invoke('db:priority:reorder', ids),

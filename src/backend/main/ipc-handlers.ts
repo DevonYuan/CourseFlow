@@ -17,6 +17,11 @@ import type {
   SubTaskInput,
   Note,
   NoteInput,
+  Page,
+  PageInput,
+  PageUpdateInput,
+  PageTreeNode,
+  PageSearchResult,
   PriorityOrder,
   PriorityOrderInput,
   ICalEvent,
@@ -219,6 +224,150 @@ const handlers: IpcHandlers = {
     } catch (error) {
       return Promise.resolve(
         err(`Failed to delete note: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  // ── Database: Pages ────────────────────────────────────────────────────
+
+  'db:pages:list': (input: { parentId?: string }): Promise<IpcResult<Page[]>> => {
+    try {
+      const pages = repo.listPages(input.parentId ?? null);
+      return Promise.resolve(ok(pages));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to list pages: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  'db:pages:get': (id: string): Promise<IpcResult<Page | null>> => {
+    try {
+      const page = repo.getPage(id);
+      return Promise.resolve(ok(page));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to get page: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  'db:pages:tree': (): Promise<IpcResult<PageTreeNode[]>> => {
+    try {
+      const tree = repo.getPageTree();
+      return Promise.resolve(ok(tree));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to get page tree: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  'db:pages:create': (input: PageInput): Promise<IpcResult<Page>> => {
+    try {
+      // Input validation
+      if (!input || typeof input !== 'object') {
+        return Promise.resolve(err('Invalid input: expected PageInput object', 'VALIDATION_ERROR'));
+      }
+      if (!input.title || typeof input.title !== 'string' || input.title.trim().length === 0) {
+        return Promise.resolve(err('title is required and must be a non-empty string', 'VALIDATION_ERROR'));
+      }
+      if (input.parentId !== undefined && input.parentId !== null && typeof input.parentId !== 'string') {
+        return Promise.resolve(err('parentId must be a string or null', 'VALIDATION_ERROR'));
+      }
+
+      const page = repo.createPage(input);
+      sendEventToRenderers('db:changed', { table: 'pages', action: 'insert', id: page.id });
+      return Promise.resolve(ok(page));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to create page: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  'db:pages:update': (input: PageUpdateInput): Promise<IpcResult<Page>> => {
+    try {
+      // Input validation
+      if (!input || typeof input !== 'object') {
+        return Promise.resolve(err('Invalid input: expected PageUpdateInput object', 'VALIDATION_ERROR'));
+      }
+      if (!input.id || typeof input.id !== 'string' || input.id.trim().length === 0) {
+        return Promise.resolve(err('id is required and must be a non-empty string', 'VALIDATION_ERROR'));
+      }
+      if (input.title !== undefined && (typeof input.title !== 'string' || input.title.trim().length === 0)) {
+        return Promise.resolve(err('title must be a non-empty string', 'VALIDATION_ERROR'));
+      }
+      if (input.parentId !== undefined && input.parentId !== null && typeof input.parentId !== 'string') {
+        return Promise.resolve(err('parentId must be a string or null', 'VALIDATION_ERROR'));
+      }
+
+      const page = repo.updatePage(input);
+      sendEventToRenderers('db:changed', { table: 'pages', action: 'update', id: page.id });
+      return Promise.resolve(ok(page));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to update page: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  'db:pages:delete': (id: string): Promise<IpcResult<void>> => {
+    try {
+      repo.deletePage(id);
+      sendEventToRenderers('db:changed', { table: 'pages', action: 'delete', id });
+      return Promise.resolve(ok(undefined));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to delete page: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  'db:pages:move': (input: { id: string; parentId: string | null; position: number }): Promise<IpcResult<Page>> => {
+    try {
+      // Input validation
+      if (!input || typeof input !== 'object') {
+        return Promise.resolve(err('Invalid input: expected move input object', 'VALIDATION_ERROR'));
+      }
+      if (!input.id || typeof input.id !== 'string' || input.id.trim().length === 0) {
+        return Promise.resolve(err('id is required and must be a non-empty string', 'VALIDATION_ERROR'));
+      }
+      if (input.parentId !== null && (typeof input.parentId !== 'string' || input.parentId.trim().length === 0)) {
+        return Promise.resolve(err('parentId must be a string or null', 'VALIDATION_ERROR'));
+      }
+      if (typeof input.position !== 'number' || !Number.isInteger(input.position) || input.position < 0) {
+        return Promise.resolve(err('position must be a non-negative integer', 'VALIDATION_ERROR'));
+      }
+
+      const page = repo.movePage(input.id, input.parentId, input.position);
+      sendEventToRenderers('db:changed', { table: 'pages', action: 'reorder', id: page.id });
+      return Promise.resolve(ok(page));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to move page: ${error instanceof Error ? error.message : 'Unknown error'}`),
+      );
+    }
+  },
+
+  'db:pages:search': (input: { query: string; limit?: number }): Promise<IpcResult<PageSearchResult[]>> => {
+    try {
+      if (!input || typeof input !== 'object') {
+        return Promise.resolve(err('Invalid input: expected search input object', 'VALIDATION_ERROR'));
+      }
+      if (typeof input.query !== 'string') {
+        return Promise.resolve(err('query must be a string', 'VALIDATION_ERROR'));
+      }
+      const limit = input.limit ?? 20;
+      if (typeof limit !== 'number' || limit < 1 || limit > 100) {
+        return Promise.resolve(err('limit must be a number between 1 and 100', 'VALIDATION_ERROR'));
+      }
+
+      const results = repo.searchPages(input.query, limit);
+      return Promise.resolve(ok(results));
+    } catch (error) {
+      return Promise.resolve(
+        err(`Failed to search pages: ${error instanceof Error ? error.message : 'Unknown error'}`),
       );
     }
   },

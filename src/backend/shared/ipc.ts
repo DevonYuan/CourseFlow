@@ -14,6 +14,11 @@ import type {
   SubTaskInput,
   Note,
   NoteInput,
+  Page,
+  PageInput,
+  PageUpdateInput,
+  PageTreeNode,
+  PageSearchResult,
   PriorityOrder,
   PriorityOrderInput,
   Settings,
@@ -107,6 +112,40 @@ export interface IpcChannels {
   'db:notes:delete': {
     request: string; // id
     response: void;
+  };
+
+  // ── Database: Pages ────────────────────────────────────────────────────
+  'db:pages:list': {
+    request: { parentId?: string };
+    response: Page[];
+  };
+  'db:pages:get': {
+    request: string; // id
+    response: Page | null;
+  };
+  'db:pages:tree': {
+    request: void;
+    response: PageTreeNode[];
+  };
+  'db:pages:create': {
+    request: PageInput;
+    response: Page;
+  };
+  'db:pages:update': {
+    request: PageUpdateInput;
+    response: Page;
+  };
+  'db:pages:delete': {
+    request: string; // id
+    response: void;
+  };
+  'db:pages:move': {
+    request: { id: string; parentId: string | null; position: number };
+    response: Page;
+  };
+  'db:pages:search': {
+    request: { query: string; limit?: number };
+    response: PageSearchResult[];
   };
 
   // ── Database: Priority Order ───────────────────────────────────────────
