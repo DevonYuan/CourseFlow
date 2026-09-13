@@ -56,7 +56,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
+  padding: 16px 14px 12px;
   gap: 8px;
   border-bottom: 1px solid var(--color-sidebar-border, #e5e7eb);
   flex-shrink: 0;
@@ -72,12 +72,14 @@
 
 .notes-sidebar__title {
   margin: 0;
-  font-size: 14px;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-text-primary, #1a1a2e);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 
 .notes-sidebar__title-tooltip {
@@ -139,14 +141,14 @@
 }
 
 .notes-sidebar__btn--primary {
-  color: var(--color-btn-primary-text, #ffffff);
-  background-color: var(--color-btn-primary, #3b82f6);
-  border-color: var(--color-btn-primary, #3b82f6);
+  color: #ffffff;
+  background-color: var(--accent, #3b6e71);
+  border-color: var(--accent, #3b6e71);
 }
 
 .notes-sidebar__btn--primary:hover {
-  background-color: var(--color-btn-primary-hover, #2563eb);
-  border-color: var(--color-btn-primary-hover, #2563eb);
+  background-color: var(--accent-ink, #25494b);
+  border-color: var(--accent-ink, #25494b);
 }
 
 .notes-sidebar__btn--collapse {
@@ -196,21 +198,21 @@
 .notes-sidebar__shortcuts {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  font-size: 10px;
-  color: var(--color-text-muted, #9ca3af);
+  gap: 6px 14px;
+  font-size: 11px;
+  color: var(--ink-faint, #5f6b64);
 }
 
 .notes-sidebar__kbd {
   display: inline-flex;
   align-items: center;
-  padding: 1px 4px;
-  font-family: var(--font-mono, monospace);
-  font-size: 9px;
-  color: var(--color-kbd-text, #6b7280);
-  background-color: var(--color-kbd-bg, #f3f4f6);
-  border: 1px solid var(--color-kbd-border, #d1d5db);
-  border-radius: 3px;
+  padding: 1.5px 5px;
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--ink-soft, #66716b);
+  background-color: var(--surface, #ffffff);
+  border: 1px solid var(--line-strong, #d3cfc1);
+  border-radius: 4px;
   white-space: nowrap;
 }
 

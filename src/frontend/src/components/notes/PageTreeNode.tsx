@@ -347,19 +347,6 @@ export function PageTreeNode({
       onBlur={() => onFocusChange(null)}
       title={hasChildren ? 'Drag to reorder or nest' : 'Drag to reorder'}
     >
-      {/* Drag Handle — receives sortable attributes for keyboard dragging;
-          covers full row on hover/focus/drag for mouse dragging */}
-      <div
-        className="page-tree-node__drag-handle"
-        aria-label="Drag to reorder"
-        {...sortableAttributes}
-        {...listeners}
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-          <path d="M4 4h8M4 8h8M4 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      </div>
-
       {/* Expand/Collapse Chevron (for branches) */}
       {hasChildren && (
         <button
@@ -417,6 +404,20 @@ export function PageTreeNode({
         ) : (
           <span className="page-tree-node__title">{page.title || 'Untitled'}</span>
         )}
+      </div>
+
+      {/* Drag Handle — receives the sortable attributes for keyboard dragging.
+          In-flow at the row's right edge so it never covers the chevron, title,
+          or actions and therefore never swallows clicks. */}
+      <div
+        className="page-tree-node__drag-handle"
+        aria-label="Drag to reorder"
+        {...sortableAttributes}
+        {...listeners}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M4 4h8M4 8h8M4 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
       </div>
 
       {/* Context Menu / Actions */}

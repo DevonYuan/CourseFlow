@@ -114,8 +114,14 @@
 }
 
 .page-tree__empty-icon {
-  font-size: 32px;
-  opacity: 0.5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: var(--accent-soft, #e7f0ef);
+  color: var(--accent-ink, #25494b);
 }
 
 .page-tree__empty-text {

@@ -9,7 +9,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background-color: var(--color-editor-bg, #ffffff);
+  background-color: var(--surface, #ffffff);
   overflow: hidden;
 }
 
@@ -43,7 +43,7 @@
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-editor-border, #e5e7eb);
   flex-shrink: 0;
-  background-color: var(--color-editor-header-bg, #fafafa);
+  background-color: var(--paper, #f7f6f1);
 }
 
 .page-editor__title-group {
@@ -124,7 +124,7 @@
   padding: 8px 12px;
   border-bottom: 1px solid var(--color-editor-border, #e5e7eb);
   flex-shrink: 0;
-  background-color: var(--color-toolbar-bg, #fafafa);
+  background-color: var(--surface, #ffffff);
   flex-wrap: wrap;
 }
 

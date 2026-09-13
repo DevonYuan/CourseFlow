@@ -31,6 +31,7 @@
   /* Core Colors */
   --paper: #f7f6f1; /* App background */
   --surface: #ffffff; /* Cards, windows, inputs */
+  --sidebar: #fbfaf6; /* Sidebar navigation tint (slightly warmer off-white) */
   --ink: #1c2420; /* Primary text */
   --ink-soft: #66716b; /* Secondary text */
   --ink-faint: #5f6b64; /* Muted/placeholder text (AA on light backgrounds) */
@@ -95,6 +96,8 @@
   --danger-light: var(--amber-soft);
   --focus-ring: rgba(59, 110, 113, 0.3);
   --focus-border: var(--accent);
+  --color-sidebar-bg: var(--sidebar);
+  --color-sidebar-border: var(--line);
   --shadow-sm: 0 1px 2px rgba(28, 36, 32, 0.05);
   --shadow-md: var(--shadow);
   --shadow-lg: 0 8px 24px rgba(28, 36, 32, 0.08);
@@ -116,6 +119,7 @@
 html.dark {
   --paper: #1a1d1b;
   --surface: #222624;
+  --sidebar: #1e2220;
   --ink: #f0f3f1;
   --ink-soft: #a8b1ac;
   --ink-faint: #7c8580;
@@ -155,6 +159,8 @@ html.dark {
   --danger-light: var(--amber-soft);
   --focus-ring: rgba(90, 163, 168, 0.3);
   --focus-border: var(--accent);
+  --color-sidebar-bg: var(--sidebar);
+  --color-sidebar-border: var(--line);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.25);
