@@ -173,6 +173,16 @@ html.dark {
 }
 
 /* --- Base Styles --------------------------------------------------------- */
+
+/* Match the design-inspo mockup: borders and padding are included in an
+   element's total width/height so `min-height: 100vh` + borders never
+   overflow the viewport (which otherwise cuts off the frame edges). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   background-color: var(--paper);
   color-scheme: light;

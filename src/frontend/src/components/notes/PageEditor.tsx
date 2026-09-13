@@ -13,7 +13,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 import { useToast } from '../../context/ToastContext';
 import { usePageActions } from '../../hooks/usePageActions';
-import { FolderIcon, LinkIcon, PageIcon } from './icons';
+
+import { LinkIcon, PageIcon } from './icons';
 import './PageEditor.css';
 
 interface PageEditorProps {

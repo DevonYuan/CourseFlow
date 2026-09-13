@@ -21,12 +21,11 @@ import {
   selectActivePageId,
   selectPageMap,
 } from '../../stores/notesStore';
-import { getPageIcon } from '../../utils/dnd';
 import type { TreeNavDirection } from '../../utils/dnd';
 import { ConfirmModal } from '../ui/ConfirmModal';
-import { FolderIcon, PageIcon } from './icons';
 
 import { PageActions } from './PageActions';
+import { FolderIcon, PageIcon } from './icons';
 import './PageTreeNode.css';
 
 interface PageTreeNodeProps {
@@ -294,7 +293,6 @@ export function PageTreeNode({
     ],
   );
 
-  const icon = getPageIcon(page);
   const hasChildren = children.length > 0;
   const isActive = activePageId === page.id;
   const isDragTarget = dragState.dropTargetId === page.id;
@@ -387,7 +385,7 @@ export function PageTreeNode({
         }}
       >
         <span className="page-tree-node__icon" aria-hidden="true">
-          {icon === 'folder' ? <FolderIcon size={14} /> : <PageIcon size={14} />}
+          {hasChildren ? <FolderIcon size={14} /> : <PageIcon size={14} />}
         </span>
         {isEditing ? (
           <input

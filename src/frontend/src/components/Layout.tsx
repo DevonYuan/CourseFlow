@@ -38,9 +38,18 @@ export function Layout({ children }: LayoutProps): JSX.Element {
         {/* Toolbar: Filters, Sort, Group, View Toggle (assignment list only) */}
         {!isNotesView && <Toolbar />}
 
-        {/* Content Area */}
-        <main id="main-content" className="layout__main" role="main" tabIndex={-1}>
-          <div className="layout__content">{children}</div>
+        {/* Content Area — the notes workspace is a full-bleed split pane, so
+            it drops the content padding/width cap to let the sidebar divider
+            run the full height of the window. */}
+        <main
+          id="main-content"
+          className={`layout__main${isNotesView ? ' layout__main--flush' : ''}`}
+          role="main"
+          tabIndex={-1}
+        >
+          <div className={`layout__content${isNotesView ? ' layout__content--flush' : ''}`}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

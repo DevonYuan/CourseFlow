@@ -668,7 +668,7 @@ const mockApi = {
           parentId,
           title: input.title || 'Untitled',
           content: input.content ?? null,
-          icon: input.icon ?? '📄',
+          icon: input.icon ?? null,
           cover: input.cover ?? null,
           position: input.position ?? nextPagePosition(parentId),
           createdAt: now,

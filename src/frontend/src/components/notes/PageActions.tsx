@@ -12,6 +12,12 @@ import type { Page } from '@backend/shared/types';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
+import {
+  DeleteIcon,
+  DuplicateIcon,
+  PlusIcon,
+  RenameIcon,
+} from './icons';
 import './PageActions.css';
 
 interface PageActionsProps {
@@ -140,23 +146,23 @@ export function PageActions({
       }}
     >
       <button type="button" className="page-actions-menu__item" role="menuitem" onClick={handleCreateChild}>
-        <span className="page-actions-menu__icon">➕</span>
+        <span className="page-actions-menu__icon"><PlusIcon size={16} /></span>
         <span>New Child Page</span>
         <kbd className="page-actions-menu__shortcut">Ctrl+N</kbd>
       </button>
       <button type="button" className="page-actions-menu__item" role="menuitem" onClick={handleCreateSibling}>
-        <span className="page-actions-menu__icon">➕</span>
+        <span className="page-actions-menu__icon"><PlusIcon size={16} /></span>
         <span>New Sibling Page</span>
         <kbd className="page-actions-menu__shortcut">Ctrl+Shift+N</kbd>
       </button>
       <hr className="page-actions-menu__separator" />
       <button type="button" className="page-actions-menu__item" role="menuitem" onClick={handleRename}>
-        <span className="page-actions-menu__icon">✏️</span>
+        <span className="page-actions-menu__icon"><RenameIcon size={16} /></span>
         <span>Rename</span>
         <kbd className="page-actions-menu__shortcut">F2</kbd>
       </button>
       <button type="button" className="page-actions-menu__item" role="menuitem" onClick={handleDuplicate}>
-        <span className="page-actions-menu__icon">📋</span>
+        <span className="page-actions-menu__icon"><DuplicateIcon size={16} /></span>
         <span>Duplicate</span>
         <kbd className="page-actions-menu__shortcut">Ctrl+D</kbd>
       </button>
@@ -167,7 +173,7 @@ export function PageActions({
         role="menuitem"
         onClick={handleDelete}
       >
-        <span className="page-actions-menu__icon">🗑️</span>
+        <span className="page-actions-menu__icon"><DeleteIcon size={16} /></span>
         <span>Delete</span>
         <kbd className="page-actions-menu__shortcut">Delete</kbd>
       </button>

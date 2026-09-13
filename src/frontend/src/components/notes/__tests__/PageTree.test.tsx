@@ -25,7 +25,7 @@ function page(id: string, overrides: Partial<Page> = {}): Page {
 function sampleTree(): PageTreeNode[] {
   return [
     {
-      page: page('root', { title: 'Class Notes', icon: '📚' }),
+      page: page('root', { title: 'Class Notes' }),
       children: [
         {
           page: page('a', { title: 'Lecture 1', parentId: 'root' as EntityId, position: 0 }),

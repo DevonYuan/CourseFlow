@@ -81,7 +81,7 @@ export function usePageActions(): UsePageActionsReturn {
         parentId: input.parentId ?? null,
         title: input.title || 'Untitled',
         content: input.content ?? null,
-        icon: input.icon ?? '📄',
+        icon: input.icon ?? null,
         cover: input.cover ?? null,
         position: input.position ?? 0,
         createdAt: now,
