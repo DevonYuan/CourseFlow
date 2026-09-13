@@ -33,6 +33,7 @@ import {
 import type { DropPosition, TreeNavDirection } from '../../utils/dnd';
 
 import { PageTreeNode } from './PageTreeNode';
+import { AlertIcon, NoteIcon } from './icons';
 import './PageTree.css';
 
 interface PageTreeProps {
@@ -228,7 +229,7 @@ export function PageTree({ onSelect, initialFocusId = null }: PageTreeProps): JS
   }, []);
 
   const handleCreateFirstPage = useCallback(() => {
-    void createPage({ parentId: null, title: 'New Page', icon: '📄' }).then((result) => {
+    void createPage({ parentId: null, title: 'New Page' }).then((result) => {
       if (result.ok) {
         onSelect(result.data.id);
       }
@@ -342,7 +343,7 @@ export function PageTree({ onSelect, initialFocusId = null }: PageTreeProps): JS
     return (
       <div className="page-tree page-tree--error" role="alert">
         <div className="page-tree__error">
-          <span className="page-tree__error-icon" aria-hidden="true">⚠️</span>
+          <span className="page-tree__error-icon" aria-hidden="true"><AlertIcon size={16} /></span>
           <span className="page-tree__error-text">Failed to load pages</span>
           <button className="page-tree__retry-btn" onClick={() => void refetch()} type="button">
             Retry
@@ -356,7 +357,7 @@ export function PageTree({ onSelect, initialFocusId = null }: PageTreeProps): JS
     return (
       <div className="page-tree page-tree--empty" role="tree" aria-label="Pages">
         <div className="page-tree__empty">
-          <span className="page-tree__empty-icon" aria-hidden="true">📝</span>
+          <span className="page-tree__empty-icon" aria-hidden="true"><NoteIcon size={16} /></span>
           <p className="page-tree__empty-text">No pages yet</p>
           <p className="page-tree__empty-hint">Create your first page to get started</p>
           <button type="button" className="page-tree__empty-cta" onClick={handleCreateFirstPage}>

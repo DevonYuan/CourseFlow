@@ -12,6 +12,13 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 
 import { NotesSidebar } from '../components/notes/NotesSidebar';
+import {
+  FolderIcon,
+  LinkIcon,
+  NoteIcon,
+  SearchIcon,
+  WriteIcon,
+} from '../components/notes/icons';
 import { usePageActions } from '../hooks/usePageActions';
 import { useNotesStore } from '../stores/notesStore';
 import './NotesWorkspace.css';
@@ -100,8 +107,8 @@ export function NotesWelcome(): JSX.Element {
   const startRename = useNotesStore((s) => s.startRename);
 
   const handleCreate = useCallback(
-    (icon: string, title: string) => {
-      void createPage({ parentId: null, title, icon }).then((result) => {
+    (title: string) => {
+      void createPage({ parentId: null, title }).then((result) => {
         if (result.ok) {
           void navigate(`/notes/${result.data.id}`);
           startRename(result.data.id, title);
@@ -114,7 +121,7 @@ export function NotesWelcome(): JSX.Element {
   return (
     <div className="notes-welcome">
       <div className="notes-welcome__content">
-        <div className="notes-welcome__icon" aria-hidden="true">📝</div>
+        <div className="notes-welcome__icon" aria-hidden="true"><NoteIcon size={64} /></div>
         <h1 className="notes-welcome__title">Welcome to Notes</h1>
         <p className="notes-welcome__description">
           Create pages, organize them into a hierarchy, and build your personal knowledge base.
@@ -124,7 +131,7 @@ export function NotesWelcome(): JSX.Element {
           <button
             className="notes-welcome__btn notes-welcome__btn--primary"
             type="button"
-            onClick={() => handleCreate('📄', 'New Page')}
+            onClick={() => handleCreate('New Page')}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path
@@ -139,7 +146,7 @@ export function NotesWelcome(): JSX.Element {
           <button
             className="notes-welcome__btn notes-welcome__btn--secondary"
             type="button"
-            onClick={() => handleCreate('📁', 'New Folder')}
+            onClick={() => handleCreate('New Folder')}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path
@@ -155,19 +162,19 @@ export function NotesWelcome(): JSX.Element {
         </div>
         <div className="notes-welcome__features">
           <div className="notes-welcome__feature">
-            <span className="notes-welcome__feature-icon" aria-hidden="true">📁</span>
+            <span className="notes-welcome__feature-icon" aria-hidden="true"><FolderIcon size={20} /></span>
             <span>Nested pages & folders</span>
           </div>
           <div className="notes-welcome__feature">
-            <span className="notes-welcome__feature-icon" aria-hidden="true">✍️</span>
+            <span className="notes-welcome__feature-icon" aria-hidden="true"><WriteIcon size={20} /></span>
             <span>Markdown editing</span>
           </div>
           <div className="notes-welcome__feature">
-            <span className="notes-welcome__feature-icon" aria-hidden="true">🔍</span>
+            <span className="notes-welcome__feature-icon" aria-hidden="true"><SearchIcon size={20} /></span>
             <span>Full-text search</span>
           </div>
           <div className="notes-welcome__feature">
-            <span className="notes-welcome__feature-icon" aria-hidden="true">🔗</span>
+            <span className="notes-welcome__feature-icon" aria-hidden="true"><LinkIcon size={20} /></span>
             <span>Wiki-style links</span>
           </div>
         </div>

@@ -13,6 +13,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 import { useToast } from '../../context/ToastContext';
 import { usePageActions } from '../../hooks/usePageActions';
+import { FolderIcon, LinkIcon, PageIcon } from './icons';
 import './PageEditor.css';
 
 interface PageEditorProps {
@@ -249,7 +250,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps): JSX.Element 
             placeholder="Untitled"
             aria-label="Page title"
           />
-          <span className="page-editor__icon" aria-hidden="true">{page.icon || '📄'}</span>
+          <span className="page-editor__icon" aria-hidden="true"><PageIcon size={20} /></span>
         </div>
 
         <div className="page-editor__status">
@@ -275,7 +276,7 @@ export function PageEditor({ page: initialPage }: PageEditorProps): JSX.Element 
         <button type="button" className="page-editor__tool-btn" onClick={handleCode} title="Inline Code (Ctrl+`)" aria-label="Inline Code"><code>{'` '}</code></button>
         <div className="page-editor__toolbar-divider" role="separator" />
         <button type="button" className="page-editor__tool-btn" onClick={handleList} title="Bullet List" aria-label="Bullet List">• List</button>
-        <button type="button" className="page-editor__tool-btn" onClick={handleLink} title="Insert Link" aria-label="Insert Link">🔗 Link</button>
+        <button type="button" className="page-editor__tool-btn" onClick={handleLink} title="Insert Link" aria-label="Insert Link"><LinkIcon size={14} /> Link</button>
       </div>
 
       {/* Editor/Preview Split */}

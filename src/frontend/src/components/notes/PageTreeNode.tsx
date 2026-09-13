@@ -24,6 +24,7 @@ import {
 import { getPageIcon } from '../../utils/dnd';
 import type { TreeNavDirection } from '../../utils/dnd';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { FolderIcon, PageIcon } from './icons';
 
 import { PageActions } from './PageActions';
 import './PageTreeNode.css';
@@ -167,7 +168,6 @@ export function PageTreeNode({
     void createPage({
       parentId: page.id,
       title: 'New Page',
-      icon: '📄',
     }).then((result) => {
       if (result.ok) {
         onSelect(result.data.id);
@@ -180,7 +180,6 @@ export function PageTreeNode({
     void createPage({
       parentId: page.parentId ?? null,
       title: 'New Page',
-      icon: '📄',
     }).then((result) => {
       if (result.ok) {
         onSelect(result.data.id);
@@ -388,7 +387,7 @@ export function PageTreeNode({
         }}
       >
         <span className="page-tree-node__icon" aria-hidden="true">
-          {icon}
+          {icon === 'folder' ? <FolderIcon size={14} /> : <PageIcon size={14} />}
         </span>
         {isEditing ? (
           <input

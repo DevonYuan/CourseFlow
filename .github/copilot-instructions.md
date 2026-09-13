@@ -122,3 +122,6 @@ ps aux | grep -E "vitest" | grep -v grep
 - For async terminals started via `run_in_terminal`, use `kill_terminal` with the returned ID
 - Document any persistent processes that SHOULD remain running (e.g., database servers)
 - **Test processes are the #1 cause of memory exhaustion** — treat every test run as a potential leak
+
+# Frontend Design Guidelines 
+Don't use emojis. 

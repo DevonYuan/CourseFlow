@@ -129,21 +129,26 @@ export function getDragTransform(transform: Transform | null): string {
 }
 
 /**
- * Default icon for a page.
+ * Icon type for a page. Pages are rendered with a consistent SVG icon in the
+ * UI (no emoji); the type selects which icon to show.
  */
-export const DEFAULT_PAGE_ICON = '📄';
+export type PageIcon = 'page' | 'folder';
 
 /**
- * Default icon for a folder (page with children).
+ * Default icon type for a page.
  */
-export const DEFAULT_FOLDER_ICON = '📁';
+export const DEFAULT_PAGE_ICON: PageIcon = 'page';
 
 /**
- * Get icon for a page based on its properties.
+ * Default icon type for a folder (page with children).
  */
-export function getPageIcon(page: { icon: string | null; children?: unknown[] }): string {
-  if (page.icon) return page.icon;
-  // If page has children and no explicit icon, use folder icon
+export const DEFAULT_FOLDER_ICON: PageIcon = 'folder';
+
+/**
+ * Get the icon type for a page based on its properties.
+ */
+export function getPageIcon(page: { children?: unknown[] }): PageIcon {
+  // If page has children, use folder icon
   if (page.children && page.children.length > 0) {
     return DEFAULT_FOLDER_ICON;
   }

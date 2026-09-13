@@ -43,7 +43,7 @@ export function NotesSidebar({ currentPageId, onCollapseChange }: NotesSidebarPr
 
   // Handle new root page creation
   const handleNewRootPage = useCallback(() => {
-    void createPage({ parentId: null, title: 'New Page', icon: '📄' }).then((result) => {
+    void createPage({ parentId: null, title: 'New Page' }).then((result) => {
       if (result.ok) {
         void navigate(`/notes/${result.data.id}`);
         startRename(result.data.id, 'New Page');

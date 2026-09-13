@@ -92,15 +92,11 @@ describe('calculateNewPosition', () => {
 });
 
 describe('getPageIcon', () => {
-  it('returns the page icon when set', () => {
-    expect(getPageIcon({ icon: '📚' })).toBe('📚');
+  it('returns the folder icon type for a page with children', () => {
+    expect(getPageIcon({ children: [{}] })).toBe(DEFAULT_FOLDER_ICON);
   });
 
-  it('returns the folder icon for a page with children and no icon', () => {
-    expect(getPageIcon({ icon: null, children: [{}] })).toBe(DEFAULT_FOLDER_ICON);
-  });
-
-  it('returns the default page icon for a leaf page with no icon', () => {
-    expect(getPageIcon({ icon: null })).toBe(DEFAULT_PAGE_ICON);
+  it('returns the default page icon type for a leaf page', () => {
+    expect(getPageIcon({})).toBe(DEFAULT_PAGE_ICON);
   });
 });
