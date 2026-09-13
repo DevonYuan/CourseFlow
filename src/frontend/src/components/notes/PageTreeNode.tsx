@@ -97,6 +97,20 @@ export function PageTreeNode({
     data: { depth },
   });
 
+  // Filter out role and tabIndex from sortable attributes to avoid conflicts with our explicit ones
+  const sortableAttributes = React.useMemo(
+    () => {
+      const rest: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(attributes)) {
+        if (key !== 'role' && key !== 'tabIndex') {
+          rest[key] = value;
+        }
+      }
+      return rest;
+    },
+    [attributes],
+  );
+
   // Combine the DnD node ref with rect registration for drop-position math.
   const combinedRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -316,6 +330,7 @@ export function PageTreeNode({
         isDragTarget ? 'drop-target' : '',
         isDragInside ? 'drop-inside' : '',
         depth > 0 ? 'page-tree-node--nested' : '',
+        hasChildren ? 'page-tree-node--branch' : 'page-tree-node--leaf',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -332,11 +347,12 @@ export function PageTreeNode({
       onBlur={() => onFocusChange(null)}
       title={hasChildren ? 'Drag to reorder or nest' : 'Drag to reorder'}
     >
-      {/* Drag Handle */}
+      {/* Drag Handle — receives sortable attributes for keyboard dragging;
+          covers full row on hover/focus/drag for mouse dragging */}
       <div
         className="page-tree-node__drag-handle"
         aria-label="Drag to reorder"
-        {...attributes}
+        {...sortableAttributes}
         {...listeners}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -344,7 +360,7 @@ export function PageTreeNode({
         </svg>
       </div>
 
-      {/* Expand/Collapse Chevron */}
+      {/* Expand/Collapse Chevron (for branches) */}
       {hasChildren && (
         <button
           type="button"

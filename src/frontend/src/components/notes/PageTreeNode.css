@@ -7,10 +7,19 @@
 .page-tree-node {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  /* Nested pages are indented by their depth in the flattened tree. */
+  padding-left: calc(var(--tree-node-depth, 0) * var(--indent-base, 16px) + 8px);
   font-size: 13px;
   line-height: 1.4;
   color: var(--color-text-primary, #1a1a2e);
+  min-height: 28px;
+  cursor: grab;
+}
+
+.page-tree-node:active {
+  cursor: grabbing;
 }
 
 .page-tree-node.focused > .page-tree-node__content {
@@ -51,7 +60,7 @@
 .page-tree-node.drop-target:not(.drop-inside) > .page-tree-node__content::after {
   content: '';
   position: absolute;
-  left: calc(var(--indent-base, 16px) + 20px);
+  left: calc(var(--tree-node-depth, 0) * var(--indent-base, 16px) + 8px + 24px);
   right: 4px;
   height: 2px;
   background-color: var(--color-drop-target-border, #3b82f6);
@@ -66,25 +75,36 @@
   bottom: 0;
 }
 
-/* Drag Handle */
+/* Drag Handle — receives sortable attributes for keyboard dragging;
+   covers full row on hover/focus/drag for mouse dragging */
 .page-tree-node__drag-handle {
+  position: absolute;
+  left: calc(var(--tree-node-depth, 0) * var(--indent-base, 16px) + 4px);
+  top: 0;
+  bottom: 0;
+  width: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
   flex-shrink: 0;
   color: var(--color-drag-handle, #9ca3af);
   cursor: grab;
   opacity: 0;
   transition: opacity 0.15s ease;
   border-radius: 3px;
+  z-index: 5;
 }
 
+/* On hover/focus/drag, expand to cover full row for mouse dragging */
 .page-tree-node:hover .page-tree-node__drag-handle,
 .page-tree-node.focused .page-tree-node__drag-handle,
 .page-tree-node.dragging .page-tree-node__drag-handle {
   opacity: 1;
+  left: calc(var(--tree-node-depth, 0) * var(--indent-base, 16px) + 4px);
+  right: 4px;
+  width: auto;
+  justify-content: flex-start;
+  padding-left: 0;
 }
 
 .page-tree-node__drag-handle:hover {
@@ -96,7 +116,7 @@
   cursor: grabbing;
 }
 
-/* Chevron */
+/* Chevron — at left edge of content area */
 .page-tree-node__chevron {
   display: flex;
   align-items: center;
@@ -128,6 +148,8 @@
 
 /* Content */
 .page-tree-node__content {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -142,15 +164,20 @@
   background-color: var(--color-hover-bg, #f3f4f6);
 }
 
+/* Leaves have no chevron; icons align with branch chevron column (24px) */
+.page-tree-node--leaf .page-tree-node__content {
+  padding-left: 28px; /* 24px chevron column + 4px gap */
+}
+
+/* Icon */
 .page-tree-node__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  font-size: 14px;
-  line-height: 1;
+  color: var(--color-icon, #6b7280);
 }
 
 .page-tree-node__title {
@@ -188,38 +215,4 @@
   margin-left: var(--indent-base, 16px);
   border-left: 1px solid var(--color-tree-line, #e5e7eb);
   padding-left: 4px;
-}
-
-/* Responsive - icon only on narrow */
-@media (max-width: 1000px) {
-  .page-tree-node__title {
-    display: none;
-  }
-
-  .page-tree-node__content {
-    padding: 4px;
-    justify-content: center;
-  }
-
-  .page-tree-node__icon {
-    width: 24px;
-    height: 24px;
-    font-size: 16px;
-  }
-}
-
-/* Animation for expand/collapse */
-.page-tree-node__children {
-  animation: slideDown 0.15s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
