@@ -4,11 +4,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { PageEditor } from './components/notes/PageEditor';
+import { SearchPalette } from './components/notes/SearchPalette';
 import { FocusRestorationProvider } from './context/FocusRestorationContext';
 import { ToastProvider } from './context/ToastContext';
 import { useSettings } from './hooks/useSettings';
 import { AssignmentDetailPage } from './pages/AssignmentDetailPage';
 import { AssignmentListPage } from './pages/AssignmentListPage';
+import { NotesSearchResults } from './pages/NotesSearchResults';
 import { NotesWorkspace, NotesWelcome } from './pages/NotesWorkspace';
 import { SettingsPage } from './pages/SettingsPage';
 import { applyTheme } from './utils/theme';
@@ -35,6 +37,7 @@ export function ThemedApp(): JSX.Element {
                 {/* Notes Workspace */}
                 <Route path="/notes" element={<NotesWorkspace />}>
                   <Route index element={<NotesWelcome />} />
+                  <Route path="search" element={<NotesSearchResults />} />
                   <Route path=":pageId" element={<PageEditor />} />
                 </Route>
                 {/* In production the app is served from file:// so the initial
@@ -43,6 +46,8 @@ export function ThemedApp(): JSX.Element {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
+            {/* Global search overlay — mounted once so Cmd+K works everywhere. */}
+            <SearchPalette />
           </FocusRestorationProvider>
         </BrowserRouter>
       </ToastProvider>

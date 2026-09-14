@@ -1,37 +1,37 @@
 /**
  * NotesSidebar — Main Sidebar Component for Notes Workspace
  *
- * Renders the collapsible sidebar with page tree, header with
- * create page button, and handles keyboard navigation focus management.
+ * Renders the page tree with header actions (new page, new subfolder, search)
+ * and handles keyboard-navigation focus management.
  *
  * @module @frontend/components/notes/NotesSidebar
  */
 
 import type { EntityId } from '@backend/shared/types';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useToast } from '../../context/ToastContext';
 import { usePageActions } from '../../hooks/usePageActions';
 import { useNotesStore, selectActivePageId } from '../../stores/notesStore';
+import { useSearchPaletteStore } from '../../stores/searchPaletteStore';
 
 import { PageTree } from './PageTree';
+import { FolderPlusIcon, SearchIcon } from './icons';
 import './NotesSidebar.css';
 
 interface NotesSidebarProps {
   /** Current page ID from route (for highlighting active page) */
   currentPageId?: EntityId | null;
-  /** Callback when sidebar collapse state changes */
-  onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export function NotesSidebar({ currentPageId, onCollapseChange }: NotesSidebarProps): JSX.Element {
+export function NotesSidebar({ currentPageId }: NotesSidebarProps): JSX.Element {
   const navigate = useNavigate();
   const { createPage } = usePageActions();
   const { error: showErrorToast } = useToast();
   const activePageId = useNotesStore(selectActivePageId);
   const startRename = useNotesStore((s) => s.startRename);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const openSearch = useSearchPaletteStore((s) => s.open);
 
   // Handle page selection (navigate to editor)
   const handleSelect = useCallback(
@@ -53,27 +53,31 @@ export function NotesSidebar({ currentPageId, onCollapseChange }: NotesSidebarPr
     });
   }, [createPage, navigate, startRename, showErrorToast]);
 
-  // Handle collapse toggle
-  const handleToggleCollapse = useCallback(() => {
-    const next = !isCollapsed;
-    setIsCollapsed(next);
-    onCollapseChange?.(next);
-  }, [isCollapsed, onCollapseChange]);
+  // Handle new subfolder creation — nested under the selected page when there
+  // is one, otherwise created at the top level.
+  const handleNewSubfolder = useCallback(() => {
+    const parentId = currentPageId ?? activePageId ?? null;
+    void createPage({ parentId, title: 'New Folder' }).then((result) => {
+      if (result.ok) {
+        // A nested folder is only visible once its parent is expanded.
+        if (parentId) {
+          const state = useNotesStore.getState();
+          if (!state.expanded.has(parentId)) state.toggleExpanded(parentId);
+        }
+        void navigate(`/notes/${result.data.id}`);
+        startRename(result.data.id, 'New Folder');
+      } else {
+        showErrorToast('Failed to create folder');
+      }
+    });
+  }, [createPage, currentPageId, activePageId, navigate, startRename, showErrorToast]);
 
   return (
-    <aside
-      className={`notes-sidebar ${isCollapsed ? 'collapsed' : ''}`}
-      role="complementary"
-      aria-label="Notes sidebar"
-      data-collapsed={isCollapsed}
-    >
+    <aside className="notes-sidebar" role="complementary" aria-label="Notes sidebar">
       {/* Sidebar Header */}
       <header className="notes-sidebar__header">
         <div className="notes-sidebar__title-group">
           <h2 className="notes-sidebar__title">Notes</h2>
-          {isCollapsed && (
-            <span className="notes-sidebar__title-tooltip">Notes</span>
-          )}
         </div>
 
         <div className="notes-sidebar__actions">
@@ -95,28 +99,32 @@ export function NotesSidebar({ currentPageId, onCollapseChange }: NotesSidebarPr
             <span className="notes-sidebar__btn-text">New Page</span>
           </button>
 
+          <span
+            className="notes-sidebar__actions-divider"
+            role="separator"
+            aria-orientation="vertical"
+          />
+
           <button
-            className="notes-sidebar__btn notes-sidebar__btn--collapse"
-            onClick={handleToggleCollapse}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="notes-sidebar__btn notes-sidebar__btn--subfolder"
+            onClick={handleNewSubfolder}
+            aria-label="New subfolder"
             type="button"
+            title="New subfolder"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden="true"
-              className={isCollapsed ? 'rotated' : ''}
-            >
-              <path
-                d="M10 4L6 8L10 12"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <FolderPlusIcon size={15} />
+            <span className="notes-sidebar__btn-text">New subfolder</span>
+          </button>
+
+          <button
+            className="notes-sidebar__btn notes-sidebar__btn--search"
+            onClick={openSearch}
+            aria-label="Search pages (Cmd+K)"
+            type="button"
+            title="Search pages (Cmd+K)"
+          >
+            <SearchIcon size={15} />
+            <span className="notes-sidebar__btn-text">Search</span>
           </button>
         </div>
       </header>
@@ -125,27 +133,23 @@ export function NotesSidebar({ currentPageId, onCollapseChange }: NotesSidebarPr
       <div className="notes-sidebar__divider" role="separator" />
 
       {/* Page Tree */}
-      {!isCollapsed && (
-        <div className="notes-sidebar__tree-wrapper">
-          <PageTree
-            onSelect={handleSelect}
-            initialFocusId={currentPageId ?? activePageId}
-          />
-        </div>
-      )}
+      <div className="notes-sidebar__tree-wrapper">
+        <PageTree
+          onSelect={handleSelect}
+          initialFocusId={currentPageId ?? activePageId}
+        />
+      </div>
 
       {/* Footer - Keyboard Shortcuts Hint */}
-      {!isCollapsed && (
-        <footer className="notes-sidebar__footer">
-          <div className="notes-sidebar__shortcuts">
-            <kbd className="notes-sidebar__kbd">↑↓</kbd> Navigate
-            <kbd className="notes-sidebar__kbd">←→</kbd> Collapse/Expand
-            <kbd className="notes-sidebar__kbd">Enter</kbd> Open
-            <kbd className="notes-sidebar__kbd">F2</kbd> Rename
-            <kbd className="notes-sidebar__kbd">Del</kbd> Delete
-          </div>
-        </footer>
-      )}
+      <footer className="notes-sidebar__footer">
+        <div className="notes-sidebar__shortcuts">
+          <kbd className="notes-sidebar__kbd">↑↓</kbd> Navigate
+          <kbd className="notes-sidebar__kbd">←→</kbd> Collapse/Expand
+          <kbd className="notes-sidebar__kbd">Enter</kbd> Open
+          <kbd className="notes-sidebar__kbd">F2</kbd> Rename
+          <kbd className="notes-sidebar__kbd">Del</kbd> Delete
+        </div>
+      </footer>
     </aside>
   );
 }

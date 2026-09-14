@@ -32,6 +32,7 @@ const SANITIZE_CONFIG = {
     'blockquote',
     'pre',
     'code',
+    'mark',
     'h1',
     'h2',
     'h3',

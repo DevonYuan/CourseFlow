@@ -18,39 +18,6 @@
   z-index: 10;
 }
 
-/* Collapsed state */
-.notes-sidebar.collapsed {
-  width: var(--sidebar-collapsed-width, 56px);
-  min-width: var(--sidebar-collapsed-width, 56px);
-  max-width: var(--sidebar-collapsed-width, 56px);
-}
-
-.notes-sidebar.collapsed .notes-sidebar__title,
-.notes-sidebar.collapsed .notes-sidebar__btn-text,
-.notes-sidebar.collapsed .notes-sidebar__footer,
-.notes-sidebar.collapsed .page-tree-node__title,
-.notes-sidebar.collapsed .page-tree-node__children {
-  display: none;
-}
-
-.notes-sidebar.collapsed .notes-sidebar__title-tooltip {
-  display: block;
-}
-
-.notes-sidebar.collapsed .notes-sidebar__header {
-  justify-content: center;
-  padding: 8px;
-}
-
-.notes-sidebar.collapsed .notes-sidebar__btn {
-  justify-content: center;
-  padding: 8px;
-}
-
-.notes-sidebar.collapsed .notes-sidebar__divider {
-  display: none;
-}
-
 /* Header */
 .notes-sidebar__header {
   display: flex;
@@ -82,33 +49,19 @@
   letter-spacing: -0.01em;
 }
 
-.notes-sidebar__title-tooltip {
-  display: none;
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 8px;
-  padding: 4px 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-tooltip-text, #ffffff);
-  background-color: var(--color-tooltip-bg, #1a1a2e);
-  border-radius: 4px;
-  white-space: nowrap;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.notes-sidebar:hover .notes-sidebar__title-tooltip {
-  display: block;
-}
-
 .notes-sidebar__actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
+}
+
+/* Thin separator between the primary "New Page" action and the tool buttons. */
+.notes-sidebar__actions-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 3px 1px;
+  background-color: var(--color-sidebar-border, #e5e7eb);
 }
 
 /* Buttons */
@@ -151,24 +104,27 @@
   border-color: var(--accent-ink, #25494b);
 }
 
-.notes-sidebar__btn--collapse {
-  padding: 6px;
+/* Icon-only compact buttons (New subfolder, Search) beside the New Page button. */
+.notes-sidebar__btn--search,
+.notes-sidebar__btn--subfolder {
+  width: 28px;
+  height: 28px;
+  padding: 0;
   color: var(--color-icon-muted, #9ca3af);
   background-color: transparent;
   border: none;
 }
 
-.notes-sidebar__btn--collapse:hover {
-  color: var(--color-icon, #6b7280);
-  background-color: var(--color-hover-bg, #f3f4f6);
+.notes-sidebar__btn--search:hover,
+.notes-sidebar__btn--subfolder:hover {
+  color: var(--accent-ink, #25494b);
+  background-color: var(--accent-soft, #e7f0ef);
+  border: none;
 }
 
-.notes-sidebar__btn--collapse svg {
-  transition: transform 0.2s ease;
-}
-
-.notes-sidebar__btn--collapse svg.rotated {
-  transform: rotate(180deg);
+.notes-sidebar__btn--search .notes-sidebar__btn-text,
+.notes-sidebar__btn--subfolder .notes-sidebar__btn-text {
+  display: none;
 }
 
 .notes-sidebar__btn-text {
@@ -233,16 +189,12 @@
   background-color: var(--color-resize-handle, #e5e7eb);
 }
 
-.notes-sidebar.collapsed::after {
-  display: none;
-}
-
 /* Focus visible for sidebar */
 .notes-sidebar:focus-within {
   outline: none;
 }
 
-/* Responsive - mobile first collapse */
+/* Responsive — the sidebar becomes a fixed overlay on narrow windows. */
 @media (max-width: 1000px) {
   .notes-sidebar {
     position: fixed;
@@ -250,19 +202,8 @@
     left: 0;
     bottom: 0;
     z-index: 100;
-    transform: translateX(-100%);
-    transition: transform 0.25s ease, width 0.2s ease;
-    box-shadow: var(--shadow-sidebar, 4px 0 16px rgba(0, 0, 0, 0.1));
-  }
-
-  .notes-sidebar.collapsed {
-    transform: translateX(0);
-    width: var(--sidebar-collapsed-width, 56px);
-  }
-
-  .notes-sidebar:not(.collapsed) {
-    transform: translateX(0);
     width: var(--sidebar-width, 280px);
+    box-shadow: var(--shadow-sidebar, 4px 0 16px rgba(0, 0, 0, 0.1));
   }
 
   .notes-sidebar::after {
@@ -284,8 +225,7 @@
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .notes-sidebar,
-  .notes-sidebar__btn,
-  .notes-sidebar__btn--collapse svg {
+  .notes-sidebar__btn {
     transition: none;
   }
 }

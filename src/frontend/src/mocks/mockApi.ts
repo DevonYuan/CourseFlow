@@ -349,6 +349,25 @@ function buildPageTree(): PageTreeNode[] {
   return build(null);
 }
 
+/** Escape snippet text before injecting the `<mark>` highlight. */
+function escapeSnippetText(text: string): string {
+  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/** Build a highlighted `…before<mark>match</mark>after…` snippet. */
+function buildMockSnippet(text: string, query: string): string {
+  const source = text || '';
+  const index = source.toLowerCase().indexOf(query.toLowerCase());
+  if (index === -1) return escapeSnippetText(source.slice(0, 80));
+  const start = Math.max(0, index - 30);
+  const end = Math.min(source.length, index + query.length + 30);
+  const prefix = start > 0 ? '…' : '';
+  const suffix = end < source.length ? '…' : '';
+  return `${prefix}${escapeSnippetText(source.slice(start, index))}<mark>${escapeSnippetText(
+    source.slice(index, index + query.length),
+  )}</mark>${escapeSnippetText(source.slice(index + query.length, end))}${suffix}`;
+}
+
 /** Seed a small deterministic page tree for browser dev + e2e tests. */
 function seedMockPages(): void {
   const now = new Date(MOCK_NOW).toISOString() as IsoDateTime;
@@ -756,13 +775,22 @@ const mockApi = {
         const query = input.query.trim().toLowerCase();
         if (!query) return createMockResult([]);
         const results = [...mockPages.values()]
-          .filter(
-            (p) =>
-              p.title.toLowerCase().includes(query) ||
-              (p.content ?? '').toLowerCase().includes(query),
+          .map((page) => {
+            const titleMatch = page.title.toLowerCase().includes(query);
+            const contentMatch = (page.content ?? '').toLowerCase().includes(query);
+            if (!titleMatch && !contentMatch) return null;
+            return { page, rank: titleMatch ? 0 : 1 };
+          })
+          .filter((entry): entry is { page: Page; rank: number } => entry !== null)
+          .sort(
+            (a, b) => a.rank - b.rank || b.page.updatedAt.localeCompare(a.page.updatedAt),
           )
           .slice(0, input.limit ?? 20)
-          .map((page) => ({ page, rank: 0, snippet: page.title }));
+          .map(({ page, rank }) => ({
+            page,
+            rank,
+            snippet: buildMockSnippet(page.content ?? page.title, query),
+          }));
         return createMockResult(results);
       },
     },

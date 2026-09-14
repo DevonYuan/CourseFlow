@@ -137,4 +137,32 @@ test.describe('Notes sidebar', () => {
     await expect(page).toHaveURL(/\/notes/);
     await expect(page.locator('.notes-sidebar')).toBeVisible();
   });
+
+  test('creates a new subfolder under the selected page', async ({ page }) => {
+    await treeItem(page, 'Ideas').click();
+    await expect(page).toHaveURL(/\/notes\/page-4/);
+
+    await page.getByRole('button', { name: 'New subfolder' }).click();
+
+    const renameInput = page.locator('.notes-sidebar input[aria-label="Page title"]');
+    await expect(renameInput).toBeVisible();
+    await renameInput.fill('Projects');
+    await renameInput.press('Enter');
+
+    // The parent auto-expands so the nested folder is visible one level down.
+    await expect(treeItem(page, 'Projects')).toBeVisible();
+    await expect(treeItem(page, 'Projects')).toHaveAttribute('aria-level', '2');
+  });
+
+  test('creates a top-level folder when no page is selected', async ({ page }) => {
+    await page.getByRole('button', { name: 'New subfolder' }).click();
+
+    const renameInput = page.locator('.notes-sidebar input[aria-label="Page title"]');
+    await expect(renameInput).toBeVisible();
+    await renameInput.fill('Archive');
+    await renameInput.press('Enter');
+
+    await expect(treeItem(page, 'Archive')).toBeVisible();
+    await expect(treeItem(page, 'Archive')).toHaveAttribute('aria-level', '1');
+  });
 });

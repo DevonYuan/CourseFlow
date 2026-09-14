@@ -63,6 +63,24 @@ export const FolderIcon = withStroke(({ size }) => (
   </svg>
 ));
 
+/** Folder with a plus — "new subfolder" action */
+export const FolderPlusIcon = withStroke(({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <path
+      d="M2 4.5A1.5 1.5 0 0 1 3.5 3h2.2l1.3 2h5.5A1.5 1.5 0 0 1 14 6.5v5A1.5 1.5 0 0 1 12.5 13h-9A1.5 1.5 0 0 1 2 11.5v-7Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8 7.75v3.5M6.25 9.5h3.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+));
+
 /** Pen / "write" icon (markdown editing) */
 export const WriteIcon = withStroke(({ size }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
