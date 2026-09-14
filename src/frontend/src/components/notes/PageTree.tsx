@@ -33,7 +33,7 @@ import {
 import type { DropPosition, TreeNavDirection } from '../../utils/dnd';
 
 import { PageTreeNode } from './PageTreeNode';
-import { AlertIcon, NoteIcon } from './icons';
+import { AlertIcon } from './icons';
 import './PageTree.css';
 
 interface PageTreeProps {
@@ -95,7 +95,7 @@ export function PageTree({ onSelect, initialFocusId = null }: PageTreeProps): JS
   const activePageId = useNotesStore(selectActivePageId);
   const pageMap = useNotesStore(selectPageMap);
   const getDescendantIds = useNotesStore((s) => s.getDescendantIds);
-  const { movePage, createPage } = usePageActions();
+  const { movePage } = usePageActions();
   const { startDrag, updateDragHover, endDrag } = useNotesStore(
     useShallow((s) => ({
       startDrag: s.startDrag,
@@ -228,14 +228,6 @@ export function PageTree({ onSelect, initialFocusId = null }: PageTreeProps): JS
     setFocusedId(nodeId);
   }, []);
 
-  const handleCreateFirstPage = useCallback(() => {
-    void createPage({ parentId: null, title: 'New Page' }).then((result) => {
-      if (result.ok) {
-        onSelect(result.data.id);
-      }
-    });
-  }, [createPage, onSelect]);
-
   // -- Drag handlers ---------------------------------------------------------------
 
   const handleDragStart = useCallback(
@@ -355,16 +347,7 @@ export function PageTree({ onSelect, initialFocusId = null }: PageTreeProps): JS
 
   if (tree.length === 0) {
     return (
-      <div className="page-tree page-tree--empty" role="tree" aria-label="Pages">
-        <div className="page-tree__empty">
-          <span className="page-tree__empty-icon" aria-hidden="true"><NoteIcon size={16} /></span>
-          <p className="page-tree__empty-text">No pages yet</p>
-          <p className="page-tree__empty-hint">Create your first page to get started</p>
-          <button type="button" className="page-tree__empty-cta" onClick={handleCreateFirstPage}>
-            Create your first page
-          </button>
-        </div>
-      </div>
+      <div className="page-tree page-tree--empty" role="tree" aria-label="Pages" />
     );
   }
 

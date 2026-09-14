@@ -153,7 +153,7 @@ describe('PageTree', () => {
     });
   });
 
-  it('shows an empty state CTA that creates a root page', async () => {
+  it('renders an empty tree without a CTA button', async () => {
     pagesApi.tree.mockResolvedValue({ ok: true, data: [] });
 
     render(
@@ -162,14 +162,10 @@ describe('PageTree', () => {
       </ToastProvider>,
     );
 
-    const cta = await screen.findByRole('button', { name: 'Create your first page' });
-    fireEvent.click(cta);
-
-    await waitFor(() => {
-      expect(pagesApi.create).toHaveBeenCalledWith(
-        expect.objectContaining({ parentId: null, title: 'New Page' }),
-      );
-    });
+    // Should render empty tree without the old "Create your first page" CTA
+    const tree = await screen.findByRole('tree', { name: 'Pages' });
+    expect(tree.className).toContain('page-tree--empty');
+    expect(screen.queryByRole('button', { name: 'Create your first page' })).toBeNull();
   });
 
   it('renames a page inline with F2 + Enter', async () => {

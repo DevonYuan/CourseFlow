@@ -185,9 +185,7 @@ export function SearchPalette(): JSX.Element | null {
                 />
               ))}
               {itemCount === 0 && (
-                <li className="search-palette__empty" role="presentation">
-                  No pages yet. Create one from the Notes sidebar.
-                </li>
+                <li className="search-palette__empty" role="presentation" />
               )}
             </>
           )}

@@ -38,7 +38,9 @@ export function PageEditor({ page: initialPage }: PageEditorProps): JSX.Element 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const titleSaveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastSavedContentRef = useRef('');
+  const lastSavedTitleRef = useRef('');
 
   const loadPage = useCallback(
     async (id: EntityId) => {
@@ -76,6 +78,25 @@ export function PageEditor({ page: initialPage }: PageEditorProps): JSX.Element 
       } else {
         setSaveError(result.error || 'Failed to save');
         showErrorToast('Failed to save page');
+      }
+    },
+    [page, updatePage, showErrorToast],
+  );
+
+  const saveTitle = useCallback(
+    async (value: string) => {
+      if (!page) return;
+
+      setIsSaving(true);
+      const result = await updatePage({ id: page.id, title: value });
+      setIsSaving(false);
+
+      if (result.ok) {
+        lastSavedTitleRef.current = value;
+        setPage(result.data);
+      } else {
+        setSaveError(result.error || 'Failed to save title');
+        showErrorToast('Failed to save title');
       }
     },
     [page, updatePage, showErrorToast],
@@ -119,6 +140,9 @@ export function PageEditor({ page: initialPage }: PageEditorProps): JSX.Element 
       window.removeEventListener('beforeunload', handleBeforeUnload);
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+      }
+      if (titleSaveTimeoutRef.current) {
+        clearTimeout(titleSaveTimeoutRef.current);
       }
     };
   }, [page, content, saveContent]);
@@ -238,14 +262,29 @@ export function PageEditor({ page: initialPage }: PageEditorProps): JSX.Element 
             onChange={(e) => {
               const newTitle = e.target.value;
               if (newTitle !== page.title) {
-                void updatePage({ id: page.id, title: newTitle });
                 setPage({ ...page, title: newTitle });
+
+                // Debounced title save (500ms)
+                if (titleSaveTimeoutRef.current) {
+                  clearTimeout(titleSaveTimeoutRef.current);
+                }
+                titleSaveTimeoutRef.current = setTimeout(() => {
+                  if (page && newTitle.trim() !== '' && newTitle !== lastSavedTitleRef.current) {
+                    void saveTitle(newTitle);
+                  }
+                }, 500);
               }
             }}
             onBlur={() => {
+              if (titleSaveTimeoutRef.current) {
+                clearTimeout(titleSaveTimeoutRef.current);
+              }
               if (page.title.trim() === '') {
-                void updatePage({ id: page.id, title: 'Untitled' });
+                void saveTitle('Untitled');
                 setPage({ ...page, title: 'Untitled' });
+              } else if (page.title !== lastSavedTitleRef.current) {
+                // Flush pending title save on blur
+                void saveTitle(page.title);
               }
             }}
             placeholder="Untitled"
