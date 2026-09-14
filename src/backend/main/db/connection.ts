@@ -146,7 +146,12 @@ export function isDatabaseInitialized(): boolean {
 /**
  * Set a test database instance (for testing only).
  * This allows tests to inject their own database instance.
+ *
+ * @param db - The test database, or null to clear it.
+ * @param path - Optional file path so `saveDatabase` exercises a real export
+ *   (and write) exactly like production. Defaults to null (no export).
  */
-export function setTestDatabase(db: Database | null): void {
+export function setTestDatabase(db: Database | null, path: string | null = null): void {
   dbInstance = db;
+  dbPath = path;
 }

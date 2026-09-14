@@ -63,10 +63,29 @@ import {
  * @param params - Parameters to bind
  * @param persist - Whether to save to disk after execution (default: true). Set to false when called inside a transaction to avoid exporting mid-transaction.
  */
+/**
+ * Tracks how many SQL transactions are currently open.
+ *
+ * sql.js's `db.export()` (used by `saveDatabase`) frees every prepared
+ * statement and closes/reopens the connection, which silently aborts an
+ * in-flight transaction. `run`/`exec` therefore must never persist while a
+ * transaction is open.
+ */
+let openTransactions = 0;
+
+/** Classifies a statement as a transaction boundary, if applicable. */
+function transactionBoundary(sql: string): 'begin' | 'commit' | 'rollback' | null {
+  const normalized = sql.trimStart().toUpperCase();
+  if (normalized.startsWith('BEGIN')) return 'begin';
+  if (normalized.startsWith('COMMIT')) return 'commit';
+  if (normalized.startsWith('ROLLBACK')) return 'rollback';
+  return null;
+}
+
 function run(sql: string, params: (string | number | null)[] = [], persist = true): void {
   const db = getDatabase();
   db.run(sql, params);
-  if (persist) saveDatabase();
+  if (persist && openTransactions === 0) saveDatabase();
 }
 
 function get<T>(sql: string, params: (string | number | null)[] = []): T | null {
@@ -98,8 +117,24 @@ function all<T>(sql: string, params: (string | number | null)[] = []): T[] {
  */
 function exec(sql: string, persist = true): void {
   const db = getDatabase();
-  db.exec(sql);
-  if (persist) saveDatabase();
+  const boundary = transactionBoundary(sql);
+  try {
+    db.exec(sql);
+  } finally {
+    // Track open transactions even when the statement throws (e.g. a failed
+    // ROLLBACK on an already-ended transaction).
+    if (boundary === 'begin') openTransactions += 1;
+    else if (boundary === 'commit' || boundary === 'rollback') {
+      openTransactions = Math.max(0, openTransactions - 1);
+    }
+  }
+  // A committed transaction must be flushed to disk: sql.js keeps changes in
+  // memory until `export()`, and callers rely on the write surviving restarts.
+  if (boundary === 'commit') {
+    saveDatabase();
+    return;
+  }
+  if (persist && openTransactions === 0) saveDatabase();
 }
 
 /**
@@ -643,7 +678,8 @@ export const repo = {
               input.status !== undefined &&
               input.status !== 'completed'
             ) {
-              run('UPDATE assignments SET status = ? WHERE id = ?', ['completed', existingId]);
+              // `persist: false` — this runs inside the import transaction.
+              run('UPDATE assignments SET status = ? WHERE id = ?', ['completed', existingId], false);
             }
             // course_color: preserve user's course color (do not overwrite from Canvas)
             // Priority: stored in priority_order table, not affected by assignment UPDATE
@@ -734,7 +770,11 @@ export const repo = {
       console.log('[importAssignments] Transaction committed');
     } catch (e) {
       console.error('[importAssignments] Error, rolling back:', e);
-      exec('ROLLBACK', false);
+      try {
+        exec('ROLLBACK', false);
+      } catch (rollbackError) {
+        console.error('[importAssignments] Rollback failed:', rollbackError);
+      }
       throw e;
     } finally {
       staleStmt.free();
