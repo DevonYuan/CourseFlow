@@ -84,8 +84,6 @@ Much of the data layer was scaffolded in Phases 0â€“2 and is **ready to use** â€
 | 3.12 | `phase3-12-notes-sidebar`      | Notes Sidebar & Navigation   | Build collapsible sidebar (left panel) showing page tree with drag-and-drop reordering, create page/folder, rename, delete, duplicate. Persist expanded/collapsed state per folder. Keyboard navigation (arrows, Enter to open).                                                                                               |
 | 3.13 | `phase3-13-notes-editor`       | Rich Text / Markdown Editor  | Implement editor for page content. MVP: markdown textarea with live preview (split view) + toolbar (headings, bold, italic, code, lists, links). Future: block-based editor (TipTap/Slate). Auto-save on change (debounced).                                                                                                   |
 | 3.14 | `phase3-14-notes-search`       | Full-Text Search             | Add SQLite FTS5 virtual table for `pages` content. Implement search IPC (`db:pages:search`) with ranking. UI: cmd+k / cmd+shift+p style command palette for quick search + dedicated search results view.                                                                                                                      |
-| 3.15 | `phase3-15-notes-linking`      | Page Linking & Backlinks     | Support `[[page title]]` wiki-style links in markdown. Auto-create backlinks panel showing "Linked from" references. Click to navigate.                                                                                                                                                                                        |
-| 3.16 | `phase3-16-notes-templates`    | Page Templates               | Pre-built templates (Class Notes, Meeting Notes, Project Plan, Daily Journal). Template picker on new page creation. Custom templates saved by user.                                                                                                                                                                           |
 
 ### E. Integration & Polish
 
@@ -139,7 +137,6 @@ By the end of Phase 3:
 - [ ] **Notes Workspace**: Sidebar with nested page tree, drag-drop reorder, create/rename/delete/duplicate
 - [ ] **Page Editor**: Markdown editor with live preview, toolbar, auto-save
 - [ ] **Search**: Command palette + search results view with FTS5 ranking
-- [ ] **Linking**: Wiki-style `[[links]]` with backlinks panel
 - [ ] Optimistic updates + error toasts; loading/empty/not-found states
 - [ ] Keyboard + screen-reader support for all new interactions
 
@@ -178,8 +175,6 @@ flowchart TD
     T3_11 --> T3_12[3.12 Notes Sidebar]
     T3_12 --> T3_13[3.13 Rich Text Editor]
     T3_13 --> T3_14[3.14 Full-Text Search]
-    T3_13 --> T3_15[3.15 Page Linking]
-    T3_15 --> T3_16[3.16 Page Templates]
 
     T3_1 --> T3_8[3.8 Delete & Sync Safety]
     T3_8 --> T3_9[3.9 Accessibility]
