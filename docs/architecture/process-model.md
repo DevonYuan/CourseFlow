@@ -35,7 +35,7 @@ We adopt a **three-process model** with strict boundaries:
 
 > **Current implementation note:** the app implements window lifecycle, SQLite,
 > iCal fetch/import, IPC handlers, and the scheduler. Native menus/dialogs,
-> auto-update, and the `courseflow://` protocol are **not implemented yet**.
+> auto-update, and the `courseflow://` protocol are **planned for Phase 4 (Launch)**.
 
 ### 2. Backend — Preload Process (`src/backend/preload/`)
 

@@ -14,9 +14,7 @@ CourseFlow is a desktop homework tracker built with **Electron + React + TypeScr
 
 ## Status (Sep 2026)
 
-- **Phase 0–2 complete** — tracked MVP is functional and verified: single-feed iCal import (past 30d / next 60d window, recurring + all-day events), local SQLite list, priority ordering, filters/sort/group, and a background auto-sync scheduler.
-- **Phase 3 in progress** — see `docs/tickets/phase3/README.md` (detail view, sub-tasks, notes UI; backend already exists).
-- The app currently syncs **one** iCal feed; multi-calendar support is planned for Phase 6.
+- **Phase 0–3 complete** — tracked MVP is functional and verified: single-feed iCal import (past 30d / next 60d window, recurring + all-day events), local SQLite list, priority ordering, filters/sort/group, and a background auto-sync scheduler.
 
 ## Phase 0 — Foundation (scaffold) ✅ Complete
 
@@ -48,7 +46,7 @@ Give users control over how their list is ordered and viewed.
 - Basic grouping (e.g., "This week", "Overdue", "Done").
 - Background auto-fetch scheduler (configurable interval, retry/backoff, manual "Sync Now").
 
-## Phase 3 — Productivity Depth 🚧 In Progress
+## Phase 3 — Productivity Depth ✅ Complete
 
 Turn CourseFlow from a tracker into a productivity tool.
 
@@ -58,28 +56,13 @@ Turn CourseFlow from a tracker into a productivity tool.
 - Link sub-tasks/notes to the assignment in the DB.
 - UI for the above (expandable assignment cards / detail view + dedicated Notes workspace).
 
-## Phase 4 — Polish & Cross-Platform
+## Phase 4 — Polish & Miscallaneous Features
 
-Get ready for a public launch.
+Additional features that I decided to add. 
 
-- Polished, dedicated desktop UI and interactions.
-- Cross-platform packaging (Windows, macOS, Linux) via Electron Builder.
-- Graceful handling of feed sync errors / offline.
-- Performance and stability pass.
-- **Optional:** cloud backup behind a paid tier (details/pricing TBD).
-
-## Phase 5 — Later (post-launch ideas)
-
-- Due-date reminders / notifications.
-- Auto-refresh of the calendar feed.
-- Potential for a recurring-event sync with Canvas.
-
-## Phase 6 (Planned) — Multi-Calendar Unified View
-
-> **Status:** Planned. The app currently supports exactly **one** iCal feed URL
-> (`settings.icalUrl`). This phase replaces that with **N feeds** (Google
-> Calendar primary + Birthdays + a Canvas feed, Outlook, family calendars, etc.)
-> and renders a single unified assignment list with per-calendar attribution.
+- The app currently supports exactly **one** iCal feed URL
+- This phase replaces that with **N feeds** (Google Calendar primary + Birthdays + a Canvas feed, Outlook, family calendars, etc.) and renders a single unified assignment list with per-calendar attribution.
+- Additional miscallaneous features include but are not limited to: A Pomodoro timer, a visual rendering of a node tree (representing the file structure of the notes), etc. 
 
 Planned scope:
 
@@ -146,9 +129,9 @@ flowchart TB
 - [x] Finalize SQLite schema details during Phase 0.
 - [x] iCal feed interaction: **full re-pull** on every sync (schedule-driven, with upsert + prune) — chosen over incremental sync for MVP simplicity.
 - [x] Choose drag-and-drop library (renderer): **@dnd-kit**.
-- [ ] Determine cloud backup scope + pricing model (deferred to Phase 4).
+- [ ] Determine cloud backup scope + pricing model (deferred to Phase 5).
 - [x] Decide whether sync is manual, on-launch, or scheduled: manual "Sync Now" + configurable background scheduler (Phase 2).
-- [ ] Single feed vs. multiple calendars → **multiple feeds planned (Phase 6)**, see `docs/architecture/multi-calendar.md`.
+- [x] Single feed vs. multiple calendars → **multiple feeds planned (Phase 4)**, see `docs/architecture/multi-calendar.md`.
 
 ## Milestones
 

@@ -99,17 +99,23 @@ flowchart TB
 - Progress indicators showing sub-task completion status
 - Fully keyboard-accessible detail view — see [docs/architecture/accessibility.md](docs/architecture/accessibility.md)
 
+### v0.4 — Polish & Multi-Calendar (In Progress)
+
+- **Multi-calendar support** — Manage N iCal feeds (Google Calendar, Canvas, Outlook, Birthdays, family calendars, etc.) with per-feed sync state, color badges, and unified assignment list
+- **Pomodoro timer** — Built-in focus timer with configurable work/break intervals
+- **Notes graph visualization** — Visual rendering of the page hierarchy (node tree representing the file structure of notes)
+- Per-source sync status in TopBar; manage calendars in Settings (add/remove/name/color/enable)
+
 ### v1.0 — Launch
 
 - Polished, dedicated desktop UI
-- Cross-platform packaging for Windows, macOS, and Linux
+- Cross-platform packaging for Windows, macOS, and Linux (electron-builder NSIS / DMG / AppImage)
 - Reliable iCal syncing and refresh
+- Auto-updater support
 
-### Later
+### Later (Post-Launch)
 
-- Standalone Notes & Pages workspace (Notion-style)
 - Due-date reminders and notifications
-- Multiple calendar feeds (Phase 6)
 - Optional cloud backup *
 
 *<small>Backup details and pricing are still being decided.</small>

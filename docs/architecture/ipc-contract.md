@@ -59,7 +59,19 @@ and `action: 'update'` for edits, so renderers can distinguish the two.
 | `db:pages:update` | `PageUpdateInput`                                    | `Page`               | Update page (title, content, parent, position, icon)      |
 | `db:pages:delete` | `string` (id)                                        | `void`               | Delete page (cascades to children)                        |
 | `db:pages:move`   | `{ id: string; parentId: string; position: number }` | `Page`               | Move page to new parent/position                          |
-| `db:pages:search` | `{ query: string; limit?: number }`                  | `PageSearchResult[]` | Full-text search across pages (FTS5)                      |
+| `db:pages:search` | `{ query: string; limit?: number }`                  | `PageSearchResult[]` | Search across pages (LIKE-based ranking; FTS5 unavailable in sql.js WASM) |
+
+### Database — Calendar Sources (Multi-Calendar — Phase 4)
+
+| Channel                    | Request                        | Response             | Description                                        |
+| -------------------------- | ------------------------------ | -------------------- | -------------------------------------------------- |
+| `db:calendars:list`        | `void`                         | `CalendarSource[]`   | Fetch all calendar sources                         |
+| `db:calendars:get`         | `string` (id)                  | `CalendarSource \| null` | Fetch single calendar source by ID                |
+| `db:calendars:create`      | `CalendarSourceInput`          | `CalendarSource`     | Create new calendar source (encrypted feed URL)    |
+| `db:calendars:update`      | `CalendarSourceUpdateInput`    | `CalendarSource`     | Update calendar source (name, color, enabled, etc.) |
+| `db:calendars:delete`      | `string` (id)                  | `void`               | Delete calendar source                             |
+| `db:calendars:reorder`     | `string[]` (ordered IDs)       | `void`               | Bulk reorder calendar sources                      |
+| `db:calendars:setEnabled`  | `{ id: string; enabled: boolean }` | `CalendarSource`  | Toggle calendar source enabled state               |
 
 ### Database — Priority Order
 
@@ -126,6 +138,7 @@ All payload types are defined in `src/backend/shared/types.ts`:
 - `Page`, `PageInput`, `PageUpdateInput`, `PageTreeNode`, `PageSearchResult`
 - `PriorityOrder`, `PriorityOrderInput`
 - `Settings`
+- `CalendarSource`, `CalendarSourceInput`, `CalendarSourceUpdateInput`
 - `ICalEvent`
 - `ImportResult`
 - `SchedulerConfig`, `SchedulerStatus`

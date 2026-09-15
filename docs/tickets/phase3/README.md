@@ -1,4 +1,4 @@
-# Phase 3 — Productivity Depth
+# Phase 3 — Productivity Depth ✅ Complete
 
 > **Goal:** Turn CourseFlow from a simple tracker into a productivity tool. Users can open any assignment, break it down into **sub-tasks**, and attach **notes / progress logs** — all persisted locally in SQLite and preserved across syncs and restarts. Additionally, users can create **standalone notes and pages** (Notion-style) independent of assignments, organized in a sidebar with nesting, rich text/markdown support, and full-text search.
 >
@@ -19,85 +19,72 @@ Phases 1 and 2 gave us a **tracker**: pull assignments from iCal, see them in a 
 
 ---
 
-## Phase 3 Scope — What Needs to Be Done
+## Phase 3 Scope — What Was Done
 
-### 🏗️ Head Start: Backend Already Exists
+### 🏗️ Backend Already Existed (Scaffolded in Phases 0–2)
 
-Much of the data layer was scaffolded in Phases 0–2 and is **ready to use** — Phase 3 is primarily a **frontend + integration** phase. Do **not** rebuild these:
+Much of the data layer was scaffolded in Phases 0–2 and was **ready to use** — Phase 3 was primarily a **frontend + integration** phase.
 
 | Piece                                                     | Location                            | Status                       |
 | --------------------------------------------------------- | ----------------------------------- | ---------------------------- |
 | `sub_tasks` table (FK → assignments, `ON DELETE CASCADE`) | DB migrations / schema              | ✅ exists                    |
-| `notes` table (1:1 or per-entry, FK → assignments)        | DB migrations / schema              | ✅ exists                    |
+| `notes` table (1:N, FK → assignments)                     | DB migrations / schema              | ✅ exists                    |
 | `SubTask` / `Note` types + inputs                         | `src/backend/shared/types.ts`       | ✅ exists                    |
 | Repo CRUD (list/upsert/delete, subtask toggle)            | `src/backend/main/db/repository.ts` | ✅ exists                    |
 | IPC channels `db:subtasks:*`, `db:notes:*`                | `src/backend/main/ipc-handlers.ts`  | ✅ exists                    |
 | Preload bridge (`window.api.db.subtasks.*`, `notes.*`)    | `src/backend/preload/index.ts`      | ✅ exists                    |
-| `db:changed` events for sub-task/note mutations           | events layer                        | ✅ exists (verify per-table) |
+| `db:changed` events for sub-task/note mutations           | events layer                        | ✅ exists                    |
 
-> ⚠️ **Audit first (Ticket 3.0):** confirm the schema/IPC/types match what the UI needs (e.g., sub-task ordering field, note `updated_at`, markdown content) before building the UI on top of it.
+### ✅ Implemented Tickets
 
-### Scope boundaries (what Phase 3 is _not_)
-
-- ❌ Not the polish/packaging pass (that's Phase 4).
-- ❌ Not reminders/notifications (Phase 5).
-- ❌ Not multiple iCal feeds (Phase 6 — see `docs/roadmap.md`).
-- ❌ Not a public-marketing detail pass on the whole UI.
-
----
-
-## Proposed Ticket Breakdown
-
-### ⚠️ BLOCKING PREREQUISITE (Do First)
-
-| #   | Ticket                       | Title                                                 | Description                                                                                                                                                                                                                                 |
-| --- | ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.0 | `phase3-00-data-model-audit` | **Data Model & IPC Audit for Detail/Sub-tasks/Notes** | Audit `SubTask`/`Note` schema, types, repo, IPC, and preload against the UI requirements below. Fill gaps (ordering, timestamps, note model shape), add/align columns, and run a migration if needed. **All other tickets depend on this.** |
-
-### A. Assignment Detail View (Frontend Foundation)
-
-| #   | Ticket                   | Title                          | Description                                                                                                                                                                           |
-| --- | ------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.1 | `phase3-01-detail-route` | Detail View Route & Navigation | Add `/assignments/:id` route + page. Assignment rows become clickable (keyboard accessible). Show title, course badge, due date (with overdue/all-day handling), description, status. |
-| 3.2 | `phase3-02-detail-state` | Detail Data Loading & Store    | Load a single assignment via `db:assignments:get`; hydrate sub-tasks + notes; subscribe to `db:changed` for live updates. Loading / error / not-found states.                         |
-
-### B. Sub-Tasks
-
-| #   | Ticket                       | Title                      | Description                                                                                                                                                                                    |
-| --- | ---------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.3 | `phase3-03-subtask-core`     | Sub-task List + Add        | Render sub-tasks ordered; add new sub-task inline (Enter to save); delete with confirmation; optimistic UI + toast on failure.                                                                 |
-| 3.4 | `phase3-04-subtask-complete` | Complete / Toggle Sub-task | One-click complete/un-complete with instant feedback via `db:subtasks:toggle`; persisted.                                                                                                      |
-| 3.5 | `phase3-05-subtask-progress` | Progress Indicator         | Show `x/y complete` + progress bar on the assignment row and/or detail header. Decide interplay with assignment status (e.g., prompt "Mark assignment complete?" when all sub-tasks are done). |
-
-### C. Notes & Progress Logging (Per-Assignment)
-
-| #   | Ticket                    | Title                      | Description                                                                                                             |
-| --- | ------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 3.6 | `phase3-06-notes-core`    | Notes Editor               | Add/edit/delete notes per assignment. Decide markdown vs. plain text (design decision below); persist via `db:notes:*`. |
-| 3.7 | `phase3-07-notes-history` | Note Ordering & Timestamps | Show newest-first log with timestamps; store `created_at`/`updated_at`; indicate edited notes.                          |
-
-### D. Standalone Notes & Pages (Notion-style Workspace)
-
-| #    | Ticket                         | Title                        | Description                                                                                                                                                                                                                                                                                                                    |
-| ---- | ------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 3.11 | `phase3-11-notes-pages-schema` | **Pages Table Schema & IPC** | Create `pages` table with: `id`, `parent_id` (self-referential FK for nesting), `title`, `content` (JSON for block-based or markdown string), `icon`, `cover`, `created_at`, `updated_at`, `created_by`. Add `db:pages:*` IPC channels (list, get, create, update, delete, move, search) and preload bridge. Run migration v5. |
-| 3.12 | `phase3-12-notes-sidebar`      | Notes Sidebar & Navigation   | Build collapsible sidebar (left panel) showing page tree with drag-and-drop reordering, create page/folder, rename, delete, duplicate. Persist expanded/collapsed state per folder. Keyboard navigation (arrows, Enter to open).                                                                                               |
-| 3.13 | `phase3-13-notes-editor`       | Rich Text / Markdown Editor  | Implement editor for page content. MVP: markdown textarea with live preview (split view) + toolbar (headings, bold, italic, code, lists, links). Future: block-based editor (TipTap/Slate). Auto-save on change (debounced).                                                                                                   |
-| 3.14 | `phase3-14-notes-search`       | Full-Text Search             | Add SQLite FTS5 virtual table for `pages` content. Implement search IPC (`db:pages:search`) with ranking. UI: cmd+k / cmd+shift+p style command palette for quick search + dedicated search results view.                                                                                                                      |
-
-### E. Integration & Polish
-
-| #    | Ticket                     | Title                    | Description                                                                                                                                                                                                 |
-| ---- | -------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.8  | `phase3-08-cascade-safety` | Delete & Sync Safety     | Deleting an assignment cascades sub-tasks/notes (verify FK). iCal re-import must **never** touch sub-tasks/notes (reuse protected-fields logic). Manual assignments (source `manual`) also get detail view. |
-| 3.9  | `phase3-09-accessibility`  | Accessibility & Keyboard | Keyboard nav to detail, complete sub-task with Space/Enter, focus management on modal/route change, ARIA for progress.                                                                                      |
-| 3.10 | `phase3-10-tests-docs`     | Tests & Docs             | Unit tests (sub-task/note repo+IPC), component tests (detail view, sub-task flow, notes), update `docs/architecture/data-model.md` + `ipc-contract.md`, root README phase badge.                            |
+| #   | Ticket                       | Title                                                 | Status | Description                                                                                                                                                                    |
+| --- | ---------------------------- | ----------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 3.0 | `phase3-00-data-model-audit` | **Data Model & IPC Audit for Detail/Sub-tasks/Notes** | ✅     | Audited `SubTask`/`Note` schema, types, repo, IPC, and preload against UI requirements. Filled gaps, added migration.                                                         |
+| 3.1 | `phase3-01-detail-route`     | Detail View Route & Navigation                        | ✅     | Added `/assignments/:id` route + page. Assignment rows clickable (keyboard accessible). Shows title, course badge, due date, description, status.                              |
+| 3.2 | `phase3-02-detail-state`     | Detail Data Loading & Store                           | ✅     | Load single assignment via `db:assignments:get`; hydrate sub-tasks + notes; subscribe to `db:changed` for live updates. Loading / error / not-found states.                    |
+| 3.3 | `phase3-03-subtask-core`     | Sub-task List + Add                                   | ✅     | Render sub-tasks ordered; add new sub-task inline (Enter to save); delete with confirmation; optimistic UI + toast on failure.                                                  |
+| 3.4 | `phase3-04-subtask-complete` | Complete / Toggle Sub-task                            | ✅     | One-click complete/un-complete with instant feedback via `db:subtasks:toggle`; persisted.                                                                                       |
+| 3.5 | `phase3-05-subtask-progress` | Progress Indicator                                    | ✅     | Shows `x/y complete` + progress bar on assignment row and detail header. Prompts "Mark assignment complete?" when all sub-tasks are done.                                      |
+| 3.6 | `phase3-06-notes-core`       | Notes Editor                                          | ✅     | Add/edit/delete notes per assignment (markdown-ready plain text); persist via `db:notes:*`.                                                                                    |
+| 3.7 | `phase3-07-notes-history`    | Note Ordering & Timestamps                            | ✅     | Shows newest-first log with timestamps; stores `created_at`/`updated_at`; indicates edited notes.                                                                               |
+| 3.8 | `phase3-08-cascade-safety`   | Delete & Sync Safety                                  | ✅     | Deleting assignment cascades sub-tasks/notes (FK). iCal re-import never touches sub-tasks/notes. Manual assignments also get detail view.                                      |
+| 3.9 | `phase3-09-accessibility`    | Accessibility & Keyboard                              | ✅     | Keyboard nav to detail, complete sub-task with Space/Enter, focus management on modal/route change, ARIA for progress.                                                         |
+| 3.10| `phase3-10-tests-docs`       | Tests & Docs                                          | ✅     | Unit tests (sub-task/note repo+IPC), component tests (detail view, sub-task flow, notes), updated architecture docs.                                                            |
+| 3.11| `phase3-11-notes-pages-schema`| **Pages Table Schema & IPC**                          | ✅     | Created `pages` table with: `id`, `parent_id` (self-referential FK), `title`, `content` (markdown), `icon`, `cover`, `created_at`, `updated_at`, `created_by`, `position`. Added `db:pages:*` IPC channels (list, get, tree, create, update, delete, move, search) and preload bridge. Ran migration v5. |
+| 3.12| `phase3-12-notes-sidebar`    | Notes Sidebar & Navigation                            | ✅     | Built collapsible sidebar (left panel) showing page tree with drag-and-drop reordering, create page/folder, rename, delete, duplicate. Persist expanded/collapsed state per folder. Keyboard navigation (arrows, Enter to open). |
+| 3.13| `phase3-13-notes-editor`     | Rich Text / Markdown Editor                           | ✅     | Implemented editor for page content. MVP: markdown textarea with live preview (split view) + toolbar (headings, bold, italic, code, lists, links). Auto-save on change (debounced). |
+| 3.14| `phase3-14-notes-search`     | Full-Text Search                                      | ✅     | Added SQLite LIKE-based search (FTS5 unavailable in sql.js WASM). Implemented search IPC (`db:pages:search`) with ranking. UI: Cmd+K / Cmd+Shift+P style command palette for quick search + dedicated search results view. |
 
 ---
 
-## Non-Coding Actions & Design Decisions (Resolve Early)
+## Non-Coding Actions & Design Decisions (Resolved)
 
 ### Architecture & Product Decisions
+
+- **Sub-task ordering**: Added `position` column to `sub_tasks` table for drag-drop reordering within an assignment.
+- **Note model**: Confirmed 1:N (multiple timestamped log entries per assignment) — supports "progress logging" over time.
+- **Pages content format**: Markdown for MVP (stored as TEXT); block-based JSON (TipTap/Slate) can be migrated later without schema changes.
+- **Pages hierarchy**: Adjacency list (`parent_id` self-referential FK) — simple and performant for typical notebook depths (<1000 pages).
+- **Search**: Implemented via `LIKE ... ESCAPE '!'` with ranking (title matches rank 0, content matches rank 1) since sql.js WASM build lacks FTS5 module.
+- **Full-text search deviation**: FTS5/BM25 requirement from original ticket was not feasible with sql.js; documented in ticket Implementation Status.
+- **Accessibility**: WCAG 2.1 AA — keyboard navigation, ARIA live regions, focus management, skip links, reduced motion support. Verified via Playwright + axe-core E2E scans.
+- **Protected fields**: Sub-tasks, notes, pages, priority order, and user-set assignment status are never overwritten by iCal re-import (see `docs/architecture/data-model.md`).
+
+---
+
+## Deliverables
+
+By the end of Phase 3:
+
+- ✅ Assignment detail view with sub-tasks, notes, progress indicator
+- ✅ Standalone Notes workspace with hierarchical sidebar, markdown editor, full-text search
+- ✅ All data persists in SQLite, survives iCal re-sync and app restarts
+- ✅ Keyboard accessible, WCAG 2.1 AA compliant
+- ✅ Tests passing (unit + component + E2E)
+
+---
+
+_Detailed task tickets for this phase are tracked under `docs/tickets/phase3/`._
 
 - [ ] **Detail view: route vs. modal** — A `/assignments/:id` route (deep-linkable) vs. an in-page panel/modal. **Recommendation:** route for Phase 3 (consistent with existing router, allows future share/links and easy state reset).
 - [ ] **Note format** — Plain text vs. markdown. No markdown dependency exists yet. **Recommendation:** plain multi-line text with a lightweight markdown renderer later; decide before Ticket 3.6.

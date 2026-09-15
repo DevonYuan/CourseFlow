@@ -1,7 +1,7 @@
 # Multi-Calendar Support (Multi-Feed) — Design Notes
 
-> **Status:** Planned · Target phase: Phase 6
-> Related: `docs/roadmap.md` (Phase 6), `docs/architecture/data-model.md`,
+> **Status:** Planned · Target phase: Phase 4
+> Related: `docs/roadmap.md` (Phase 4), `docs/architecture/data-model.md`,
 > `docs/architecture/ipc-contract.md`, `docs/architecture/security.md`
 
 ## 1. Goal
