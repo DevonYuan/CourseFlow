@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { IpcChannels, IpcEvents, IpcResult } from '../shared/ipc.js';
-import type { Settings } from '../shared/types.js';
+import type { Settings, CalendarSource, CalendarSourceInput } from '../shared/types.js';
 
 /**
  * Typed wrapper for ipcRenderer.invoke that returns IpcResult<T>.
@@ -72,6 +72,18 @@ const api = {
       reorder: (ids: string[]) => invoke('db:priority:reorder', ids),
       upsert: (input: IpcChannels['db:priority:upsert']['request']) =>
         invoke('db:priority:upsert', input),
+    },
+    calendars: {
+      list: () => invoke('db:calendars:list', undefined),
+      get: (id: string) => invoke('db:calendars:get', id),
+      create: (input: IpcChannels['db:calendars:create']['request']) =>
+        invoke('db:calendars:create', input),
+      update: (input: IpcChannels['db:calendars:update']['request']) =>
+        invoke('db:calendars:update', input),
+      delete: (id: string) => invoke('db:calendars:delete', id),
+      reorder: (ids: string[]) => invoke('db:calendars:reorder', ids),
+      setEnabled: (input: IpcChannels['db:calendars:setEnabled']['request']) =>
+        invoke('db:calendars:setEnabled', input),
     },
   },
   ical: {

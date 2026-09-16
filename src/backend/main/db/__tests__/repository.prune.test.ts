@@ -79,7 +79,8 @@ function runMigrations(db: Database): void {
       status TEXT CHECK (status IN ('pending', 'in_progress', 'completed', 'archived')) DEFAULT 'pending',
       source TEXT CHECK (source IN ('manual', 'ical')) DEFAULT 'manual',
       source_url TEXT,
-      rrule TEXT
+      rrule TEXT,
+      source_id TEXT
     );
     CREATE TABLE IF NOT EXISTS priority_order (
       assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
@@ -87,6 +88,20 @@ function runMigrations(db: Database): void {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS calendars (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      feed_url TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      color TEXT NOT NULL,
+      position INTEGER NOT NULL,
+      last_sync_at INTEGER,
+      next_sync_at INTEGER,
+      last_error TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_assignments_source_ical ON assignments(source_id, ical_uid);
   `);
 }
 
@@ -104,6 +119,7 @@ let rowCounter = 0;
 
 /**
  * Insert a row directly into the test assignments table.
+ * Column order matches the test's runMigrations CREATE TABLE.
  */
 function seedRow(db: Database, row: SeedRow): void {
   rowCounter++;
@@ -111,19 +127,30 @@ function seedRow(db: Database, row: SeedRow): void {
   db.run(
     `INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at,
        unlock_at, lock_at, points_possible, submission_types, workflow_state, html_url, ical_uid,
-       status, source, source_url, rrule, created_at, updated_at)
-     VALUES (?, NULL, ?, '', 'Test Course', '#6366f1', ?, NULL, NULL, NULL, '[]', 'published', '', ?,
-       ?, ?, ?, NULL, ?, ?)`,
+       created_at, updated_at, status, source, source_url, rrule, source_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       row.id,
+      null,
       row.title ?? 'Seeded Assignment',
+      '',
+      'Test Course',
+      '#6366f1',
       row.dueAtMs ?? now + 7 * 86_400_000,
+      null,
+      null,
+      null,
+      '[]',
+      'published',
+      '',
       row.icalUid,
+      now,
+      now,
       row.status ?? 'pending',
       row.source ?? 'ical',
       row.sourceUrl ?? 'https://calendar.example.com/basic.ics',
-      now,
-      now,
+      null,
+      null,
     ],
   );
 }

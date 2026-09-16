@@ -20,12 +20,14 @@ import type {
   PriorityOrder,
   PriorityOrderInput,
   Settings,
+  CalendarSource,
   DbAssignment,
   DbSubTask,
   DbNote,
   DbPage,
   DbPriorityOrder,
   DbSettings,
+  DbCalendarSource,
   IsoDateTime,
 } from '../../shared/types.js';
 
@@ -276,4 +278,23 @@ export function mapPageUpdateInputToDb(input: PageUpdateInput, now: number): Par
   dbRow.updated_at = now;
 
   return dbRow;
+}
+
+/**
+ * Map database row to CalendarSource domain object.
+ */
+export function mapDbCalendarSourceToCalendarSource(row: DbCalendarSource): CalendarSource {
+  return {
+    id: row.id as CalendarSource['id'],
+    name: row.name,
+    feedUrl: row.feed_url,
+    enabled: row.enabled === 1,
+    color: row.color,
+    position: row.position,
+    lastSyncAt: row.last_sync_at ? (toIsoDateTime(row.last_sync_at) as CalendarSource['lastSyncAt']) : null,
+    nextSyncAt: row.next_sync_at ? (toIsoDateTime(row.next_sync_at) as CalendarSource['nextSyncAt']) : null,
+    lastError: row.last_error,
+    createdAt: toIsoDateTime(row.created_at) as CalendarSource['createdAt'],
+    updatedAt: toIsoDateTime(row.updated_at) as CalendarSource['updatedAt'],
+  };
 }

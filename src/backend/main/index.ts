@@ -42,6 +42,9 @@ void app.whenReady().then(async () => {
   const db = await initializeDatabase();
   migrate(db);
 
+  // Run post-migration v6 seeding (calendar from legacy icalUrl)
+  await repo.seedCalendarFromSettings();
+
   // Register all IPC handlers before creating windows
   registerIpcHandlers();
 

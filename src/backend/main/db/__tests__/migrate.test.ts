@@ -59,7 +59,7 @@ describe('migrate', () => {
     const row = queryOne<{ max_version: number }>(
       'SELECT MAX(version) AS max_version FROM schema_migrations',
     );
-    expect(row?.max_version).toBe(5);
+    expect(row?.max_version).toBe(6);
   });
 
   it('creates the pages table', () => {
@@ -100,6 +100,6 @@ describe('migrate', () => {
     const row = queryOne<{ max_version: number }>(
       'SELECT MAX(version) AS max_version FROM schema_migrations',
     );
-    expect(row?.max_version).toBe(5);
+    expect(row?.max_version).toBe(6);
   });
 });

@@ -24,6 +24,8 @@ import type {
   PageSearchResult,
   PriorityOrder,
   PriorityOrderInput,
+  CalendarSource,
+  CalendarSourceInput,
   ICalEvent,
   Settings,
   ImportResult,
@@ -466,6 +468,188 @@ const handlers: IpcHandlers = {
     }
   },
 
+  // ── Database: Calendar Sources ─────────────────────────────────────────
+
+  'db:calendars:list': (): Promise<IpcResult<CalendarSource[]>> => {
+    try {
+      return Promise.resolve(ok(repo.listCalendars()));
+    } catch (error) {
+      return Promise.resolve(
+        err(
+          `Failed to list calendars: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ),
+      );
+    }
+  },
+
+  'db:calendars:get': (id: string): Promise<IpcResult<CalendarSource | null>> => {
+    try {
+      const calendar = repo.getCalendar(id);
+      return Promise.resolve(ok(calendar));
+    } catch (error) {
+      return Promise.resolve(
+        err(
+          `Failed to get calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ),
+      );
+    }
+  },
+
+  'db:calendars:create': async (input: CalendarSourceInput): Promise<IpcResult<CalendarSource>> => {
+    try {
+      // Input validation
+      if (!input || typeof input !== 'object') {
+        return err('Invalid input: expected CalendarSourceInput object', 'VALIDATION_ERROR');
+      }
+      if (!input.name || typeof input.name !== 'string' || input.name.trim().length === 0) {
+        return err('name is required and must be a non-empty string', 'VALIDATION_ERROR');
+      }
+      if (!input.feedUrl || typeof input.feedUrl !== 'string' || input.feedUrl.trim().length === 0) {
+        return err('feedUrl is required and must be a non-empty string', 'VALIDATION_ERROR');
+      }
+      try {
+        new URL(input.feedUrl);
+      } catch {
+        return err('Invalid feedUrl format', 'VALIDATION_ERROR');
+      }
+      if (input.enabled !== undefined && typeof input.enabled !== 'boolean') {
+        return err('enabled must be a boolean', 'VALIDATION_ERROR');
+      }
+      if (input.color !== undefined && typeof input.color !== 'string') {
+        return err('color must be a string', 'VALIDATION_ERROR');
+      }
+      if (input.position !== undefined && (typeof input.position !== 'number' || !Number.isInteger(input.position) || input.position < 0)) {
+        return err('position must be a non-negative integer', 'VALIDATION_ERROR');
+      }
+
+      const calendar = await repo.createCalendar(input);
+      sendEventToRenderers('db:changed', { table: 'calendars', action: 'insert', id: calendar.id });
+      return ok(calendar);
+    } catch (error) {
+      return err(
+        `Failed to create calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  },
+
+  'db:calendars:update': async (input: CalendarSourceInput): Promise<IpcResult<CalendarSource>> => {
+    try {
+      // Input validation
+      if (!input || typeof input !== 'object') {
+        return err('Invalid input: expected CalendarSourceInput object', 'VALIDATION_ERROR');
+      }
+      if (!input.id || typeof input.id !== 'string' || input.id.trim().length === 0) {
+        return err('id is required and must be a non-empty string', 'VALIDATION_ERROR');
+      }
+      if (input.name !== undefined && (typeof input.name !== 'string' || input.name.trim().length === 0)) {
+        return err('name must be a non-empty string', 'VALIDATION_ERROR');
+      }
+      if (input.feedUrl !== undefined) {
+        if (typeof input.feedUrl !== 'string' || input.feedUrl.trim().length === 0) {
+          return err('feedUrl must be a non-empty string', 'VALIDATION_ERROR');
+        }
+        try {
+          new URL(input.feedUrl);
+        } catch {
+          return err('Invalid feedUrl format', 'VALIDATION_ERROR');
+        }
+      }
+      if (input.enabled !== undefined && typeof input.enabled !== 'boolean') {
+        return err('enabled must be a boolean', 'VALIDATION_ERROR');
+      }
+      if (input.color !== undefined && typeof input.color !== 'string') {
+        return err('color must be a string', 'VALIDATION_ERROR');
+      }
+      if (input.position !== undefined && (typeof input.position !== 'number' || !Number.isInteger(input.position) || input.position < 0)) {
+        return err('position must be a non-negative integer', 'VALIDATION_ERROR');
+      }
+
+      const calendar = await repo.updateCalendar(input.id, input);
+      sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id: calendar.id });
+      return ok(calendar);
+    } catch (error) {
+      return err(
+        `Failed to update calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  },
+
+  'db:calendars:delete': (id: string): Promise<IpcResult<void>> => {
+    try {
+      // Validate input
+      if (!id || typeof id !== 'string' || id.trim().length === 0) {
+        return err('id is required and must be a non-empty string', 'VALIDATION_ERROR');
+      }
+
+      repo.deleteCalendar(id);
+      sendEventToRenderers('db:changed', { table: 'calendars', action: 'delete', id });
+      return ok(undefined);
+    } catch (error) {
+      return err(
+        `Failed to delete calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  },
+
+  'db:calendars:reorder': (ids: string[]): Promise<IpcResult<void>> => {
+    try {
+      // Input validation: non-empty array of strings
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return Promise.resolve(
+          err('Expected non-empty array of calendar IDs', 'VALIDATION_ERROR'),
+        );
+      }
+      if (!ids.every((id) => typeof id === 'string' && id.length > 0)) {
+        return Promise.resolve(
+          err('All calendar IDs must be non-empty strings', 'VALIDATION_ERROR'),
+        );
+      }
+
+      repo.reorderCalendars(ids);
+
+      // Emit db:changed for each affected calendar with 'update' action
+      for (const calendarId of ids) {
+        sendEventToRenderers('db:changed', {
+          table: 'calendars',
+          action: 'update',
+          id: calendarId,
+        });
+      }
+
+      return Promise.resolve(ok(undefined));
+    } catch (error) {
+      return Promise.resolve(
+        err(
+          `Failed to reorder calendars: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'INTERNAL_ERROR',
+        ),
+      );
+    }
+  },
+
+  'db:calendars:setEnabled': async (input: { id: string; enabled: boolean }): Promise<IpcResult<CalendarSource>> => {
+    try {
+      // Input validation
+      if (!input || typeof input !== 'object') {
+        return err('Invalid input: expected { id: string; enabled: boolean }', 'VALIDATION_ERROR');
+      }
+      if (!input.id || typeof input.id !== 'string' || input.id.trim().length === 0) {
+        return err('id is required and must be a non-empty string', 'VALIDATION_ERROR');
+      }
+      if (typeof input.enabled !== 'boolean') {
+        return err('enabled must be a boolean', 'VALIDATION_ERROR');
+      }
+
+      const calendar = await repo.setCalendarEnabled(input.id, input.enabled);
+      sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id: calendar.id });
+      return ok(calendar);
+    } catch (error) {
+      return err(
+        `Failed to set calendar enabled: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  },
+
   // ── iCal Integration ───────────────────────────────────────────────────
 
   'ical:fetch': async (input: { url: string }): Promise<IpcResult<ICalEvent[]>> => {
@@ -532,6 +716,7 @@ const handlers: IpcHandlers = {
   'ical:import': async (input: {
     events: ICalEvent[];
     sourceUrl: string;
+    sourceId?: string;
   }): Promise<IpcResult<ImportResult>> => {
     try {
       // Validate input
@@ -541,12 +726,16 @@ const handlers: IpcHandlers = {
       if (!input.sourceUrl || typeof input.sourceUrl !== 'string') {
         return err('sourceUrl is required', 'VALIDATION_ERROR');
       }
+      if (input.sourceId !== undefined && typeof input.sourceId !== 'string') {
+        return err('sourceId must be a string', 'VALIDATION_ERROR');
+      }
 
       // Emit importing progress
       sendEventToRenderers('ical:progress', {
         stage: 'importing',
         progress: 10,
         message: 'Importing assignments...',
+        sourceId: input.sourceId,
       });
 
       // Map iCal events to assignments
@@ -554,20 +743,31 @@ const handlers: IpcHandlers = {
 
       // Import assignments with deduplication
       console.log('[ical:import] Import completed, updating lastSyncAt');
-      const result = repo.importAssignments(assignments);
+      const result = repo.importAssignments(assignments, input.sourceId);
       console.log('[ical:import] Import result:', result);
 
-      // Update lastSyncAt in settings on successful import
+      // Update lastSyncAt in settings on successful import (legacy)
+      // Also update the calendar source's last_sync_at
       const now = new Date().toISOString() as IsoDateTime;
+      const nowMs = Date.now();
       console.log('[ical:import] Setting lastSyncAt:', now);
       await repo.setSettings({ lastSyncAt: now });
       console.log('[ical:import] lastSyncAt updated');
+
+      // Update calendar source's last_sync_at if sourceId provided
+      if (input.sourceId) {
+        // Get sync interval from settings
+        const settings = await repo.getAllSettings();
+        const intervalMinutes = settings.syncIntervalMinutes ?? 15;
+        await repo.updateCalendarSyncTime(input.sourceId, nowMs, intervalMinutes);
+      }
 
       // Emit completion progress
       sendEventToRenderers('ical:progress', {
         stage: 'complete',
         progress: 100,
         message: `Imported ${result.imported}, updated ${result.updated}, skipped ${result.skipped}`,
+        sourceId: input.sourceId,
       });
 
       return ok(result);
@@ -575,7 +775,7 @@ const handlers: IpcHandlers = {
       // Emit error progress
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('[ical:import] Error:', error);
-      sendEventToRenderers('ical:progress', { stage: 'error', progress: 100, message });
+      sendEventToRenderers('ical:progress', { stage: 'error', progress: 100, message, sourceId: input.sourceId });
 
       return err(`Failed to import assignments: ${message}`, 'INTERNAL_ERROR');
     }

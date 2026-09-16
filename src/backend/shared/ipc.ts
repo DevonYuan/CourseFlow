@@ -22,10 +22,14 @@ import type {
   PriorityOrder,
   PriorityOrderInput,
   Settings,
+  CalendarSource,
+  CalendarSourceInput,
+  CalendarSourceUpdateInput,
   ICalEvent,
   SchedulerConfig,
   SchedulerStatus,
   IsoDateTime,
+  ImportResult,
 } from './types.js';
 
 /**
@@ -162,14 +166,44 @@ export interface IpcChannels {
     response: PriorityOrder;
   };
 
+  // ── Database: Calendar Sources ─────────────────────────────────────────
+  'db:calendars:list': {
+    request: void;
+    response: CalendarSource[];
+  };
+  'db:calendars:get': {
+    request: string; // id
+    response: CalendarSource | null;
+  };
+  'db:calendars:create': {
+    request: CalendarSourceInput;
+    response: CalendarSource;
+  };
+  'db:calendars:update': {
+    request: CalendarSourceUpdateInput;
+    response: CalendarSource;
+  };
+  'db:calendars:delete': {
+    request: string; // id
+    response: void;
+  };
+  'db:calendars:reorder': {
+    request: string[]; // ordered calendar IDs
+    response: void;
+  };
+  'db:calendars:setEnabled': {
+    request: { id: string; enabled: boolean };
+    response: CalendarSource;
+  };
+
   // ── iCal Integration ───────────────────────────────────────────────────
   'ical:fetch': {
     request: { url: string };
     response: ICalEvent[];
   };
   'ical:import': {
-    request: { events: ICalEvent[]; sourceUrl: string };
-    response: { imported: number; updated: number; skipped: number };
+    request: { events: ICalEvent[]; sourceUrl: string; sourceId?: string };
+    response: ImportResult;
   };
 
   // ── Settings ───────────────────────────────────────────────────────────
@@ -242,14 +276,17 @@ export interface IpcEvents {
     stage: 'fetching' | 'parsing' | 'importing' | 'complete' | 'error';
     progress: number;
     message?: string;
+    sourceId?: string; // Source ID for multi-calendar progress tracking
   };
   'settings:changed': Settings;
   'scheduler:tick': {
     nextRun: IsoDateTime;
+    sourceId?: string; // Source ID for multi-calendar scheduling
   };
   'scheduler:error': {
     message: string;
     code: 'network' | 'auth' | 'parse' | 'server' | 'unknown';
+    sourceId?: string; // Source ID for multi-calendar error tracking
   };
   'scheduler:coalesced': {
     message: string;

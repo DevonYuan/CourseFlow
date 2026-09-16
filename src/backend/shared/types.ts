@@ -253,6 +253,50 @@ export interface Settings {
 }
 
 /**
+ * CalendarSource — a single iCal feed configuration (multi-calendar support).
+ * Each source has its own encrypted feed URL, sync state, and display properties.
+ */
+export interface CalendarSource {
+  id: EntityId;
+  name: string;
+  feedUrl: string; // Encrypted JSON envelope (same format as settings.icalUrl)
+  enabled: boolean;
+  color: string; // Hex color, e.g., "#3b82f6"
+  position: number; // Display order (0 = top)
+  lastSyncAt: IsoDateTime | null; // ISO 8601, updated on successful import
+  nextSyncAt: IsoDateTime | null; // ISO 8601, calculated from interval
+  lastError: string | null;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}
+
+/**
+ * Input for creating a new calendar source.
+ * feedUrl is the plaintext iCal URL — will be encrypted in the repository.
+ */
+export interface CalendarSourceInput {
+  name: string;
+  feedUrl: string; // Plaintext iCal URL
+  enabled?: boolean; // Default: true
+  color?: string; // Default: deterministic hash from name
+  position?: number; // Default: append to end
+}
+
+/**
+ * Input for updating an existing calendar source.
+ * All fields optional; id is required to identify the source.
+ * feedUrl is plaintext — will be encrypted in the repository.
+ */
+export interface CalendarSourceUpdateInput {
+  id: EntityId;
+  name?: string;
+  feedUrl?: string; // Plaintext iCal URL
+  enabled?: boolean;
+  color?: string;
+  position?: number;
+}
+
+/**
  * Result of an iCal import operation with deduplication.
  */
 export interface ImportResult {
@@ -352,6 +396,20 @@ export interface DbPage {
   created_at: number;
   updated_at: number;
   created_by: string | null;
+}
+
+export interface DbCalendarSource {
+  id: string;
+  name: string;
+  feed_url: string; // Encrypted JSON envelope
+  enabled: number; // 0/1
+  color: string;
+  position: number;
+  last_sync_at: number | null;
+  next_sync_at: number | null;
+  last_error: string | null;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DbPriorityOrder {

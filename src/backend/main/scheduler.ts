@@ -1,10 +1,11 @@
 /**
  * Auto-Fetch Scheduler — Main Process
  *
- * Periodically fetches and imports iCal data based on user settings.
- * Runs in the Electron main process using setInterval.
+ * Periodically fetches and imports iCal data from multiple calendar sources
+ * based on user settings. Runs in the Electron main process using setInterval.
  * Handles sleep/wake via power-monitor for accurate scheduling.
  * Implements retry logic with exponential backoff and error classification.
+ * Each calendar source is synced independently — a failure on one never blocks others.
  *
  * @module @backend/main/scheduler
  */
@@ -12,7 +13,7 @@
 import type { BrowserWindow } from 'electron';
 import { powerMonitor } from 'electron';
 
-import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus } from '../shared/types.js';
+import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus, CalendarSource } from '../shared/types.js';
 
 import { repo } from './db/repository.js';
 import { sendEventToRenderers, emitSchedulerTick, emitSchedulerError } from './events.js';
@@ -26,12 +27,14 @@ import {
   ICalParseError,
 } from './ical/index.js';
 import { DecryptionError } from './security/encryption.js';
+import { decryptIcalUrl } from './security/encryption.js';
 
 /**
  * Scheduler — Background auto-fetch scheduler for iCal sync.
  *
  * Manages a single setInterval timer with sleep/wake awareness.
  * Emits scheduler:tick and scheduler:error events for UI updates.
+ * Iterates over all enabled calendar sources on each cycle.
  */
 export class Scheduler {
   private intervalId: NodeJS.Timeout | null = null;
@@ -49,7 +52,7 @@ export class Scheduler {
   private suspendTime: number | null = null;
   private mainWindow: BrowserWindow | null = null;
 
-  // Retry state for current tick
+  // Retry state for current source
   private retryCount = 0;
   private readonly maxRetries = 3;
   private readonly retryDelaysMs = [60_000, 120_000, 240_000]; // 1min, 2min, 4min
@@ -218,7 +221,7 @@ export class Scheduler {
   }
 
   /**
-   * Triggers an immediate fetch cycle (for "Sync Now" button).
+   * Triggers an immediate fetch cycle for all enabled sources (for "Sync Now" button).
    * Does not affect the regular interval schedule.
    * If a fetch is already in progress, ignores the request and emits a coalesced event.
    */
@@ -235,7 +238,7 @@ export class Scheduler {
     if (!this.currentSettings) {
       console.warn('[Scheduler] No settings available for manual trigger');
       sendEventToRenderers('scheduler:error', {
-        message: 'No iCal URL configured — check Settings',
+        message: 'No calendar sources configured — check Settings',
         code: 'auth',
       });
       return;
@@ -257,7 +260,7 @@ export class Scheduler {
   /**
    * Updates the scheduler with new settings.
    * Restarts the interval if sync-relevant settings have changed.
-   * Resumes scheduler if it was paused and iCal URL is now valid.
+   * Resumes scheduler if it was paused and calendar sources are now valid.
    *
    * @param settings - New application settings
    */
@@ -266,23 +269,16 @@ export class Scheduler {
     const newInterval = settings.syncIntervalMinutes;
     const oldAutoFetch = this.currentSettings?.autoFetchIcal ?? false;
     const newAutoFetch = settings.autoFetchIcal;
-    const urlChanged = this.currentSettings?.icalUrl !== settings.icalUrl;
-    const wasPaused = this.isPaused;
 
     this.currentSettings = settings;
-
-    // If scheduler was paused and URL changed to a non-empty value, resume
-    if (wasPaused && urlChanged && settings.icalUrl) {
-      this.resumeScheduler();
-    }
 
     // Check if scheduling-relevant settings changed
     const intervalChanged = oldInterval !== newInterval;
     const autoFetchChanged = oldAutoFetch !== newAutoFetch;
 
-    if (intervalChanged || autoFetchChanged || urlChanged) {
+    if (intervalChanged || autoFetchChanged) {
       console.log('[Scheduler] Settings changed, restarting scheduler');
-      if (newAutoFetch && newInterval > 0 && settings.icalUrl) {
+      if (newAutoFetch && newInterval > 0) {
         this.start(newInterval);
       } else {
         this.stop();
@@ -291,8 +287,8 @@ export class Scheduler {
   }
 
   /**
-   * Performs a single fetch-and-import cycle with retry logic.
-   * Uses the existing ical:fetch → ical:import pipeline logic.
+   * Performs a single fetch-and-import cycle for ALL enabled calendar sources.
+   * Each source is processed independently with its own retry logic.
    * Guarded by isRunning flag to prevent overlapping runs.
    */
   private async runFetchCycle(): Promise<void> {
@@ -306,18 +302,13 @@ export class Scheduler {
       return;
     }
 
-    const { autoFetchIcal, syncIntervalMinutes, icalUrl } = this.currentSettings;
+    const { autoFetchIcal, syncIntervalMinutes } = this.currentSettings;
 
     // For manual triggers, allow running even if autoFetchIcal is false
     // But for scheduled runs, respect the autoFetchIcal setting
     const isScheduledRun = this.intervalId !== null;
-    if (isScheduledRun && (!autoFetchIcal || syncIntervalMinutes <= 0 || !icalUrl)) {
+    if (isScheduledRun && (!autoFetchIcal || syncIntervalMinutes <= 0)) {
       console.log('[Scheduler] Auto-fetch disabled or not configured, skipping scheduled run');
-      return;
-    }
-
-    if (!icalUrl) {
-      console.warn('[Scheduler] No iCal URL configured, skipping fetch cycle');
       return;
     }
 
@@ -326,8 +317,14 @@ export class Scheduler {
       return;
     }
 
+    // Get all enabled calendar sources
+    const calendars = repo.listCalendars().filter((c) => c.enabled);
+    if (calendars.length === 0) {
+      console.warn('[Scheduler] No enabled calendar sources, skipping fetch cycle');
+      return;
+    }
+
     this.isRunning = true;
-    this.retryCount = 0;
     const now = new Date().toISOString() as IsoDateTime;
     this.config = {
       ...this.config,
@@ -336,104 +333,153 @@ export class Scheduler {
     };
 
     this.emitTick();
-    console.log('[Scheduler] Starting fetch cycle (attempt 1/4)');
+    console.log(`[Scheduler] Starting fetch cycle for ${calendars.length} source(s)`);
 
-    await this.fetchAndImport(icalUrl, syncIntervalMinutes);
+    // Process each calendar source sequentially
+    for (const calendar of calendars) {
+      // Check if scheduler was stopped/paused during processing
+      if (this.isPaused || !this.isRunning) {
+        console.log('[Scheduler] Stopped/paused during cycle, aborting remaining sources');
+        break;
+      }
 
-    // isRunning will be set to false by onFetchSuccess or pauseScheduler when retries are exhausted
-    // Don't set it here because fetchAndImport may schedule retries that need isRunning to be true
+      await this.fetchAndImportForSource(calendar, syncIntervalMinutes);
+    }
+
+    // Mark cycle complete
+    this.isRunning = false;
+    this.emitTick();
   }
 
   /**
-   * Core fetch and import logic with retry handling.
-   * Called by runFetchCycle and handles retries internally.
+   * Core fetch and import logic for a single calendar source with retry handling.
    *
-   * @param icalUrl - The decrypted iCal feed URL
+   * @param calendar - The calendar source to sync
    * @param syncIntervalMinutes - Sync interval for next run calculation
    */
-  private async fetchAndImport(icalUrl: string, syncIntervalMinutes: number): Promise<void> {
+  private async fetchAndImportForSource(
+    calendar: CalendarSource,
+    syncIntervalMinutes: number,
+  ): Promise<void> {
+    this.retryCount = 0;
+
+    try {
+      // Decrypt the feed URL
+      let feedUrl: string;
+      try {
+        const parsed = JSON.parse(calendar.feedUrl);
+        feedUrl = await decryptIcalUrl(parsed);
+      } catch {
+        console.error(`[Scheduler] Failed to decrypt feed URL for calendar ${calendar.id}`);
+        this.emitErrorForSource(calendar.id, 'Failed to decrypt feed URL', 'auth');
+        await repo.updateCalendarError(calendar.id, 'Failed to decrypt feed URL');
+        return;
+      }
+
+      await this.fetchWithRetries(calendar, feedUrl, syncIntervalMinutes);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[Scheduler] Unexpected error for calendar ${calendar.id}:`, message);
+      this.emitErrorForSource(calendar.id, message, 'unknown');
+      await repo.updateCalendarError(calendar.id, message);
+    }
+  }
+
+  /**
+   * Performs fetch with retry logic for a single source.
+   */
+  private async fetchWithRetries(
+    calendar: CalendarSource,
+    feedUrl: string,
+    syncIntervalMinutes: number,
+  ): Promise<void> {
     const attemptNumber = this.retryCount + 1;
-    const maxAttempts = this.maxRetries + 1; // 1 initial + 3 retries
+    const maxAttempts = this.maxRetries + 1;
 
     try {
       // Emit progress: fetching
-      this.emitProgress(
+      this.emitProgressForSource(
+        calendar.id,
         'fetching',
         10,
-        `Fetching calendar... (attempt ${attemptNumber}/${maxAttempts})`,
+        `Fetching "${calendar.name}"... (attempt ${attemptNumber}/${maxAttempts})`,
       );
 
       // Fetch iCal feed with 30s timeout, no internal retries (scheduler handles retries)
-      const icalText = await fetchICalFeed(icalUrl, { timeoutMs: 30_000, maxRetries: 1 });
+      const icalText = await fetchICalFeed(feedUrl, { timeoutMs: 30_000, maxRetries: 1 });
 
       // Emit progress: parsing
-      this.emitProgress('parsing', 30, 'Parsing events...');
+      this.emitProgressForSource(calendar.id, 'parsing', 30, 'Parsing events...');
 
       // Parse iCal feed
       const events = parseICalFeed(icalText);
 
       if (events.length === 0) {
-        this.emitProgress('complete', 100, 'No events found');
-        this.onFetchSuccess(0, 0, 0, syncIntervalMinutes);
+        this.emitProgressForSource(calendar.id, 'complete', 100, 'No events found');
+        await this.onFetchSuccessForSource(calendar, 0, 0, 0, syncIntervalMinutes);
         return;
       }
 
       // Emit progress: importing
-      this.emitProgress('importing', 50, 'Importing assignments...');
+      this.emitProgressForSource(calendar.id, 'importing', 50, 'Importing assignments...');
 
       // Map iCal events to assignments
-      const assignments = mapICalToAssignments(events, icalUrl);
+      const assignments = mapICalToAssignments(events, feedUrl);
 
-      // Import assignments with deduplication (preserves priority/notes/subtasks)
-      const result = repo.importAssignments(assignments);
+      // Import assignments with deduplication (per-source, preserves priority/notes/subtasks)
+      const result = repo.importAssignments(assignments, calendar.id);
 
-      // Update lastSyncAt in settings on successful import
-      const syncNow = new Date().toISOString() as IsoDateTime;
-      await repo.setSettings({ lastSyncAt: syncNow });
+      // Update calendar source's last_sync_at and next_sync_at
+      const syncNow = Date.now();
+      await repo.updateCalendarSyncTime(calendar.id, syncNow, syncIntervalMinutes);
 
-      this.onFetchSuccess(result.imported, result.updated, result.skipped, syncIntervalMinutes);
+      // Also update legacy settings for backward compatibility
+      await repo.setSettings({ lastSyncAt: new Date(syncNow).toISOString() as IsoDateTime });
+
+      await this.onFetchSuccessForSource(
+        calendar,
+        result.imported,
+        result.updated,
+        result.skipped,
+        syncIntervalMinutes,
+      );
     } catch (error) {
-      await this.handleFetchError(error, icalUrl, syncIntervalMinutes);
+      await this.handleFetchErrorForSource(error, calendar, feedUrl, syncIntervalMinutes);
     }
   }
 
   /**
-   * Handles successful fetch and import.
+   * Handles successful fetch and import for a single source.
    *
+   * @param calendar - The calendar source
    * @param imported - Number of newly imported assignments
    * @param updated - Number of updated assignments
    * @param skipped - Number of skipped assignments
    * @param syncIntervalMinutes - Sync interval for next run calculation
    */
-  private onFetchSuccess(
+  private async onFetchSuccessForSource(
+    calendar: CalendarSource,
     imported: number,
     updated: number,
     skipped: number,
     syncIntervalMinutes: number,
-  ): void {
+  ): Promise<void> {
     const syncNow = new Date().toISOString() as IsoDateTime;
-
-    // Update scheduler config
-    this.config = {
-      ...this.config,
-      lastRun: syncNow,
-      nextRun: new Date(Date.now() + syncIntervalMinutes * 60 * 1000).toISOString() as IsoDateTime,
-    };
 
     // Reset retry state on success
     this.retryCount = 0;
     this.lastError = null;
-    this.isRunning = false;
 
     // Emit completion progress
-    this.emitProgress(
+    this.emitProgressForSource(
+      calendar.id,
       'complete',
       100,
-      `Imported ${imported}, updated ${updated}, skipped ${skipped}`,
+      `"${calendar.name}": imported ${imported}, updated ${updated}, skipped ${skipped}`,
     );
 
-    // Emit tick with updated nextRun
-    this.emitTick();
+    // Update calendar's last_error to null on success
+    await repo.updateCalendarError(calendar.id, null);
 
     // Structured logging
     console.log(
@@ -442,24 +488,28 @@ export class Scheduler {
         level: 'info',
         component: 'scheduler',
         event: 'fetch_success',
+        sourceId: calendar.id,
+        sourceName: calendar.name,
         imported,
         updated,
         skipped,
-        nextRun: this.config.nextRun,
       }),
     );
   }
 
   /**
-   * Handles fetch/import errors with classification and retry logic.
+   * Handles fetch/import errors for a single source with classification and retry logic.
+   * Errors on one source never block other sources.
    *
    * @param error - The error that occurred
-   * @param icalUrl - The iCal feed URL
+   * @param calendar - The calendar source
+   * @param feedUrl - The decrypted feed URL
    * @param syncIntervalMinutes - Sync interval for next run calculation
    */
-  private async handleFetchError(
+  private async handleFetchErrorForSource(
     error: unknown,
-    icalUrl: string,
+    calendar: CalendarSource,
+    feedUrl: string,
     syncIntervalMinutes: number,
   ): Promise<void> {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -474,6 +524,8 @@ export class Scheduler {
         level: 'error',
         component: 'scheduler',
         event: 'fetch_error',
+        sourceId: calendar.id,
+        sourceName: calendar.name,
         attempt: this.retryCount + 1,
         maxAttempts: this.maxRetries + 1,
         errorCode: classification.code,
@@ -483,31 +535,33 @@ export class Scheduler {
       }),
     );
 
-    // Update last error
+    // Update calendar's last_error
     this.lastError = message;
-    this.config = {
-      ...this.config,
-      lastRun: new Date().toISOString() as IsoDateTime,
-    };
+    await repo.updateCalendarError(calendar.id, message);
 
     // Emit error progress
-    this.emitProgress('error', 100, `Fetch failed: ${classification.userMessage}`);
+    this.emitProgressForSource(
+      calendar.id,
+      'error',
+      100,
+      `"${calendar.name}": ${classification.userMessage}`,
+    );
 
-    // Emit scheduler error event
-    this.emitError(classification.userMessage, classification.code);
+    // Emit scheduler error event with sourceId
+    this.emitErrorForSource(calendar.id, classification.userMessage, classification.code);
 
     if (classification.retryable && this.retryCount < this.maxRetries) {
       // Schedule retry with exponential backoff
       const delayMs = (this.retryDelaysMs[this.retryCount] ?? this.retryDelaysMs.at(-1)) as number;
       this.retryCount++;
       console.log(
-        `[Scheduler] Scheduling retry ${this.retryCount}/${this.maxRetries} in ${delayMs / 1000}s`,
+        `[Scheduler] Scheduling retry ${this.retryCount}/${this.maxRetries} for "${calendar.name}" in ${delayMs / 1000}s`,
       );
 
       this.retryTimer = setTimeout(() => {
         this.retryTimer = null;
         if (!this.isPaused && this.isRunning) {
-          void this.fetchAndImport(icalUrl, syncIntervalMinutes);
+          void this.fetchWithRetries(calendar, feedUrl, syncIntervalMinutes);
         }
       }, delayMs);
 
@@ -515,8 +569,10 @@ export class Scheduler {
         this.retryTimer.unref();
       }
     } else {
-      // Max retries exhausted or non-retryable error - pause scheduler
-      this.pauseScheduler(classification.userMessage);
+      // Max retries exhausted or non-retryable error - mark this source as failed but continue
+      console.log(`[Scheduler] Source "${calendar.name}" failed permanently: ${classification.userMessage}`);
+      // Don't pause the entire scheduler - just this source's sync is done for this cycle
+      // The source will be retried on the next scheduled cycle
     }
   }
 
@@ -548,7 +604,7 @@ export class Scheduler {
         return {
           code: 'auth',
           retryable: false,
-          userMessage: 'iCal URL invalid or expired — check Settings',
+          userMessage: 'Calendar URL invalid or expired — check Settings',
         };
       }
       // 404/5xx → server error, retryable
@@ -563,7 +619,7 @@ export class Scheduler {
       return {
         code: 'auth',
         retryable: false,
-        userMessage: 'iCal URL invalid or expired — check Settings',
+        userMessage: 'Calendar URL invalid or expired — check Settings',
       };
     }
 
@@ -581,7 +637,7 @@ export class Scheduler {
       return {
         code: 'auth',
         retryable: false,
-        userMessage: 'Failed to decrypt iCal URL — check Settings',
+        userMessage: 'Failed to decrypt calendar URL — check Settings',
       };
     }
 
@@ -594,8 +650,8 @@ export class Scheduler {
   }
 
   /**
-   * Pauses the scheduler due to a non-retryable error.
-   * Requires user action (update URL) to resume.
+   * Pauses the scheduler due to a non-retryable error affecting ALL sources.
+   * This is now rare since errors are per-source.
    *
    * @param reason - The reason for pausing
    */
@@ -621,7 +677,7 @@ export class Scheduler {
 
   /**
    * Resumes the scheduler after being paused.
-   * Called when settings are updated with a valid iCal URL.
+   * Called when settings are updated with valid calendar sources.
    */
   private resumeScheduler(): void {
     if (!this.isPaused) return;
@@ -745,18 +801,31 @@ export class Scheduler {
   }
 
   /**
-   * Emits ical:progress event to all renderer windows.
-   *
-   * @param stage - Progress stage
-   * @param progress - Progress percentage (0-100)
-   * @param message - Optional message
+   * Emits scheduler:error event with sourceId for multi-calendar tracking.
    */
-  private emitProgress(
+  private emitErrorForSource(
+    sourceId: string,
+    message: string,
+    code: 'network' | 'auth' | 'parse' | 'server' | 'unknown',
+  ): void {
+    // Extend the event with sourceId
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) {
+        window.webContents.send('scheduler:error', { message, code, sourceId });
+      }
+    }
+  }
+
+  /**
+   * Emits ical:progress event to all renderer windows with sourceId.
+   */
+  private emitProgressForSource(
+    sourceId: string,
     stage: 'fetching' | 'parsing' | 'importing' | 'complete' | 'error',
     progress: number,
     message?: string,
   ): void {
-    sendEventToRenderers('ical:progress' as const, { stage, progress, message });
+    sendEventToRenderers('ical:progress' as const, { stage, progress, message, sourceId });
   }
 }
 
@@ -798,45 +867,22 @@ export function __resetScheduler(): void {
 export function startScheduler(settings: Settings): void {
   const scheduler = getScheduler();
   scheduler.updateSettings(settings);
-  if (settings.autoFetchIcal && settings.syncIntervalMinutes > 0 && settings.icalUrl) {
-    scheduler.start(settings.syncIntervalMinutes);
-  }
+}
+
+/**
+ * Updates the scheduler with new settings (backward compatibility function).
+ *
+ * @param settings - Application settings
+ */
+export function updateScheduler(settings: Settings): void {
+  const scheduler = getScheduler();
+  scheduler.updateSettings(settings);
 }
 
 /**
  * Stops the scheduler (backward compatibility function).
  */
 export function stopScheduler(): void {
-  if (schedulerInstance) {
-    schedulerInstance.stop();
-  }
-}
-
-/**
- * Updates the scheduler with new settings (backward compatibility function).
- *
- * @param settings - New application settings
- */
-export function updateScheduler(settings: Settings): void {
-  if (schedulerInstance) {
-    schedulerInstance.updateSettings(settings);
-  }
-}
-
-/**
- * Gets the current scheduler status (backward compatibility function).
- *
- * @returns SchedulerStatus
- */
-export function getSchedulerStatus(): SchedulerStatus {
-  if (schedulerInstance) {
-    return schedulerInstance.getStatus();
-  }
-  return {
-    running: false,
-    intervalMinutes: 15,
-    lastRun: null,
-    nextRun: null,
-    lastError: null,
-  };
+  const scheduler = getScheduler();
+  scheduler.stop();
 }

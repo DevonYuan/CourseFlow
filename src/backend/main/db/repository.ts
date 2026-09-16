@@ -26,12 +26,15 @@ import type {
   PriorityOrder,
   PriorityOrderInput,
   Settings,
+  CalendarSource,
+  CalendarSourceInput,
   DbAssignment,
   DbSubTask,
   DbNote,
   DbPage,
   DbPriorityOrder,
   DbSettings,
+  DbCalendarSource,
   ImportResult,
 } from '../../shared/types.js';
 import { sendEventToRenderers } from '../events.js';
@@ -571,47 +574,61 @@ export const repo = {
   },
 
   /**
-   * Import assignments with deduplication by ical_uid.
-   * Matches existing assignments by ical_uid and applies conflict resolution:
+   * Import assignments with deduplication by (source_id, ical_uid).
+   * Matches existing assignments by ical_uid within the same source and applies conflict resolution:
    * - New ical_uid → INSERT (counted as imported)
    * - Existing ical_uid with newer updatedAt → UPDATE (counted as updated)
    * - Existing ical_uid with older/equal updatedAt → SKIP (counted as skipped)
    *
    * On UPDATE, preserves user-edited fields: status (if completed or archived), priority, course_color, notes, subtasks.
    * Updates from Canvas: due_at, title, workflow_state, description.
-   * Prunes stale `ical` rows (not in this batch) that the user hasn't completed/archived,
+   * Prunes stale `ical` rows (not in this batch) FOR THE GIVEN SOURCE ONLY that the user hasn't completed/archived,
    * keeping the DB in sync with the feed + mapper window.
    * Emits db:changed events for each insert/update/delete.
    * Transactional — all or nothing.
+   *
+   * @param inputs - Assignment inputs to import
+   * @param sourceId - Optional calendar source ID to scope dedupe/prune. If not provided, falls back to global behavior.
    */
-  importAssignments(inputs: AssignmentInput[]): ImportResult {
+  importAssignments(inputs: AssignmentInput[], sourceId?: string): ImportResult {
     const now = Date.now();
     const result: ImportResult = { imported: 0, skipped: 0, updated: 0 };
 
     // Prepared statements for performance
     const db = getDatabase();
 
+    // Select by (source_id, ical_uid) for per-source dedupe
     const selectStmt = db.prepare(
+      'SELECT id, description, status, updated_at FROM assignments WHERE ical_uid = ? AND (source_id = ? OR (source_id IS NULL AND source_url = (SELECT feed_url FROM calendars WHERE id = ?)))',
+    );
+    // For backward compat, also check by ical_uid alone when sourceId not provided
+    const selectStmtGlobal = db.prepare(
       'SELECT id, description, status, updated_at FROM assignments WHERE ical_uid = ?',
     );
+
     const insertStmt = db.prepare(`
       INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at, unlock_at, lock_at,
-        points_possible, submission_types, workflow_state, html_url, ical_uid, status, source, source_url, rrule, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        points_possible, submission_types, workflow_state, html_url, ical_uid, status, source, source_url, rrule, source_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const updateStmt = db.prepare(`
       UPDATE assignments SET
         title = ?, due_at = ?, workflow_state = ?, html_url = ?, points_possible = ?,
-        submission_types = ?, unlock_at = ?, lock_at = ?, rrule = ?, source = ?, source_url = ?, status = ?, updated_at = ?, description = ?
+        submission_types = ?, unlock_at = ?, lock_at = ?, rrule = ?, source = ?, source_url = ?, source_id = ?, status = ?, updated_at = ?, description = ?
       WHERE id = ?
     `);
-    const staleStmt = db.prepare(
-      "SELECT id, ical_uid FROM assignments WHERE source = 'ical' AND status NOT IN ('completed', 'archived')",
-    );
+    // Prune only rows for this source (or global if no sourceId)
+    const staleStmt = sourceId
+      ? db.prepare(
+          "SELECT id, ical_uid FROM assignments WHERE source = 'ical' AND status NOT IN ('completed', 'archived') AND source_id = ?",
+        )
+      : db.prepare(
+          "SELECT id, ical_uid FROM assignments WHERE source = 'ical' AND status NOT IN ('completed', 'archived')",
+        );
     const deleteStmt = db.prepare('DELETE FROM assignments WHERE id = ?');
 
     exec('BEGIN TRANSACTION', false);
-    console.log('[importAssignments] Transaction started, inputs:', inputs.length);
+    console.log('[importAssignments] Transaction started, inputs:', inputs.length, 'sourceId:', sourceId);
     try {
       // Track ical_uids seen in this batch to handle duplicates within the same import
       // (e.g., recurring events in Google Calendar share the same UID)
@@ -630,10 +647,17 @@ export const repo = {
           continue;
         }
 
-        // Check if assignment with this ical_uid exists
-        selectStmt.bind([icalUid]);
-        const existing = selectStmt.step() ? selectStmt.getAsObject() : null;
-        selectStmt.reset();
+        // Check if assignment with this ical_uid exists (scoped to source)
+        let existing: Record<string, unknown> | null = null;
+        if (sourceId) {
+          selectStmt.bind([icalUid, sourceId, sourceId]);
+          existing = selectStmt.step() ? selectStmt.getAsObject() : null;
+          selectStmt.reset();
+        } else {
+          selectStmtGlobal.bind([icalUid]);
+          existing = selectStmtGlobal.step() ? selectStmtGlobal.getAsObject() : null;
+          selectStmtGlobal.reset();
+        }
 
         const incomingUpdatedAt = input.updatedAt ? new Date(input.updatedAt).getTime() : now;
 
@@ -663,6 +687,7 @@ export const repo = {
               input.rrule ?? toNullable(existing['rrule']), // rrule
               input.source ?? existing['source'] ?? 'ical', // source
               input.sourceUrl ?? toNullable(existing['source_url']), // source_url
+              sourceId ?? toNullable(existing['source_id']), // source_id
               input.status ?? existingStatus, // status (may be restored below if protected)
               now, // updated_at
               input.description ?? existing['description'] ?? '', // description (from Canvas)
@@ -719,6 +744,7 @@ export const repo = {
             dbRow.source ?? 'ical',
             dbRow.source_url ?? null,
             dbRow.rrule ?? null,
+            sourceId ?? null, // source_id
             dbRow.created_at ?? now,
             dbRow.updated_at ?? now,
           ]);
@@ -751,6 +777,10 @@ export const repo = {
       //      that have now been replaced by expanded per-occurrence rows.
       // Delete them so the list always mirrors the calendar. Rows the user
       // explicitly marked completed/archived are preserved.
+      // SCOPE: Only prune rows for the given sourceId (or all if not provided).
+      if (sourceId) {
+        staleStmt.bind([sourceId]);
+      }
       while (staleStmt.step()) {
         const stale = staleStmt.getAsObject() as { id: string; ical_uid: string };
         if (!seenIcalUids.has(stale.ical_uid)) {
@@ -779,7 +809,11 @@ export const repo = {
     } finally {
       staleStmt.free();
       deleteStmt.free();
-      selectStmt.free();
+      if (sourceId) {
+        selectStmt.free();
+      } else {
+        selectStmtGlobal.free();
+      }
       insertStmt.free();
       updateStmt.free();
     }
@@ -1490,5 +1524,259 @@ export const repo = {
     }
 
     return defaults;
+  },
+
+  // --- Calendar Sources ---
+
+  /**
+   * Run post-migration v6 seeding:
+   * - If settings.icalUrl exists and calendars table is empty, create a CalendarSource from it
+   * - Backfill assignments.source_id by matching source_url to the calendar's feed_url
+   */
+  async seedCalendarFromSettings(): Promise<void> {
+    const db = getDatabase();
+
+    // Check if calendars table exists and has any rows
+    const calendarCount = get<{ count: number }>('SELECT COUNT(*) as count FROM calendars');
+    if (calendarCount && calendarCount.count > 0) {
+      return; // Already seeded
+    }
+
+    // Get the legacy icalUrl from settings
+    const icalUrlRow = get<{ value: string }>("SELECT value FROM settings WHERE key = 'icalUrl'");
+    if (!icalUrlRow) {
+      return; // No legacy URL to migrate
+    }
+
+    let legacyUrl: string;
+    try {
+      const parsed = JSON.parse(icalUrlRow.value);
+      if (isEncryptedSetting(parsed)) {
+        legacyUrl = await decryptIcalUrl(parsed);
+      } else {
+        // Plaintext (shouldn't happen but handle anyway)
+        legacyUrl = parsed as string;
+      }
+    } catch {
+      return; // Invalid settings, skip seeding
+    }
+
+    if (!legacyUrl || legacyUrl.trim().length === 0) {
+      return; // Empty URL, nothing to seed
+    }
+
+    // Create the calendar source
+    const now = Date.now();
+    const calendarId = randomUUID();
+    const encrypted = await encryptIcalUrl(legacyUrl);
+    const feedUrl = JSON.stringify(encrypted);
+
+    // Deterministic color from name
+    const name = 'Primary Calendar';
+    const color = '#3b82f6'; // Blue default
+
+    run(
+      `INSERT INTO calendars (id, name, feed_url, enabled, color, position, last_sync_at, next_sync_at, last_error, created_at, updated_at)
+       VALUES (?, ?, ?, 1, ?, 0, NULL, NULL, NULL, ?, ?)`,
+      [calendarId, name, feedUrl, color, now, now],
+    );
+
+    // Backfill assignments.source_id for ical assignments matching this feed URL
+    run(
+      `UPDATE assignments SET source_id = ? WHERE source = 'ical' AND source_url = ?`,
+      [calendarId, legacyUrl],
+    );
+
+    // Also update any assignments that have source='ical' but no source_url (edge case)
+    // They should also belong to this calendar
+    run(
+      `UPDATE assignments SET source_id = ? WHERE source = 'ical' AND source_id IS NULL AND source_url IS NULL`,
+      [calendarId],
+    );
+  },
+
+  /**
+   * List all calendar sources ordered by position.
+   */
+  listCalendars(): CalendarSource[] {
+    const rows = all<DbCalendarSource>('SELECT * FROM calendars ORDER BY position ASC');
+    return rows.map(mapDbCalendarSourceToCalendarSource);
+  },
+
+  /**
+   * Get a single calendar source by ID.
+   */
+  getCalendar(id: string): CalendarSource | null {
+    const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
+    return row ? mapDbCalendarSourceToCalendarSource(row) : null;
+  },
+
+  /**
+   * Create a new calendar source.
+   * feedUrl is plaintext — will be encrypted before storage.
+   */
+  async createCalendar(input: CalendarSourceInput): Promise<CalendarSource> {
+    const now = Date.now();
+    const id = randomUUID();
+
+    // Determine position (append to end if not specified)
+    let position = input.position ?? 0;
+    if (input.position === undefined) {
+      const maxPosRow = get<{ max_pos: number }>(
+        'SELECT COALESCE(MAX(position), -1) + 1 as max_pos FROM calendars',
+      );
+      position = maxPosRow?.max_pos ?? 0;
+    }
+
+    // Deterministic color from name if not provided
+    let color = input.color ?? '#3b82f6';
+    if (input.color === undefined) {
+      // Simple hash-based color generation
+      const colors = [
+        '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#a855f7',
+        '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+      ];
+      let hash = 0;
+      for (let i = 0; i < input.name.length; i++) {
+        hash = input.name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      color = colors[Math.abs(hash) % colors.length];
+    }
+
+    // Encrypt the feed URL
+    const encrypted = await encryptIcalUrl(input.feedUrl);
+    const feedUrl = JSON.stringify(encrypted);
+
+    run(
+      `INSERT INTO calendars (id, name, feed_url, enabled, color, position, last_sync_at, next_sync_at, last_error, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?)`,
+      [id, input.name, feedUrl, input.enabled ?? 1, color, position, now, now],
+    );
+
+    const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
+    if (!row) throw new Error('Failed to retrieve created calendar');
+    return mapDbCalendarSourceToCalendarSource(row);
+  },
+
+  /**
+   * Update a calendar source by ID.
+   * feedUrl is plaintext — will be encrypted before storage.
+   */
+  async updateCalendar(id: string, input: CalendarSourceInput): Promise<CalendarSource> {
+    const now = Date.now();
+    const setParts: string[] = [];
+    const params: (string | number | null)[] = [];
+
+    if (input.name !== undefined) {
+      setParts.push('name = ?');
+      params.push(input.name);
+    }
+    if (input.feedUrl !== undefined) {
+      const encrypted = await encryptIcalUrl(input.feedUrl);
+      setParts.push('feed_url = ?');
+      params.push(JSON.stringify(encrypted));
+    }
+    if (input.enabled !== undefined) {
+      setParts.push('enabled = ?');
+      params.push(input.enabled ? 1 : 0);
+    }
+    if (input.color !== undefined) {
+      setParts.push('color = ?');
+      params.push(input.color);
+    }
+    if (input.position !== undefined) {
+      setParts.push('position = ?');
+      params.push(input.position);
+    }
+
+    setParts.push('updated_at = ?');
+    params.push(now, id);
+
+    if (setParts.length <= 1) {
+      return this.getCalendar(id) as Promise<CalendarSource>;
+    }
+
+    run(`UPDATE calendars SET ${setParts.join(', ')} WHERE id = ?`, params);
+
+    const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
+    if (!row) throw new Error(`Calendar not found: ${id}`);
+    return mapDbCalendarSourceToCalendarSource(row);
+  },
+
+  /**
+   * Delete a calendar source by ID.
+   * Note: This does NOT delete associated assignments (they keep source_id as orphaned reference).
+   */
+  deleteCalendar(id: string): void {
+    run('DELETE FROM calendars WHERE id = ?', [id]);
+  },
+
+  /**
+   * Reorder calendar sources.
+   * Uses the same negative-position technique as priority reorder.
+   */
+  reorderCalendars(orderedIds: string[]): void {
+    const now = Date.now();
+    exec('BEGIN IMMEDIATE TRANSACTION', false);
+    try {
+      for (let i = 0; i < orderedIds.length; i++) {
+        run(
+          'UPDATE calendars SET position = ? WHERE id = ?',
+          [-(i + 1), orderedIds[i]!],
+          false,
+        );
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        run(
+          'UPDATE calendars SET position = ?, updated_at = ? WHERE id = ?',
+          [i, now, orderedIds[i]!],
+          false,
+        );
+      }
+      exec('COMMIT', false);
+    } catch (e) {
+      exec('ROLLBACK', false);
+      throw e;
+    }
+  },
+
+  /**
+   * Set calendar enabled state.
+   */
+  async setCalendarEnabled(id: string, enabled: boolean): Promise<CalendarSource> {
+    const now = Date.now();
+    run('UPDATE calendars SET enabled = ?, updated_at = ? WHERE id = ?', [enabled ? 1 : 0, now, id]);
+    const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
+    if (!row) throw new Error(`Calendar not found: ${id}`);
+    return mapDbCalendarSourceToCalendarSource(row);
+  },
+
+  /**
+   * Update calendar source's last_sync_at and next_sync_at timestamps.
+   */
+  async updateCalendarSyncTime(id: string, lastSyncAt: number, intervalMinutes: number): Promise<CalendarSource> {
+    const now = Date.now();
+    const nextSyncAt = lastSyncAt + intervalMinutes * 60 * 1000;
+
+    run(
+      'UPDATE calendars SET last_sync_at = ?, next_sync_at = ?, updated_at = ? WHERE id = ?',
+      [lastSyncAt, nextSyncAt, now, id],
+    );
+
+    const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
+    if (!row) throw new Error(`Calendar not found: ${id}`);
+    return mapDbCalendarSourceToCalendarSource(row);
+  },
+
+  /**
+   * Update calendar source's last_error.
+   */
+  async updateCalendarError(id: string, error: string | null): Promise<CalendarSource> {
+    const now = Date.now();
+    run('UPDATE calendars SET last_error = ?, updated_at = ? WHERE id = ?', [error, now, id]);
+
+    const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
+    if (!row) throw new Error(`Calendar not found: ${id}`);
+    return mapDbCalendarSourceToCalendarSource(row);
   },
 };
