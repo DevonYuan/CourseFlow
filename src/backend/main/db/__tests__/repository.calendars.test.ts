@@ -21,6 +21,7 @@ vi.mock('electron', () => ({
 
 // Import after mocking electron
 import { repo } from '../repository.js';
+import type { CalendarSource } from '../../../shared/types.js';
 
 // The repository reads the database and emits events through these modules.
 // Inject a test database and a spy so the real repository logic runs in isolation.
@@ -202,7 +203,7 @@ describe('CalendarSource Repository', () => {
       const created = await repo.createCalendar({ name: 'Original', feedUrl: 'https://example.com/cal.ics' });
       mockState.sendEventToRenderers.mockClear();
 
-      const updated = await repo.updateCalendar(created.id, { name: 'Updated' });
+      const updated = await repo.updateCalendar({ id: created.id, name: 'Updated' });
 
       expect(updated.name).toBe('Updated');
       expect(updated.id).toBe(created.id);
@@ -220,7 +221,7 @@ describe('CalendarSource Repository', () => {
       const oldFeedUrl = created.feedUrl;
       mockState.sendEventToRenderers.mockClear();
 
-      const updated = await repo.updateCalendar(created.id, { feedUrl: 'https://new.com/cal.ics' });
+      const updated = await repo.updateCalendar({ id: created.id, feedUrl: 'https://new.com/cal.ics' });
 
       expect(updated.feedUrl).not.toBe(oldFeedUrl);
       expect(updated.feedUrl).not.toBe('https://new.com/cal.ics'); // Should be encrypted
@@ -231,7 +232,7 @@ describe('CalendarSource Repository', () => {
       const oldFeedUrl = created.feedUrl;
       mockState.sendEventToRenderers.mockClear();
 
-      const updated = await repo.updateCalendar(created.id, { name: 'New Name' });
+      const updated = await repo.updateCalendar({ id: created.id, name: 'New Name' });
 
       expect(updated.feedUrl).toBe(oldFeedUrl);
     });
@@ -240,7 +241,7 @@ describe('CalendarSource Repository', () => {
       const created = await repo.createCalendar({ name: 'Test', feedUrl: 'https://example.com/cal.ics', enabled: true });
       mockState.sendEventToRenderers.mockClear();
 
-      const updated = await repo.updateCalendar(created.id, { enabled: false });
+      const updated = await repo.updateCalendar({ id: created.id, enabled: false });
 
       expect(updated.enabled).toBe(false);
     });
@@ -249,7 +250,7 @@ describe('CalendarSource Repository', () => {
       const created = await repo.createCalendar({ name: 'Test', feedUrl: 'https://example.com/cal.ics', color: '#ff0000' });
       mockState.sendEventToRenderers.mockClear();
 
-      const updated = await repo.updateCalendar(created.id, { color: '#00ff00' });
+      const updated = await repo.updateCalendar({ id: created.id, color: '#00ff00' });
 
       expect(updated.color).toBe('#00ff00');
     });
@@ -258,13 +259,13 @@ describe('CalendarSource Repository', () => {
       const created = await repo.createCalendar({ name: 'Test', feedUrl: 'https://example.com/cal.ics', position: 0 });
       mockState.sendEventToRenderers.mockClear();
 
-      const updated = await repo.updateCalendar(created.id, { position: 10 });
+      const updated = await repo.updateCalendar({ id: created.id, position: 10 });
 
       expect(updated.position).toBe(10);
     });
 
     it('throws error for non-existent ID', async () => {
-      await expect(repo.updateCalendar('non-existent', { name: 'Test' })).rejects.toThrow('Calendar not found');
+      await expect(repo.updateCalendar({ id: 'non-existent' as CalendarSource['id'], name: 'Test' })).rejects.toThrow('Calendar not found');
     });
   });
 

@@ -26,6 +26,7 @@ import type {
   PriorityOrderInput,
   CalendarSource,
   CalendarSourceInput,
+  CalendarSourceUpdateInput,
   ICalEvent,
   Settings,
   ImportResult,
@@ -484,7 +485,15 @@ const handlers: IpcHandlers = {
 
   'db:calendars:get': (id: string): Promise<IpcResult<CalendarSource | null>> => {
     try {
+      // Validate input
+      if (!id || typeof id !== 'string' || id.trim().length === 0) {
+        return Promise.resolve(err('id is required and must be a non-empty string', 'VALIDATION_ERROR'));
+      }
+
       const calendar = repo.getCalendar(id);
+      if (!calendar) {
+        return Promise.resolve(err('Calendar not found', 'NOT_FOUND'));
+      }
       return Promise.resolve(ok(calendar));
     } catch (error) {
       return Promise.resolve(
@@ -515,8 +524,13 @@ const handlers: IpcHandlers = {
       if (input.enabled !== undefined && typeof input.enabled !== 'boolean') {
         return err('enabled must be a boolean', 'VALIDATION_ERROR');
       }
-      if (input.color !== undefined && typeof input.color !== 'string') {
-        return err('color must be a string', 'VALIDATION_ERROR');
+      if (input.color !== undefined) {
+        if (typeof input.color !== 'string') {
+          return err('color must be a string', 'VALIDATION_ERROR');
+        }
+        if (!/^#[0-9a-fA-F]{6}$/.test(input.color)) {
+          return err('color must be a valid hex color (e.g., #3b82f6)', 'VALIDATION_ERROR');
+        }
       }
       if (input.position !== undefined && (typeof input.position !== 'number' || !Number.isInteger(input.position) || input.position < 0)) {
         return err('position must be a non-negative integer', 'VALIDATION_ERROR');
@@ -532,11 +546,11 @@ const handlers: IpcHandlers = {
     }
   },
 
-  'db:calendars:update': async (input: CalendarSourceInput): Promise<IpcResult<CalendarSource>> => {
+  'db:calendars:update': async (input: CalendarSourceUpdateInput): Promise<IpcResult<CalendarSource>> => {
     try {
       // Input validation
       if (!input || typeof input !== 'object') {
-        return err('Invalid input: expected CalendarSourceInput object', 'VALIDATION_ERROR');
+        return err('Invalid input: expected CalendarSourceUpdateInput object', 'VALIDATION_ERROR');
       }
       if (!input.id || typeof input.id !== 'string' || input.id.trim().length === 0) {
         return err('id is required and must be a non-empty string', 'VALIDATION_ERROR');
@@ -557,14 +571,25 @@ const handlers: IpcHandlers = {
       if (input.enabled !== undefined && typeof input.enabled !== 'boolean') {
         return err('enabled must be a boolean', 'VALIDATION_ERROR');
       }
-      if (input.color !== undefined && typeof input.color !== 'string') {
-        return err('color must be a string', 'VALIDATION_ERROR');
+      if (input.color !== undefined) {
+        if (typeof input.color !== 'string') {
+          return err('color must be a string', 'VALIDATION_ERROR');
+        }
+        if (!/^#[0-9a-fA-F]{6}$/.test(input.color)) {
+          return err('color must be a valid hex color (e.g., #3b82f6)', 'VALIDATION_ERROR');
+        }
       }
       if (input.position !== undefined && (typeof input.position !== 'number' || !Number.isInteger(input.position) || input.position < 0)) {
         return err('position must be a non-negative integer', 'VALIDATION_ERROR');
       }
 
-      const calendar = await repo.updateCalendar(input.id, input);
+      // Check if calendar exists first
+      const existing = repo.getCalendar(input.id);
+      if (!existing) {
+        return err('Calendar not found', 'NOT_FOUND');
+      }
+
+      const calendar = await repo.updateCalendar(input);
       sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id: calendar.id });
       return ok(calendar);
     } catch (error) {
@@ -578,15 +603,23 @@ const handlers: IpcHandlers = {
     try {
       // Validate input
       if (!id || typeof id !== 'string' || id.trim().length === 0) {
-        return err('id is required and must be a non-empty string', 'VALIDATION_ERROR');
+        return Promise.resolve(err('id is required and must be a non-empty string', 'VALIDATION_ERROR'));
+      }
+
+      // Check if calendar exists
+      const calendar = repo.getCalendar(id);
+      if (!calendar) {
+        return Promise.resolve(err('Calendar not found', 'NOT_FOUND'));
       }
 
       repo.deleteCalendar(id);
       sendEventToRenderers('db:changed', { table: 'calendars', action: 'delete', id });
-      return ok(undefined);
+      return Promise.resolve(ok(undefined));
     } catch (error) {
-      return err(
-        `Failed to delete calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      return Promise.resolve(
+        err(
+          `Failed to delete calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ),
       );
     }
   },
@@ -605,16 +638,22 @@ const handlers: IpcHandlers = {
         );
       }
 
+      // Verify all calendars exist
+      for (const calendarId of ids) {
+        const calendar = repo.getCalendar(calendarId);
+        if (!calendar) {
+          return Promise.resolve(err(`Calendar not found: ${calendarId}`, 'NOT_FOUND'));
+        }
+      }
+
       repo.reorderCalendars(ids);
 
-      // Emit db:changed for each affected calendar with 'update' action
-      for (const calendarId of ids) {
-        sendEventToRenderers('db:changed', {
-          table: 'calendars',
-          action: 'update',
-          id: calendarId,
-        });
-      }
+      // Emit single reorder event for all calendars
+      sendEventToRenderers('db:changed', {
+        table: 'calendars',
+        action: 'reorder',
+        id: 'all',
+      });
 
       return Promise.resolve(ok(undefined));
     } catch (error) {
@@ -638,6 +677,12 @@ const handlers: IpcHandlers = {
       }
       if (typeof input.enabled !== 'boolean') {
         return err('enabled must be a boolean', 'VALIDATION_ERROR');
+      }
+
+      // Check if calendar exists
+      const existing = repo.getCalendar(input.id);
+      if (!existing) {
+        return err('Calendar not found', 'NOT_FOUND');
       }
 
       const calendar = await repo.setCalendarEnabled(input.id, input.enabled);

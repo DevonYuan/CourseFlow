@@ -28,6 +28,7 @@ import type {
   Settings,
   CalendarSource,
   CalendarSourceInput,
+  CalendarSourceUpdateInput,
   DbAssignment,
   DbSubTask,
   DbNote,
@@ -1631,7 +1632,7 @@ export const repo = {
     }
 
     // Deterministic color from name if not provided
-    let color = input.color ?? '#3b82f6';
+    let color: string = input.color ?? '#3b82f6';
     if (input.color === undefined) {
       // Simple hash-based color generation
       const colors = [
@@ -1642,7 +1643,7 @@ export const repo = {
       for (let i = 0; i < input.name.length; i++) {
         hash = input.name.charCodeAt(i) + ((hash << 5) - hash);
       }
-      color = colors[Math.abs(hash) % colors.length];
+      color = colors[Math.abs(hash) % colors.length]!;
     }
 
     // Encrypt the feed URL
@@ -1652,7 +1653,7 @@ export const repo = {
     run(
       `INSERT INTO calendars (id, name, feed_url, enabled, color, position, last_sync_at, next_sync_at, last_error, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?)`,
-      [id, input.name, feedUrl, input.enabled ?? 1, color, position, now, now],
+      [id, input.name, feedUrl, input.enabled ? 1 : 0, color, position, now, now],
     );
 
     const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
@@ -1663,12 +1664,13 @@ export const repo = {
   },
 
   /**
-   * Update a calendar source by ID.
+   * Update a calendar source.
    * feedUrl is plaintext — will be encrypted before storage.
    * Emits db:changed event with table='calendars', action='update'.
    */
-  async updateCalendar(id: string, input: CalendarSourceUpdateInput): Promise<CalendarSource> {
+  async updateCalendar(input: CalendarSourceUpdateInput): Promise<CalendarSource> {
     const now = Date.now();
+    const id = input.id;
     const setParts: string[] = [];
     const params: (string | number | null)[] = [];
 
@@ -1698,7 +1700,9 @@ export const repo = {
     params.push(now, id);
 
     if (setParts.length <= 1) {
-      return this.getCalendar(id) as Promise<CalendarSource>;
+      const existing = this.getCalendar(id);
+      if (!existing) throw new Error(`Calendar not found: ${id}`);
+      return existing;
     }
 
     run(`UPDATE calendars SET ${setParts.join(', ')} WHERE id = ?`, params);
