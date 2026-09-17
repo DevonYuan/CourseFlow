@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-import type { IpcChannels, IpcEvents, IpcResult } from '../shared/ipc.js';
-import type { Settings, CalendarSource, CalendarSourceInput } from '../shared/types.js';
+import type { IpcChannels, IpcEvents, IpcResult } from '@backend/shared/ipc.js';
+import type { Settings } from '@backend/shared/ipc.js';
 
 /**
  * Typed wrapper for ipcRenderer.invoke that returns IpcResult<T>.

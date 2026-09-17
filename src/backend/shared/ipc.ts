@@ -33,6 +33,17 @@ import type {
 } from './types.js';
 
 /**
+ * Re-export domain types for consumers (Preload, Renderer).
+ * These are part of the IPC contract for various channels.
+ */
+export type {
+  Settings,
+  CalendarSource,
+  CalendarSourceInput,
+  CalendarSourceUpdateInput,
+};
+
+/**
  * Unified response wrapper for all IPC request/response channels.
  * Handlers MUST return this type — never throw across IPC boundary.
  */
