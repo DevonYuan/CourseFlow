@@ -80,6 +80,9 @@ vi.mock('../db/repository.js', () => ({
     importAssignments: vi.fn(),
     setSettings: vi.fn(),
     getSettings: vi.fn(),
+    listCalendars: vi.fn().mockReturnValue([]),
+    updateCalendarSyncTime: vi.fn(),
+    updateCalendarError: vi.fn(),
   },
 }));
 

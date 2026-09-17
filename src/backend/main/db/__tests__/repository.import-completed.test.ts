@@ -89,11 +89,25 @@ function createSchema(db: Database): void {
       status TEXT CHECK (status IN ('pending', 'in_progress', 'completed', 'archived')) DEFAULT 'pending',
       source TEXT CHECK (source IN ('manual', 'ical')) DEFAULT 'manual',
       source_url TEXT,
-      rrule TEXT
+      rrule TEXT,
+      source_id TEXT REFERENCES calendars(id)
     );
     CREATE TABLE IF NOT EXISTS priority_order (
       assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
       position INTEGER NOT NULL UNIQUE,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS calendars (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      feed_url TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      color TEXT NOT NULL,
+      position INTEGER NOT NULL,
+      last_sync_at INTEGER,
+      next_sync_at INTEGER,
+      last_error TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );

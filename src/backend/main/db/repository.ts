@@ -54,6 +54,7 @@ import {
   mapDbSettingsToSettings,
   mapPriorityOrderRow,
   mapPriorityOrderInputToDb,
+  mapDbCalendarSourceToCalendarSource,
 } from './mappers.js';
 
 // ============================================================================
@@ -1614,6 +1615,7 @@ export const repo = {
   /**
    * Create a new calendar source.
    * feedUrl is plaintext — will be encrypted before storage.
+   * Emits db:changed event with table='calendars', action='insert'.
    */
   async createCalendar(input: CalendarSourceInput): Promise<CalendarSource> {
     const now = Date.now();
@@ -1655,14 +1657,17 @@ export const repo = {
 
     const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
     if (!row) throw new Error('Failed to retrieve created calendar');
-    return mapDbCalendarSourceToCalendarSource(row);
+    const calendar = mapDbCalendarSourceToCalendarSource(row);
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'insert', id });
+    return calendar;
   },
 
   /**
    * Update a calendar source by ID.
    * feedUrl is plaintext — will be encrypted before storage.
+   * Emits db:changed event with table='calendars', action='update'.
    */
-  async updateCalendar(id: string, input: CalendarSourceInput): Promise<CalendarSource> {
+  async updateCalendar(id: string, input: CalendarSourceUpdateInput): Promise<CalendarSource> {
     const now = Date.now();
     const setParts: string[] = [];
     const params: (string | number | null)[] = [];
@@ -1700,20 +1705,26 @@ export const repo = {
 
     const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
     if (!row) throw new Error(`Calendar not found: ${id}`);
-    return mapDbCalendarSourceToCalendarSource(row);
+    const calendar = mapDbCalendarSourceToCalendarSource(row);
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id });
+    return calendar;
   },
 
   /**
-   * Delete a calendar source by ID.
-   * Note: This does NOT delete associated assignments (they keep source_id as orphaned reference).
+   * Soft-delete a calendar source by ID (sets enabled=0).
+   * This preserves sync history and allows user to re-enable.
+   * Emits db:changed event with table='calendars', action='update'.
    */
-  deleteCalendar(id: string): void {
-    run('DELETE FROM calendars WHERE id = ?', [id]);
+  async deleteCalendar(id: string): Promise<void> {
+    const now = Date.now();
+    run('UPDATE calendars SET enabled = 0, updated_at = ? WHERE id = ?', [now, id]);
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id });
   },
 
   /**
    * Reorder calendar sources.
    * Uses the same negative-position technique as priority reorder.
+   * Emits db:changed event with table='calendars', action='reorder'.
    */
   reorderCalendars(orderedIds: string[]): void {
     const now = Date.now();
@@ -1738,21 +1749,27 @@ export const repo = {
       exec('ROLLBACK', false);
       throw e;
     }
+    // Emit reorder event with the ordered IDs
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'reorder', id: orderedIds.join(',') });
   },
 
   /**
    * Set calendar enabled state.
+   * Emits db:changed event with table='calendars', action='update'.
    */
   async setCalendarEnabled(id: string, enabled: boolean): Promise<CalendarSource> {
     const now = Date.now();
     run('UPDATE calendars SET enabled = ?, updated_at = ? WHERE id = ?', [enabled ? 1 : 0, now, id]);
     const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
     if (!row) throw new Error(`Calendar not found: ${id}`);
-    return mapDbCalendarSourceToCalendarSource(row);
+    const calendar = mapDbCalendarSourceToCalendarSource(row);
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id });
+    return calendar;
   },
 
   /**
    * Update calendar source's last_sync_at and next_sync_at timestamps.
+   * Emits db:changed event with table='calendars', action='update'.
    */
   async updateCalendarSyncTime(id: string, lastSyncAt: number, intervalMinutes: number): Promise<CalendarSource> {
     const now = Date.now();
@@ -1765,11 +1782,14 @@ export const repo = {
 
     const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
     if (!row) throw new Error(`Calendar not found: ${id}`);
-    return mapDbCalendarSourceToCalendarSource(row);
+    const calendar = mapDbCalendarSourceToCalendarSource(row);
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id });
+    return calendar;
   },
 
   /**
    * Update calendar source's last_error.
+   * Emits db:changed event with table='calendars', action='update'.
    */
   async updateCalendarError(id: string, error: string | null): Promise<CalendarSource> {
     const now = Date.now();
@@ -1777,6 +1797,8 @@ export const repo = {
 
     const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
     if (!row) throw new Error(`Calendar not found: ${id}`);
-    return mapDbCalendarSourceToCalendarSource(row);
+    const calendar = mapDbCalendarSourceToCalendarSource(row);
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id });
+    return calendar;
   },
 };

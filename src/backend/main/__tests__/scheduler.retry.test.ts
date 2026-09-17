@@ -69,6 +69,17 @@ vi.mock('../ical/index.js', () => ({
   },
 }));
 
+// Mock encryption (for decryptIcalUrl)
+vi.mock('../security/encryption.js', () => ({
+  decryptIcalUrl: vi.fn().mockResolvedValue('https://canvas.example.edu/feeds/calendars/test.ics'),
+  DecryptionError: class DecryptionError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'DecryptionError';
+    }
+  },
+}));
+
 // Mock the repository
 vi.mock('../db/repository.js', () => ({
   repo: {
@@ -98,6 +109,7 @@ import {
   NetworkError,
   HttpError,
 } from '../ical/index.js';
+import { decryptIcalUrl } from '../security/encryption.js';
 import { Scheduler, __resetScheduler } from '../scheduler.js';
 
 const mockFetchICalFeed = fetchICalFeed as Mock;
@@ -183,12 +195,23 @@ describe('Scheduler Retry Logic Tests', () => {
     vi.useRealTimers();
     scheduler.stop();
     __resetScheduler();
-    vi.resetModules();
+    // Don't reset modules - it clears the electron mock which breaks BrowserWindow
   });
 
   it('retries on network error with exponential backoff', async () => {
     const settings = createMockSettings({ syncIntervalMinutes: 15 });
     scheduler['currentSettings'] = settings;
+
+    // Mock listCalendars to return an enabled calendar with valid encrypted feedUrl
+    const encryptedFeedUrl = JSON.stringify({
+      v: 1,
+      ciphertext: 'mock-ciphertext',
+      iv: 'mock-iv',
+      salt: 'mock-salt',
+    });
+    repo.listCalendars.mockReturnValue([
+      { id: 'cal-1', name: 'Test Calendar', feedUrl: encryptedFeedUrl, enabled: true, color: '#3b82f6', position: 0, lastSyncAt: null, nextSyncAt: null, lastError: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    ]);
 
     mockFetchICalFeed
       .mockRejectedValueOnce(new NetworkError('Network error'))
@@ -215,6 +238,17 @@ describe('Scheduler Retry Logic Tests', () => {
     const settings = createMockSettings({ syncIntervalMinutes: 15 });
     scheduler['currentSettings'] = settings;
 
+    // Mock listCalendars to return an enabled calendar with valid encrypted feedUrl
+    const encryptedFeedUrl = JSON.stringify({
+      v: 1,
+      ciphertext: 'mock-ciphertext',
+      iv: 'mock-iv',
+      salt: 'mock-salt',
+    });
+    repo.listCalendars.mockReturnValue([
+      { id: 'cal-1', name: 'Test Calendar', feedUrl: encryptedFeedUrl, enabled: true, color: '#3b82f6', position: 0, lastSyncAt: null, nextSyncAt: null, lastError: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    ]);
+
     mockFetchICalFeed.mockRejectedValue(new NetworkError('Persistent network error'));
     mockParseICalFeed.mockReturnValue([{ uid: '1', summary: 'Test' }]);
     mockMapICalToAssignments.mockReturnValue([createMockAssignment()]);
@@ -234,6 +268,17 @@ describe('Scheduler Retry Logic Tests', () => {
   it('retries on server error (5xx)', async () => {
     const settings = createMockSettings({ syncIntervalMinutes: 15 });
     scheduler['currentSettings'] = settings;
+
+    // Mock listCalendars to return an enabled calendar with valid encrypted feedUrl
+    const encryptedFeedUrl = JSON.stringify({
+      v: 1,
+      ciphertext: 'mock-ciphertext',
+      iv: 'mock-iv',
+      salt: 'mock-salt',
+    });
+    repo.listCalendars.mockReturnValue([
+      { id: 'cal-1', name: 'Test Calendar', feedUrl: encryptedFeedUrl, enabled: true, color: '#3b82f6', position: 0, lastSyncAt: null, nextSyncAt: null, lastError: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    ]);
 
     mockFetchICalFeed
       .mockRejectedValueOnce(new HttpError('Server Error', 500))
