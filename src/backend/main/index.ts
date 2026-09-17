@@ -38,12 +38,9 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(async () => {
-  // Initialize database and run migrations
+  // Initialize database and run migrations (includes v6 seeding)
   const db = await initializeDatabase();
-  migrate(db);
-
-  // Run post-migration v6 seeding (calendar from legacy icalUrl)
-  await repo.seedCalendarFromSettings();
+  await migrate(db);
 
   // Register all IPC handlers before creating windows
   registerIpcHandlers();

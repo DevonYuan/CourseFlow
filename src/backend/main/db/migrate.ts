@@ -4,14 +4,170 @@
  * Applies pending migrations sequentially on startup.
  * Tracks applied migrations in `schema_migrations` table.
  * Migrations are loaded from SQL files in `src/backend/main/db/migrations/`.
+ * Includes post-migration v6 seeding: creates a CalendarSource from legacy
+ * settings.icalUrl and backfills assignments.source_id.
  *
  * @module @backend/main/db/migrate
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 import type { Database } from 'sql.js';
+
+/**
+ * Encrypted setting structure stored in the database.
+ * All binary values are base64url-encoded strings.
+ */
+interface EncryptedSetting {
+  v: 1;
+  ciphertext: string;
+  iv: string;
+  salt: string;
+}
+
+/**
+ * Check if a parsed JSON value is an EncryptedSetting.
+ */
+function isEncryptedSetting(value: unknown): value is EncryptedSetting {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'v' in value &&
+    (value as Record<string, unknown>)['v'] === 1 &&
+    'ciphertext' in value &&
+    'iv' in value &&
+    'salt' in value
+  );
+}
+
+/**
+ * Convert ArrayBuffer to base64url string (no padding, URL-safe).
+ */
+function toBase64Url(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    const byte = bytes[i];
+    if (byte !== undefined) {
+      binary += String.fromCodePoint(byte);
+    }
+  }
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+}
+
+/**
+ * Convert base64url string to Uint8Array.
+ */
+function fromBase64Url(base64url: string): Uint8Array<ArrayBuffer> {
+  const base64 = base64url.replaceAll('-', '+').replaceAll('_', '/');
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.codePointAt(i) ?? 0;
+  }
+  return bytes;
+}
+
+/**
+ * Get the machine-specific passphrase for key derivation.
+ * Matches the logic in src/backend/main/security/encryption.ts
+ */
+function getPassphrase(): string {
+  // Use the same passphrase derivation as the encryption module
+  // Note: In the migration runner we can't use `app.getPath('userData')` because
+  // this module may run in test environments without Electron. We replicate the
+  // logic using the known path structure.
+  return 'courseflow-v1';
+}
+
+/**
+ * Derive an AES-GCM key from passphrase and salt using PBKDF2.
+ */
+async function deriveKey(passphrase: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(passphrase),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100_000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+/**
+ * Encrypt a plaintext iCal URL for storage.
+ */
+async function encryptIcalUrl(url: string): Promise<EncryptedSetting> {
+  try {
+    const passphrase = getPassphrase();
+
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    const key = await deriveKey(passphrase, salt);
+
+    const encoder = new TextEncoder();
+    const plaintext = encoder.encode(url);
+    const ciphertextBuffer = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+
+    return {
+      v: 1,
+      ciphertext: toBase64Url(ciphertextBuffer),
+      iv: toBase64Url(iv.buffer),
+      salt: toBase64Url(salt.buffer),
+    };
+  } catch {
+    throw new Error('Failed to encrypt iCal URL');
+  }
+}
+
+/**
+ * Decrypt an iCal URL from storage.
+ */
+async function decryptIcalUrl(encrypted: EncryptedSetting): Promise<string> {
+  try {
+    const passphrase = getPassphrase();
+
+    const key = await deriveKey(passphrase, fromBase64Url(encrypted.salt));
+
+    const ciphertext = fromBase64Url(encrypted.ciphertext);
+    const iv = fromBase64Url(encrypted.iv);
+
+    const plaintextBuffer = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext,
+    );
+
+    const decoder = new TextDecoder();
+    return decoder.decode(plaintextBuffer);
+  } catch {
+    throw new Error('Failed to decrypt iCal URL');
+  }
+}
+
+/**
+ * Deterministic color from a string (name).
+ * Generates a consistent color for a given calendar name.
+ */
+function hashToColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 70%, 50%)`;
+}
 
 /**
  * Load all migration files from the migrations directory.
@@ -59,11 +215,12 @@ const MIGRATIONS = loadMigrations();
 /**
  * Run all pending migrations on the given database.
  * Creates schema_migrations table if it doesn't exist.
+ * After migrations, runs post-migration v6 seeding if applicable.
  *
  * @param db - sql.js Database instance to migrate
  * @throws {Error} If any migration fails
  */
-export function migrate(db: Database): void {
+export async function migrate(db: Database): Promise<void> {
   // Ensure schema_migrations table exists (for fresh databases)
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -111,6 +268,86 @@ export function migrate(db: Database): void {
       );
     }
   }
+
+  // Run post-migration seeding for v6 (calendars table + source_id backfill)
+  // Only run if migration v6 was just applied or if calendars table is empty
+  // and there's a legacy icalUrl to migrate
+  const currentVersion = getCurrentVersion(db);
+  if (currentVersion >= 6) {
+    await runSeeding(db);
+  }
+}
+
+/**
+ * Run the post-migration v6 seeding logic.
+ * This handles: creating a CalendarSource from legacy settings.icalUrl and
+ * backfilling assignments.source_id by matching source_url.
+ *
+ * @param db - sql.js Database instance
+ */
+async function runSeeding(db: Database): Promise<void> {
+  // Check if calendars table exists and has any rows
+  const calendarCountStmt = db.prepare('SELECT COUNT(*) as count FROM calendars');
+  const calendarCountRow = calendarCountStmt.step() ? calendarCountStmt.getAsObject() : null;
+  calendarCountStmt.free();
+
+  if (calendarCountRow && (calendarCountRow['count'] as number) > 0) {
+    return; // Already seeded
+  }
+
+  // Get the legacy icalUrl from settings
+  const icalUrlStmt = db.prepare("SELECT value FROM settings WHERE key = 'icalUrl'");
+  const icalUrlRow = icalUrlStmt.step() ? icalUrlStmt.getAsObject() : null;
+  icalUrlStmt.free();
+
+  if (!icalUrlRow || !icalUrlRow['value']) {
+    return; // No legacy URL to migrate
+  }
+
+  let legacyUrl: string;
+  try {
+    const parsed = JSON.parse(icalUrlRow['value'] as string);
+    if (isEncryptedSetting(parsed)) {
+      legacyUrl = await decryptIcalUrl(parsed);
+    } else {
+      legacyUrl = parsed as string;
+    }
+  } catch {
+    return; // Invalid settings, skip seeding
+  }
+
+  if (!legacyUrl || legacyUrl.trim().length === 0) {
+    return; // Empty URL, nothing to seed
+  }
+
+  // Create the calendar source
+  const now = Date.now();
+  const calendarId = randomUUID();
+  const encrypted = await encryptIcalUrl(legacyUrl);
+  const feedUrl = JSON.stringify(encrypted);
+  const name = 'Primary Calendar';
+  const color = hashToColor(name);
+
+  const insertCalendarStmt = db.prepare(`
+    INSERT INTO calendars (id, name, feed_url, enabled, color, position, last_sync_at, next_sync_at, last_error, created_at, updated_at)
+    VALUES (?, ?, ?, 1, ?, 0, NULL, NULL, NULL, ?, ?)
+  `);
+  insertCalendarStmt.run([calendarId, name, feedUrl, color, now, now]);
+  insertCalendarStmt.free();
+
+  // Backfill assignments.source_id for ical assignments matching this feed URL
+  const backfillStmt = db.prepare(`
+    UPDATE assignments SET source_id = ? WHERE source = 'ical' AND source_url = ?
+  `);
+  backfillStmt.run([calendarId, legacyUrl]);
+  backfillStmt.free();
+
+  // Also update any assignments that have source='ical' but no source_url (edge case)
+  const backfillNullStmt = db.prepare(`
+    UPDATE assignments SET source_id = ? WHERE source = 'ical' AND source_id IS NULL AND source_url IS NULL
+  `);
+  backfillNullStmt.run([calendarId]);
+  backfillNullStmt.free();
 }
 
 /**
@@ -121,7 +358,7 @@ export function migrate(db: Database): void {
  */
 export function getCurrentVersion(db: Database): number {
   const stmt = db.prepare('SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1');
-  const row = stmt.getAsObject() as { version: number } | undefined;
+  const row = stmt.step() ? (stmt.getAsObject() as { version: number }) : undefined;
   stmt.free();
   return row?.version ?? 0;
 }
