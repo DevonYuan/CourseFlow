@@ -74,17 +74,45 @@ vi.mock('../ical/index.js', () => ({
   },
 }));
 
-// Mock the repository
-vi.mock('../db/repository.js', () => ({
-  repo: {
-    importAssignments: vi.fn(),
-    setSettings: vi.fn(),
-    getSettings: vi.fn(),
-    listCalendars: vi.fn().mockReturnValue([]),
-    updateCalendarSyncTime: vi.fn(),
-    updateCalendarError: vi.fn(),
+// Mock encryption (for decryptIcalUrl)
+vi.mock('../security/encryption.js', () => ({
+  decryptIcalUrl: vi.fn().mockResolvedValue('https://canvas.example.edu/feeds/calendars/test.ics'),
+  DecryptionError: class DecryptionError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'DecryptionError';
+    }
   },
 }));
+
+// Mock the repository
+vi.mock('../db/repository.js', () => {
+  // Default calendar for tests - can be overridden in individual tests
+  const defaultCalendar = {
+    id: 'cal-1',
+    name: 'Test Calendar',
+    feedUrl: JSON.stringify({ v: 1, ciphertext: 'mock-ciphertext', iv: 'mock-iv', salt: 'mock-salt' }),
+    enabled: true,
+    color: '#3b82f6',
+    position: 0,
+    lastSyncAt: null,
+    nextSyncAt: null,
+    lastError: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    repo: {
+      importAssignments: vi.fn(),
+      setSettings: vi.fn(),
+      getSettings: vi.fn(),
+      listCalendars: vi.fn().mockReturnValue([defaultCalendar]),
+      updateCalendarSyncTime: vi.fn(),
+      updateCalendarError: vi.fn(),
+    },
+  };
+});
 
 // Mock events
 vi.mock('../events.js', () => ({
@@ -118,6 +146,9 @@ const mockParseICalFeed = parseICalFeed as Mock;
 const mockMapICalToAssignments = mapICalToAssignments as Mock;
 const mockImportAssignments = repo.importAssignments as Mock;
 const mockSetSettings = repo.setSettings as Mock;
+const mockUpdateCalendarSyncTime = repo.updateCalendarSyncTime as Mock;
+const mockUpdateCalendarError = repo.updateCalendarError as Mock;
+const mockListCalendars = repo.listCalendars as Mock;
 const mockSendEventToRenderers = sendEventToRenderers as Mock;
 const mockEmitSchedulerTick = emitSchedulerTick as Mock;
 const mockEmitSchedulerError = emitSchedulerError as Mock;
@@ -183,7 +214,23 @@ describe('Scheduler Integration Tests', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+
+    // Set up default calendar mock
+    const defaultCalendar = {
+      id: 'cal-1',
+      name: 'Test Calendar',
+      feedUrl: JSON.stringify({ v: 1, ciphertext: 'mock-ciphertext', iv: 'mock-iv', salt: 'mock-salt' }),
+      enabled: true,
+      color: '#3b82f6',
+      position: 0,
+      lastSyncAt: null,
+      nextSyncAt: null,
+      lastError: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    mockListCalendars.mockReturnValue([defaultCalendar]);
 
     mockWindow = {
       isDestroyed: vi.fn().mockReturnValue(false),
@@ -239,11 +286,17 @@ describe('Scheduler Integration Tests', () => {
       expect(scheduler.getStatus().running).toBe(false);
     });
 
-    it('does not start if icalUrl is empty', () => {
-      const settings = createMockSettings({ icalUrl: '' });
-      scheduler.updateSettings(settings);
+    it('continues running when no enabled calendars (waits for calendars to be added)', () => {
+      const settings1 = createMockSettings();
+      scheduler.updateSettings(settings1);
 
-      expect(scheduler.getStatus().running).toBe(false);
+      // Remove all enabled calendars
+      mockListCalendars.mockReturnValue([]);
+      const settings2 = createMockSettings({ icalUrl: '' });
+      scheduler.updateSettings(settings2);
+
+      // Scheduler continues running (will skip fetch cycles until calendars are added)
+      expect(scheduler.getStatus().running).toBe(true);
     });
   });
 
@@ -302,34 +355,40 @@ describe('Scheduler Integration Tests', () => {
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'scheduler:error',
         expect.objectContaining({
-          message: 'No iCal URL configured — check Settings',
+          message: 'No calendar sources configured — check Settings',
           code: 'auth',
         }),
       );
     });
 
-    it('emits error if scheduler is paused', async () => {
+    it('skips manual trigger when fetch already in progress', async () => {
       const settings = createMockSettings();
       scheduler.updateSettings(settings);
 
-      // Pause by triggering auth error
-      mockFetchICalFeed.mockRejectedValue(new HttpError('Unauthorized', 401));
+      let resolveFetch: (value: string) => void;
+      const fetchPromise = new Promise<string>((resolve) => {
+        resolveFetch = resolve;
+      });
+      mockFetchICalFeed.mockReturnValue(fetchPromise);
       mockParseICalFeed.mockReturnValue([]);
       mockMapICalToAssignments.mockReturnValue([]);
+      mockImportAssignments.mockReturnValue(createMockImportResult());
+      mockSetSettings.mockResolvedValue(undefined);
 
+      // Start first fetch
+      const firstTrigger = scheduler.triggerManual();
+
+      // Immediately try second trigger
       await scheduler.triggerManual();
 
-      // Wait for error handling
-      await vi.runAllTimersAsync();
-
-      // Now try manual trigger while paused
-      mockSendEventToRenderers.mockClear();
-      await scheduler.triggerManual();
-
-      expect(mockEmitSchedulerError).toHaveBeenCalledWith(
-        'iCal URL invalid or expired — check Settings',
-        'auth',
+      expect(mockSendEventToRenderers).toHaveBeenCalledWith(
+        'scheduler:coalesced',
+        expect.objectContaining({ message: 'Sync in progress...' }),
       );
+
+      // Resolve first fetch
+      resolveFetch!('BEGIN:VCALENDAR\nEND:VCALENDAR');
+      await firstTrigger;
     });
   });
 
@@ -358,33 +417,32 @@ describe('Scheduler Integration Tests', () => {
       expect(scheduler.getStatus().running).toBe(false);
     });
 
-    it('resumes scheduler when paused and URL changes to valid', () => {
-      const settings1 = createMockSettings({ icalUrl: '' });
+    it('resumes scheduler when autoFetchIcal is enabled', () => {
+      const settings1 = createMockSettings({ autoFetchIcal: false });
       scheduler.updateSettings(settings1);
-
-      // Trigger to cause pause
-      mockFetchICalFeed.mockRejectedValue(new HttpError('Not Found', 404));
-      scheduler.triggerManual();
-      vi.runAllTimersAsync();
 
       expect(scheduler.getStatus().running).toBe(false);
 
       mockEmitSchedulerTick.mockClear();
 
-      const settings2 = createMockSettings({ icalUrl: 'https://new-url.ics' });
+      // Enable autoFetchIcal
+      const settings2 = createMockSettings({ autoFetchIcal: true });
       scheduler.updateSettings(settings2);
 
       expect(scheduler.getStatus().running).toBe(true);
     });
 
-    it('stops scheduler when URL becomes empty', () => {
+    it('continues running when no enabled calendars (waits for calendars to be added)', () => {
       const settings1 = createMockSettings();
       scheduler.updateSettings(settings1);
 
+      // Remove all enabled calendars
+      mockListCalendars.mockReturnValue([]);
       const settings2 = createMockSettings({ icalUrl: '' });
       scheduler.updateSettings(settings2);
 
-      expect(scheduler.getStatus().running).toBe(false);
+      // Scheduler continues running (will skip fetch cycles until calendars are added)
+      expect(scheduler.getStatus().running).toBe(true);
     });
   });
 
@@ -418,14 +476,20 @@ describe('Scheduler Integration Tests', () => {
       mockFetchICalFeed.mockRejectedValue(new HttpError('Unauthorized', 401));
       mockParseICalFeed.mockReturnValue([]);
       mockMapICalToAssignments.mockReturnValue([]);
+      mockImportAssignments.mockReturnValue(createMockImportResult({ imported: 0 }));
+      mockSetSettings.mockResolvedValue(undefined);
+      mockUpdateCalendarSyncTime.mockResolvedValue(undefined);
+      mockUpdateCalendarError.mockResolvedValue(undefined);
 
-      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.advanceTimersByTimeAsync(31_000);
 
       expect(mockFetchICalFeed).toHaveBeenCalledTimes(1);
-      expect(scheduler.getStatus().running).toBe(false);
-      expect(mockEmitSchedulerError).toHaveBeenCalledWith(
-        'iCal URL invalid or expired — check Settings',
-        'auth',
+      // Scheduler continues running (doesn't pause for non-retryable errors on one source)
+      expect(scheduler.getStatus().running).toBe(true);
+      // Check scheduler:error event sent via window.webContents.send
+      expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+        'scheduler:error',
+        expect.objectContaining({ message: 'Calendar URL invalid or expired — check Settings', code: 'auth', sourceId: 'cal-1' }),
       );
     });
 
@@ -438,12 +502,21 @@ describe('Scheduler Integration Tests', () => {
         throw new ICalParseError('Invalid iCal format');
       });
       mockMapICalToAssignments.mockReturnValue([]);
+      mockImportAssignments.mockReturnValue(createMockImportResult({ imported: 0 }));
+      mockSetSettings.mockResolvedValue(undefined);
+      mockUpdateCalendarSyncTime.mockResolvedValue(undefined);
+      mockUpdateCalendarError.mockResolvedValue(undefined);
 
-      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.advanceTimersByTimeAsync(31_000);
 
       expect(mockFetchICalFeed).toHaveBeenCalledTimes(1);
-      expect(scheduler.getStatus().running).toBe(false);
-      expect(mockEmitSchedulerError).toHaveBeenCalledWith('Failed to parse calendar feed', 'parse');
+      // Scheduler continues running (doesn't pause for non-retryable errors on one source)
+      expect(scheduler.getStatus().running).toBe(true);
+      // Check scheduler:error event sent via window.webContents.send
+      expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+        'scheduler:error',
+        expect.objectContaining({ message: 'Failed to parse calendar feed', code: 'parse', sourceId: 'cal-1' }),
+      );
     });
   });
 
@@ -518,11 +591,17 @@ describe('Scheduler Integration Tests', () => {
       mockFetchICalFeed.mockRejectedValue(new HttpError('Unauthorized', 401));
       mockParseICalFeed.mockReturnValue([]);
       mockMapICalToAssignments.mockReturnValue([]);
+      mockImportAssignments.mockReturnValue(createMockImportResult({ imported: 0 }));
+      mockSetSettings.mockResolvedValue(undefined);
+      mockUpdateCalendarSyncTime.mockResolvedValue(undefined);
+      mockUpdateCalendarError.mockResolvedValue(undefined);
 
-      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.advanceTimersByTimeAsync(31_000);
 
       const status = scheduler.getStatus();
 
+      // Scheduler continues running after non-retryable error
+      expect(status.running).toBe(true);
       expect(status.lastError).toContain('Unauthorized');
     });
   });
@@ -575,8 +654,9 @@ describe('Scheduler Integration Tests', () => {
       mockMapICalToAssignments.mockReturnValue([createMockAssignment()]);
       mockImportAssignments.mockReturnValue(createMockImportResult());
       mockSetSettings.mockResolvedValue(undefined);
+      mockUpdateCalendarSyncTime.mockResolvedValue(undefined);
 
-      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.advanceTimersByTimeAsync(31_000);
 
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'ical:progress',

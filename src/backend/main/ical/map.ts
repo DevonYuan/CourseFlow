@@ -328,16 +328,21 @@ function getCurrentIsoTime(): IsoDateTime {
  *
  * @param events - Array of parsed ICalEvent objects
  * @param sourceUrl - The iCal feed URL these events were fetched from
+ * @param sourceId - Optional calendar source ID for per-source attribution
  * @returns Array of AssignmentInput objects
  *
  * @example
  * ```typescript
  * const events = parseICalFeed(icalText);
- * const assignments = mapICalToAssignments(events, 'https://canvas.example.com/feed.ics');
- * // assignments ready for repository.upsertAssignments(assignments)
+ * const assignments = mapICalToAssignments(events, 'https://canvas.example.com/feed.ics', 'cal-123');
+ * // assignments ready for repository.importAssignments(assignments, { sourceId: 'cal-123' })
  * ```
  */
-export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): AssignmentInput[] {
+export function mapICalToAssignments(
+  events: ICalEvent[],
+  sourceUrl: string,
+  sourceId?: string,
+): AssignmentInput[] {
   const now = Date.now();
   const currentIsoTime = getCurrentIsoTime();
 
@@ -382,6 +387,7 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
           status: 'pending',
           source: 'ical',
           sourceUrl: assignmentSourceUrl,
+          sourceId,
           rrule: event.rrule, // Keep RRULE for reference
           createdAt: currentIsoTime,
           updatedAt: currentIsoTime,
@@ -417,6 +423,7 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
           status: 'pending',
           source: 'ical',
           sourceUrl: assignmentSourceUrl,
+          sourceId,
           rrule: event.rrule ?? undefined,
           createdAt: currentIsoTime,
           updatedAt: currentIsoTime,
@@ -446,6 +453,7 @@ export function mapICalToAssignments(events: ICalEvent[], sourceUrl: string): As
           status: 'pending',
           source: 'ical',
           sourceUrl: assignmentSourceUrl,
+          sourceId,
           rrule: undefined,
           createdAt: currentIsoTime,
           updatedAt: currentIsoTime,

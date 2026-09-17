@@ -73,7 +73,7 @@ function runMigrations(db: Database): void {
       submission_types TEXT,
       workflow_state TEXT,
       html_url TEXT,
-      ical_uid TEXT UNIQUE,
+      ical_uid TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
       status TEXT CHECK (status IN ('pending', 'in_progress', 'completed', 'archived')) DEFAULT 'pending',
@@ -82,6 +82,7 @@ function runMigrations(db: Database): void {
       rrule TEXT,
       source_id TEXT
     );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_assignments_source_ical ON assignments(source_id, ical_uid);
     CREATE TABLE IF NOT EXISTS priority_order (
       assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
       position INTEGER NOT NULL UNIQUE,
@@ -177,7 +178,8 @@ function makeInput(icalUid: string, overrides: Partial<AssignmentInput> = {}): A
     source: 'ical',
     sourceUrl: 'https://calendar.example.com/basic.ics',
     createdAt: new Date(now).toISOString() as IsoDateTime,
-    updatedAt: new Date(now).toISOString() as IsoDateTime,
+    // Use a future timestamp to ensure it's newer than seeded rows
+    updatedAt: new Date(now + 1000).toISOString() as IsoDateTime,
     ...overrides,
   };
 }
@@ -320,5 +322,249 @@ describe('importAssignments pruning', () => {
     expect(updated.status).toBe('completed');
     expect(updated.title).toBe('Mark Me');
     expect(updated.dueAt).toBeDefined();
+  });
+});
+
+/**
+ * Per-Source Import Tests
+ *
+ * Tests that importAssignments correctly scopes dedupe and prune to a specific calendar source.
+ * This ensures multiple calendars can share the same iCal UIDs without conflicts.
+ */
+describe('importAssignments per-source', () => {
+  beforeAll(async () => {
+    testDb = await initTestDb();
+    runMigrations(testDb);
+    setTestDatabase(testDb);
+  });
+
+  afterAll(() => {
+    setTestDatabase(null);
+  });
+
+  beforeEach(() => {
+    // Reset tables between tests
+    testDb!.exec('DELETE FROM assignments');
+    testDb!.exec('DELETE FROM priority_order');
+    testDb!.exec('DELETE FROM calendars');
+  });
+
+  function seedCalendar(db: Database, id: string, name: string): void {
+    const now = Date.now();
+    db.run(
+      `INSERT INTO calendars (id, name, feed_url, enabled, color, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, name, 'encrypted-url', 1, '#6366f1', 0, now, now],
+    );
+  }
+
+  function seedRowWithSource(db: Database, row: SeedRow & { sourceId?: string | null }): void {
+    rowCounter++;
+    const now = Date.now();
+    db.run(
+      `INSERT INTO assignments (id, canvas_id, title, description, course_name, course_color, due_at,
+         unlock_at, lock_at, points_possible, submission_types, workflow_state, html_url, ical_uid,
+         created_at, updated_at, status, source, source_url, rrule, source_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        row.id,
+        null,
+        row.title ?? 'Seeded Assignment',
+        '',
+        'Test Course',
+        '#6366f1',
+        row.dueAtMs ?? now + 7 * 86_400_000,
+        null,
+        null,
+        null,
+        '[]',
+        'published',
+        '',
+        row.icalUid,
+        now,
+        now,
+        row.status ?? 'pending',
+        row.source ?? 'ical',
+        row.sourceUrl ?? 'https://calendar.example.com/basic.ics',
+        null,
+        row.sourceId ?? null,
+      ],
+    );
+  }
+
+  function makeInputWithSource(
+    icalUid: string,
+    sourceId: string,
+    overrides: Partial<AssignmentInput> = {},
+  ): AssignmentInput {
+    const now = Date.now();
+    rowCounter++;
+    return {
+      id: `input-${rowCounter}` as EntityId,
+      title: 'Imported Assignment',
+      description: '',
+      courseName: 'Test Course',
+      courseColor: '#6366f1',
+      dueAt: new Date(now + 7 * 86_400_000).toISOString() as IsoDateTime,
+      unlockAt: null,
+      lockAt: null,
+      pointsPossible: null,
+      submissionTypes: [],
+      workflowState: 'published',
+      htmlUrl: '',
+      icalUid,
+      priority: 'low',
+      status: 'pending',
+      source: 'ical',
+      sourceUrl: 'https://calendar.example.com/basic.ics',
+      sourceId,
+      createdAt: new Date(now).toISOString() as IsoDateTime,
+      // Use a future timestamp to ensure it's newer than seeded rows
+      updatedAt: new Date(now + 1000).toISOString() as IsoDateTime,
+      ...overrides,
+    };
+  }
+
+  function getIcalUidsForSource(db: Database, sourceId: string): string[] {
+    const rows = db.exec(
+      `SELECT ical_uid FROM assignments WHERE source_id = ? ORDER BY ical_uid`,
+      [sourceId],
+    );
+    if (rows.length === 0) return [];
+    return rows[0]!.values.map((row) => String(row[0]));
+  }
+
+  it('deduplicates by (source_id, ical_uid) composite key', () => {
+    const db = getDatabase();
+    // Seed two calendars
+    seedCalendar(db, 'cal-1', 'Calendar 1');
+    seedCalendar(db, 'cal-2', 'Calendar 2');
+
+    // Both calendars have an event with the same ical_uid
+    seedRowWithSource(db, { id: 'a1', icalUid: 'same-uid@google.com', sourceId: 'cal-1' });
+    seedRowWithSource(db, { id: 'a2', icalUid: 'same-uid@google.com', sourceId: 'cal-2' });
+
+    // Import for cal-1 with the same UID - should update cal-1's row, not affect cal-2
+    const result = repo.importAssignments(
+      [makeInputWithSource('same-uid@google.com', 'cal-1', { title: 'Updated for Cal 1' })],
+      'cal-1',
+    );
+
+    expect(result.updated).toBe(1);
+    expect(result.imported).toBe(0);
+
+    // cal-1 should have the updated title
+    const cal1Rows = db.exec(`SELECT title FROM assignments WHERE source_id = 'cal-1'`);
+    expect(cal1Rows.length).toBeGreaterThan(0);
+    // values is SqlValue[][] - first row, first column
+    const cal1Title = cal1Rows[0]!.values[0] as unknown[];
+    expect(cal1Title[0]).toBe('Updated for Cal 1');
+
+    // cal-2 should be unchanged
+    const cal2Rows = db.exec(`SELECT title FROM assignments WHERE source_id = 'cal-2'`);
+    expect(cal2Rows.length).toBeGreaterThan(0);
+    const cal2Title = cal2Rows[0]!.values[0] as unknown[];
+    expect(cal2Title[0]).toBe('Seeded Assignment');
+  });
+
+  it('prunes only stale rows for the given source', () => {
+    const db = getDatabase();
+    seedCalendar(db, 'cal-1', 'Calendar 1');
+    seedCalendar(db, 'cal-2', 'Calendar 2');
+
+    // Both calendars have events
+    seedRowWithSource(db, { id: 'a1', icalUid: 'stale@google.com', sourceId: 'cal-1' });
+    seedRowWithSource(db, { id: 'a2', icalUid: 'keep@google.com', sourceId: 'cal-1' });
+    seedRowWithSource(db, { id: 'b1', icalUid: 'stale@google.com', sourceId: 'cal-2' });
+    seedRowWithSource(db, { id: 'b2', icalUid: 'keep@google.com', sourceId: 'cal-2' });
+
+    // Import only for cal-1 with 'keep' UID - should prune cal-1's 'stale' but not cal-2's
+    repo.importAssignments([makeInputWithSource('keep@google.com', 'cal-1')], 'cal-1');
+
+    // cal-1 should only have 'keep'
+    expect(getIcalUidsForSource(db, 'cal-1')).toEqual(['keep@google.com']);
+
+    // cal-2 should still have both
+    expect(getIcalUidsForSource(db, 'cal-2').sort()).toEqual(['keep@google.com', 'stale@google.com']);
+  });
+
+  it('preserves completed rows for the given source only', () => {
+    const db = getDatabase();
+    seedCalendar(db, 'cal-1', 'Calendar 1');
+    seedCalendar(db, 'cal-2', 'Calendar 2');
+
+    // cal-1 has a completed row with UID 'done'
+    seedRowWithSource(db, { id: 'a1', icalUid: 'done@google.com', status: 'completed', sourceId: 'cal-1' });
+    // cal-2 has a pending row with same UID
+    seedRowWithSource(db, { id: 'b1', icalUid: 'done@google.com', status: 'pending', sourceId: 'cal-2' });
+
+    // Import for cal-1 without 'done' UID - should preserve cal-1's completed row
+    repo.importAssignments([makeInputWithSource('keep@google.com', 'cal-1')], 'cal-1');
+
+    expect(getIcalUidsForSource(db, 'cal-1').sort()).toEqual(['done@google.com', 'keep@google.com']);
+
+    // cal-2 should be unchanged (not imported for cal-2)
+    expect(getIcalUidsForSource(db, 'cal-2')).toEqual(['done@google.com']);
+  });
+
+  it('imports new rows with source_id set correctly', () => {
+    const db = getDatabase();
+    seedCalendar(db, 'cal-1', 'Calendar 1');
+
+    const result = repo.importAssignments(
+      [makeInputWithSource('new-uid@google.com', 'cal-1', { title: 'New Assignment' })],
+      'cal-1',
+    );
+
+    expect(result.imported).toBe(1);
+
+    const row = db.exec(
+      `SELECT title, source_id FROM assignments WHERE ical_uid = 'new-uid@google.com'`,
+    );
+    expect(row.length).toBeGreaterThan(0);
+    const row0 = row[0]!.values[0] as unknown[];
+    expect(row0[0]).toBe('New Assignment');
+    expect(row0[1]).toBe('cal-1');
+  });
+
+  it('handles multiple sources in sequence without cross-contamination', () => {
+    const db = getDatabase();
+    seedCalendar(db, 'cal-1', 'Calendar 1');
+    seedCalendar(db, 'cal-2', 'Calendar 2');
+    seedCalendar(db, 'cal-3', 'Calendar 3');
+
+    // Import for cal-1
+    repo.importAssignments([makeInputWithSource('uid-1@google.com', 'cal-1')], 'cal-1');
+    // Import for cal-2
+    repo.importAssignments([makeInputWithSource('uid-2@google.com', 'cal-2')], 'cal-2');
+    // Import for cal-3
+    repo.importAssignments([makeInputWithSource('uid-3@google.com', 'cal-3')], 'cal-3');
+
+    // Each source should have only its own assignment
+    expect(getIcalUidsForSource(db, 'cal-1')).toEqual(['uid-1@google.com']);
+    expect(getIcalUidsForSource(db, 'cal-2')).toEqual(['uid-2@google.com']);
+    expect(getIcalUidsForSource(db, 'cal-3')).toEqual(['uid-3@google.com']);
+
+    // Total count should be 3
+    const total = db.exec(`SELECT COUNT(*) as count FROM assignments WHERE source = 'ical'`);
+    expect(total.length).toBeGreaterThan(0);
+    const totalRow = total[0]!.values[0] as unknown[];
+    expect(totalRow[0]).toBe(3);
+  });
+
+  it('backward compat: global import (no sourceId) still works for legacy data', () => {
+    const db = getDatabase();
+    // Legacy data without source_id
+    seedRowWithSource(db, { id: 'legacy-1', icalUid: 'legacy@google.com', sourceId: null });
+    seedRowWithSource(db, { id: 'legacy-2', icalUid: 'legacy-2@google.com', sourceId: null });
+
+    // Import without sourceId (legacy behavior)
+    const result = repo.importAssignments([makeInput('legacy@google.com', { title: 'Updated Legacy' })]);
+
+    expect(result.updated).toBe(1);
+    const row = db.exec(`SELECT title FROM assignments WHERE ical_uid = 'legacy@google.com'`);
+    expect(row.length).toBeGreaterThan(0);
+    const row0 = row[0]!.values[0] as unknown[];
+    expect(row0[0]).toBe('Updated Legacy');
   });
 });

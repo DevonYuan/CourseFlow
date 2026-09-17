@@ -286,8 +286,8 @@ describe('iCal IPC Handlers', () => {
     const testEvents: ICalEvent[] = [createICalEvent(), createICalEvent({ uid: 'test-uid-456' })];
     const testSourceUrl = 'https://canvas.example.com/feeds/ical/abc123.ics';
     const mockAssignments = [
-      { id: 'assignment-1', title: 'Test Assignment' },
-      { id: 'assignment-2', title: 'Test Assignment 2' },
+      { id: 'assignment-1', title: 'Test Assignment', sourceId: undefined },
+      { id: 'assignment-2', title: 'Test Assignment 2', sourceId: undefined },
     ];
     const mockImportResult = createImportResult({ imported: 2, updated: 0, skipped: 0 });
 
@@ -309,10 +309,10 @@ describe('iCal IPC Handlers', () => {
       }
 
       // Verify mapICalToAssignments called with correct args
-      expect(mapICalToAssignments).toHaveBeenCalledWith(testEvents, testSourceUrl);
+      expect(mapICalToAssignments).toHaveBeenCalledWith(testEvents, testSourceUrl, undefined);
 
       // Verify repo.importAssignments called with mapped assignments
-      expect(repo.importAssignments).toHaveBeenCalledWith(mockAssignments);
+      expect(repo.importAssignments).toHaveBeenCalledWith(mockAssignments, undefined);
 
       // Verify progress events emitted
       expect(sendEventToRenderers).toHaveBeenCalledWith('ical:progress', {

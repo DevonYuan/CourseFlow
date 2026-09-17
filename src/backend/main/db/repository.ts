@@ -670,29 +670,42 @@ export const repo = {
             // UPDATE: incoming is newer — but preserve protected fields
             const existingId = existing['id'] as string;
             const existingStatus = (existing['status'] as string) ?? 'pending';
+            const existingTitle = existing['title'] as string;
+            const existingDueAt = existing['due_at'] as number | null;
+            const existingWorkflowState = existing['workflow_state'] as string | null;
+            const existingHtmlUrl = existing['html_url'] as string | null;
+            const existingPointsPossible = existing['points_possible'] as number | null;
+            const existingSubmissionTypes = existing['submission_types'] as string | null;
+            const existingUnlockAt = existing['unlock_at'] as number | null;
+            const existingLockAt = existing['lock_at'] as number | null;
+            const existingRrule = existing['rrule'] as string | null;
+            const existingSource = existing['source'] as string | null;
+            const existingSourceUrl = existing['source_url'] as string | null;
+            const existingSourceId = existing['source_id'] as string | null;
+            const existingDescription = existing['description'] as string | null;
 
             // Update safe-to-overwrite fields from Canvas (including description)
             // Preserve: status (if completed), course_color, priority_order, notes, subtasks
             updateStmt.bind([
-              input.title ?? existing['title'] ?? '', // title
-              input.dueAt ? new Date(input.dueAt).getTime() : toNullable(existing['due_at']), // due_at
-              input.workflowState ?? existing['workflow_state'] ?? 'published', // workflow_state
-              input.htmlUrl ?? existing['html_url'] ?? '', // html_url
-              input.pointsPossible ?? toNullable(existing['points_possible']), // points_possible
+              input.title ?? existingTitle ?? '', // title
+              input.dueAt ? new Date(input.dueAt).getTime() : toNullable(existingDueAt), // due_at
+              input.workflowState ?? existingWorkflowState ?? 'published', // workflow_state
+              input.htmlUrl ?? existingHtmlUrl ?? '', // html_url
+              input.pointsPossible ?? toNullable(existingPointsPossible), // points_possible
               input.submissionTypes
                 ? JSON.stringify(input.submissionTypes)
-                : toNullable(existing['submission_types']), // submission_types
+                : toNullable(existingSubmissionTypes), // submission_types
               input.unlockAt
                 ? new Date(input.unlockAt).getTime()
-                : toNullable(existing['unlock_at']), // unlock_at
-              input.lockAt ? new Date(input.lockAt).getTime() : toNullable(existing['lock_at']), // lock_at
-              input.rrule ?? toNullable(existing['rrule']), // rrule
-              input.source ?? existing['source'] ?? 'ical', // source
-              input.sourceUrl ?? toNullable(existing['source_url']), // source_url
-              sourceId ?? toNullable(existing['source_id']), // source_id
+                : toNullable(existingUnlockAt), // unlock_at
+              input.lockAt ? new Date(input.lockAt).getTime() : toNullable(existingLockAt), // lock_at
+              input.rrule ?? toNullable(existingRrule), // rrule
+              input.source ?? existingSource ?? 'ical', // source
+              input.sourceUrl ?? toNullable(existingSourceUrl), // source_url
+              sourceId ?? toNullable(existingSourceId), // source_id
               input.status ?? existingStatus, // status (may be restored below if protected)
               now, // updated_at
-              input.description ?? existing['description'] ?? '', // description (from Canvas)
+              input.description ?? existingDescription ?? '', // description (from Canvas)
               existingId, // WHERE id = ?
             ]);
             updateStmt.step();

@@ -102,6 +102,7 @@ export function mapAssignmentInputToDb(input: AssignmentInput, now: number): Par
   if (input.status !== undefined) dbRow.status = input.status;
   if (input.source !== undefined) dbRow.source = input.source;
   if (input.sourceUrl !== undefined) dbRow.source_url = input.sourceUrl;
+  if (input.sourceId !== undefined) dbRow.source_id = input.sourceId;
   if (input.rrule !== undefined) dbRow.rrule = input.rrule;
   if (input.createdAt !== undefined) dbRow.created_at = toUnixMs(input.createdAt) ?? now;
   if (input.updatedAt !== undefined) dbRow.updated_at = toUnixMs(input.updatedAt) ?? now;

@@ -784,7 +784,7 @@ const handlers: IpcHandlers = {
       });
 
       // Map iCal events to assignments
-      const assignments = mapICalToAssignments(input.events, input.sourceUrl);
+      const assignments = mapICalToAssignments(input.events, input.sourceUrl, input.sourceId);
 
       // Import assignments with deduplication
       console.log('[ical:import] Import completed, updating lastSyncAt');

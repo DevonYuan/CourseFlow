@@ -68,6 +68,7 @@ export interface AssignmentInput {
   status?: AssignmentStatus;
   source?: AssignmentSource;
   sourceUrl?: string;
+  sourceId?: string; // Calendar source ID for per-source dedupe
   rrule?: string;
   createdAt?: IsoDateTime;
   updatedAt?: IsoDateTime;
@@ -362,6 +363,7 @@ export interface DbAssignment {
   status: string | null;
   source: string | null;
   source_url: string | null;
+  source_id: string | null;
   rrule: string | null;
   created_at: number;
   updated_at: number;

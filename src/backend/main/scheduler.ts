@@ -10,8 +10,7 @@
  * @module @backend/main/scheduler
  */
 
-import type { BrowserWindow } from 'electron';
-import { powerMonitor } from 'electron';
+import { BrowserWindow, powerMonitor } from 'electron';
 
 import type { Settings, IsoDateTime, SchedulerConfig, SchedulerStatus, CalendarSource } from '../shared/types.js';
 
@@ -424,7 +423,7 @@ export class Scheduler {
       this.emitProgressForSource(calendar.id, 'importing', 50, 'Importing assignments...');
 
       // Map iCal events to assignments
-      const assignments = mapICalToAssignments(events, feedUrl);
+      const assignments = mapICalToAssignments(events, feedUrl, calendar.id);
 
       // Import assignments with deduplication (per-source, preserves priority/notes/subtasks)
       const result = repo.importAssignments(assignments, calendar.id);

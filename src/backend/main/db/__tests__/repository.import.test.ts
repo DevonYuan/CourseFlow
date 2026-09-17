@@ -72,14 +72,16 @@ function runMigrations(db: Database): void {
       submission_types TEXT,
       workflow_state TEXT,
       html_url TEXT,
-      ical_uid TEXT UNIQUE,
+      ical_uid TEXT,
       status TEXT CHECK (status IN ('pending', 'in_progress', 'completed')) DEFAULT 'pending',
       source TEXT CHECK (source IN ('manual', 'ical')) DEFAULT 'manual',
       source_url TEXT,
       rrule TEXT,
+      source_id TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_assignments_source_ical ON assignments(source_id, ical_uid);
     CREATE TABLE IF NOT EXISTS priority_order (
       assignment_id TEXT PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
       position INTEGER NOT NULL UNIQUE
