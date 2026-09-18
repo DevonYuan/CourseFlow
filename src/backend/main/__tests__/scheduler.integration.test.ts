@@ -110,6 +110,7 @@ vi.mock('../db/repository.js', () => {
       listCalendars: vi.fn().mockReturnValue([defaultCalendar]),
       updateCalendarSyncTime: vi.fn(),
       updateCalendarError: vi.fn(),
+      updateCalendarNextSyncAt: vi.fn(),
     },
   };
 });
@@ -148,6 +149,7 @@ const mockImportAssignments = repo.importAssignments as Mock;
 const mockSetSettings = repo.setSettings as Mock;
 const mockUpdateCalendarSyncTime = repo.updateCalendarSyncTime as Mock;
 const mockUpdateCalendarError = repo.updateCalendarError as Mock;
+const mockUpdateCalendarNextSyncAt = repo.updateCalendarNextSyncAt as Mock;
 const mockListCalendars = repo.listCalendars as Mock;
 const mockSendEventToRenderers = sendEventToRenderers as Mock;
 const mockEmitSchedulerTick = emitSchedulerTick as Mock;
@@ -338,7 +340,10 @@ describe('Scheduler Integration Tests', () => {
 
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'scheduler:coalesced',
-        expect.objectContaining({ message: 'Sync in progress...' }),
+        expect.objectContaining({ 
+          message: 'Sync already in progress for 1 calendar(s)',
+          sourceIds: ['cal-1'],
+        }),
       );
 
       // Resolve first fetch
@@ -383,7 +388,10 @@ describe('Scheduler Integration Tests', () => {
 
       expect(mockSendEventToRenderers).toHaveBeenCalledWith(
         'scheduler:coalesced',
-        expect.objectContaining({ message: 'Sync in progress...' }),
+        expect.objectContaining({ 
+          message: 'Sync already in progress for 1 calendar(s)',
+          sourceIds: ['cal-1'],
+        }),
       );
 
       // Resolve first fetch

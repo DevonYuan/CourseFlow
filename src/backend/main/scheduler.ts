@@ -54,10 +54,13 @@ export class Scheduler {
   // Retry state for current source
   private retryCount = 0;
   private readonly maxRetries = 3;
-  private readonly retryDelaysMs = [60_000, 120_000, 240_000]; // 1min, 2min, 4min
+  private readonly retryDelaysMs = [1000, 2000, 4000]; // 1s, 2s, 4s (exponential backoff)
   private retryTimer: NodeJS.Timeout | null = null;
   private isPaused = false;
   private pauseReason: string | null = null;
+
+  // Per-source sync state for coalescing
+  private isSyncing: Record<string, boolean> = {};
 
   /**
    * Creates a new Scheduler instance.
@@ -225,15 +228,6 @@ export class Scheduler {
    * If a fetch is already in progress, ignores the request and emits a coalesced event.
    */
   async triggerManual(): Promise<void> {
-    if (this.isRunning) {
-      console.log('[Scheduler] Manual trigger skipped - fetch already in progress');
-      // Emit coalesced event for UI toast notification
-      sendEventToRenderers('scheduler:coalesced', {
-        message: 'Sync in progress...',
-      });
-      return;
-    }
-
     if (!this.currentSettings) {
       console.warn('[Scheduler] No settings available for manual trigger');
       sendEventToRenderers('scheduler:error', {
@@ -252,7 +246,31 @@ export class Scheduler {
       return;
     }
 
-    console.log('[Scheduler] Manual trigger initiated');
+    // Get all enabled calendars
+    const calendars = repo.listCalendars().filter((c) => c.enabled);
+    if (calendars.length === 0) {
+      console.warn('[Scheduler] No enabled calendar sources for manual trigger');
+      sendEventToRenderers('scheduler:error', {
+        message: 'No enabled calendar sources — check Settings',
+        code: 'auth',
+      });
+      return;
+    }
+
+    // Check for per-source coalescing
+    const alreadySyncing = calendars.filter((c) => this.isSyncing[c.id]);
+    if (alreadySyncing.length > 0) {
+      console.log(
+        `[Scheduler] Manual trigger coalesced for ${alreadySyncing.length} source(s) already syncing`,
+      );
+      sendEventToRenderers('scheduler:coalesced', {
+        message: `Sync already in progress for ${alreadySyncing.length} calendar(s)`,
+        sourceIds: alreadySyncing.map((c) => c.id),
+      });
+      return;
+    }
+
+    console.log('[Scheduler] Manual trigger initiated for all enabled sources');
     await this.runFetchCycle();
   }
 
@@ -288,14 +306,9 @@ export class Scheduler {
   /**
    * Performs a single fetch-and-import cycle for ALL enabled calendar sources.
    * Each source is processed independently with its own retry logic.
-   * Guarded by isRunning flag to prevent overlapping runs.
+   * Per-source coalescing prevents overlapping syncs for the same source.
    */
   private async runFetchCycle(): Promise<void> {
-    if (this.isRunning) {
-      console.log('[Scheduler] Fetch cycle skipped - already running');
-      return;
-    }
-
     if (!this.currentSettings) {
       console.warn('[Scheduler] No settings available, skipping fetch cycle');
       return;
@@ -342,7 +355,18 @@ export class Scheduler {
         break;
       }
 
-      await this.fetchAndImportForSource(calendar, syncIntervalMinutes);
+      // Per-source coalescing: skip if this source is already syncing
+      if (this.isSyncing[calendar.id]) {
+        console.log(`[Scheduler] Skipping "${calendar.name}" - already syncing`);
+        continue;
+      }
+
+      this.isSyncing[calendar.id] = true;
+      try {
+        await this.fetchAndImportForSource(calendar, syncIntervalMinutes);
+      } finally {
+        this.isSyncing[calendar.id] = false;
+      }
     }
 
     // Mark cycle complete
@@ -370,7 +394,7 @@ export class Scheduler {
         feedUrl = await decryptIcalUrl(parsed);
       } catch {
         console.error(`[Scheduler] Failed to decrypt feed URL for calendar ${calendar.id}`);
-        this.emitErrorForSource(calendar.id, 'Failed to decrypt feed URL', 'auth');
+        this.emitErrorForSource(calendar.id, calendar.name, 'Failed to decrypt feed URL', 'auth');
         await repo.updateCalendarError(calendar.id, 'Failed to decrypt feed URL');
         return;
       }
@@ -379,7 +403,7 @@ export class Scheduler {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error(`[Scheduler] Unexpected error for calendar ${calendar.id}:`, message);
-      this.emitErrorForSource(calendar.id, message, 'unknown');
+      this.emitErrorForSource(calendar.id, calendar.name, message, 'unknown');
       await repo.updateCalendarError(calendar.id, message);
     }
   }
@@ -399,6 +423,7 @@ export class Scheduler {
       // Emit progress: fetching
       this.emitProgressForSource(
         calendar.id,
+        calendar.name,
         'fetching',
         10,
         `Fetching "${calendar.name}"... (attempt ${attemptNumber}/${maxAttempts})`,
@@ -408,19 +433,19 @@ export class Scheduler {
       const icalText = await fetchICalFeed(feedUrl, { timeoutMs: 30_000, maxRetries: 1 });
 
       // Emit progress: parsing
-      this.emitProgressForSource(calendar.id, 'parsing', 30, 'Parsing events...');
+      this.emitProgressForSource(calendar.id, calendar.name, 'parsing', 30, 'Parsing events...');
 
       // Parse iCal feed
       const events = parseICalFeed(icalText);
 
       if (events.length === 0) {
-        this.emitProgressForSource(calendar.id, 'complete', 100, 'No events found');
+        this.emitProgressForSource(calendar.id, calendar.name, 'complete', 100, 'No events found');
         await this.onFetchSuccessForSource(calendar, 0, 0, 0, syncIntervalMinutes);
         return;
       }
 
       // Emit progress: importing
-      this.emitProgressForSource(calendar.id, 'importing', 50, 'Importing assignments...');
+      this.emitProgressForSource(calendar.id, calendar.name, 'importing', 50, 'Importing assignments...');
 
       // Map iCal events to assignments
       const assignments = mapICalToAssignments(events, feedUrl, calendar.id);
@@ -472,6 +497,7 @@ export class Scheduler {
     // Emit completion progress
     this.emitProgressForSource(
       calendar.id,
+      calendar.name,
       'complete',
       100,
       `"${calendar.name}": imported ${imported}, updated ${updated}, skipped ${skipped}`,
@@ -538,16 +564,22 @@ export class Scheduler {
     this.lastError = message;
     await repo.updateCalendarError(calendar.id, message);
 
+    // Schedule next_sync_at even on failure (so the source will be retried on next cycle)
+    const syncNow = Date.now();
+    const nextSyncAt = syncNow + syncIntervalMinutes * 60 * 1000;
+    await repo.updateCalendarNextSyncAt(calendar.id, nextSyncAt);
+
     // Emit error progress
     this.emitProgressForSource(
       calendar.id,
+      calendar.name,
       'error',
       100,
       `"${calendar.name}": ${classification.userMessage}`,
     );
 
-    // Emit scheduler error event with sourceId
-    this.emitErrorForSource(calendar.id, classification.userMessage, classification.code);
+    // Emit scheduler error event with sourceId and sourceName
+    this.emitErrorForSource(calendar.id, calendar.name, classification.userMessage, classification.code);
 
     if (classification.retryable && this.retryCount < this.maxRetries) {
       // Schedule retry with exponential backoff
@@ -800,31 +832,33 @@ export class Scheduler {
   }
 
   /**
-   * Emits scheduler:error event with sourceId for multi-calendar tracking.
+   * Emits scheduler:error event with sourceId and sourceName for multi-calendar tracking.
    */
   private emitErrorForSource(
     sourceId: string,
+    sourceName: string,
     message: string,
     code: 'network' | 'auth' | 'parse' | 'server' | 'unknown',
   ): void {
-    // Extend the event with sourceId
+    // Extend the event with sourceId and sourceName
     for (const window of BrowserWindow.getAllWindows()) {
       if (!window.isDestroyed()) {
-        window.webContents.send('scheduler:error', { message, code, sourceId });
+        window.webContents.send('scheduler:error', { message, code, sourceId, sourceName });
       }
     }
   }
 
   /**
-   * Emits ical:progress event to all renderer windows with sourceId.
+   * Emits ical:progress event to all renderer windows with sourceId and sourceName.
    */
   private emitProgressForSource(
     sourceId: string,
+    sourceName: string,
     stage: 'fetching' | 'parsing' | 'importing' | 'complete' | 'error',
     progress: number,
     message?: string,
   ): void {
-    sendEventToRenderers('ical:progress' as const, { stage, progress, message, sourceId });
+    sendEventToRenderers('ical:progress' as const, { stage, progress, message, sourceId, sourceName });
   }
 }
 

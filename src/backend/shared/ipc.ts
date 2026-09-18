@@ -288,6 +288,7 @@ export interface IpcEvents {
     progress: number;
     message?: string;
     sourceId?: string; // Source ID for multi-calendar progress tracking
+    sourceName?: string; // Source name for multi-calendar progress tracking
   };
   'settings:changed': Settings;
   'scheduler:tick': {
@@ -298,9 +299,11 @@ export interface IpcEvents {
     message: string;
     code: 'network' | 'auth' | 'parse' | 'server' | 'unknown';
     sourceId?: string; // Source ID for multi-calendar error tracking
+    sourceName?: string; // Source name for multi-calendar error tracking
   };
   'scheduler:coalesced': {
     message: string;
+    sourceIds?: string[]; // Source IDs that are already syncing
   };
 }
 

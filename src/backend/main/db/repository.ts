@@ -1818,4 +1818,19 @@ export const repo = {
     sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id });
     return calendar;
   },
+
+  /**
+   * Update calendar source's next_sync_at timestamp only (e.g., after a failed sync to schedule retry).
+   * Emits db:changed event with table='calendars', action='update'.
+   */
+  async updateCalendarNextSyncAt(id: string, nextSyncAt: number): Promise<CalendarSource> {
+    const now = Date.now();
+    run('UPDATE calendars SET next_sync_at = ?, updated_at = ? WHERE id = ?', [nextSyncAt, now, id]);
+
+    const row = get<DbCalendarSource>('SELECT * FROM calendars WHERE id = ?', [id]);
+    if (!row) throw new Error(`Calendar not found: ${id}`);
+    const calendar = mapDbCalendarSourceToCalendarSource(row);
+    sendEventToRenderers('db:changed', { table: 'calendars', action: 'update', id });
+    return calendar;
+  },
 };
