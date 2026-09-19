@@ -27,26 +27,9 @@ import { ToastProvider } from '../context/ToastContext';
 // Extend expect with jest-dom matchers
 expect.extend(matchers);
 
-// Mock window.api
-const mockApi = {
-  settings: {
-    get: vi.fn(),
-    set: vi.fn(),
-    reset: vi.fn(),
-  },
-  ical: {
-    fetch: vi.fn(),
-    import: vi.fn(),
-  },
-  onSettingsChanged: vi.fn(),
-  onIcalProgress: vi.fn(),
-};
-
-Object.defineProperty(window, 'api', {
-  value: mockApi,
-  writable: true,
-  configurable: true,
-});
+// Track progress callback for fetch tests
+let progressCallback: ((payload: IpcEvents['ical:progress']) => void) | null = null;
+let settingsUnsubscribe: (() => void) | null = null;
 
 // Test utilities
 const defaultSettings: Settings = {
@@ -62,10 +45,6 @@ const defaultSettings: Settings = {
   autoFetchIntervalMs: 3_600_000,
   syncIntervalMinutes: 15,
 };
-
-// Track progress callback for fetch tests
-let progressCallback: ((payload: IpcEvents['ical:progress']) => void) | null = null;
-let settingsUnsubscribe: (() => void) | null = null;
 
 function renderSettingsModal(props?: { isOpen: boolean; onClose: () => void }) {
   const resolved = props ?? { isOpen: true, onClose: vi.fn() };
@@ -93,65 +72,64 @@ async function waitForFormReady() {
   });
 }
 
-// Setup mocks that simulate the fetch/import flow with progress events
-function setupFetchMocks() {
-  let progressCb: ((payload: IpcEvents['ical:progress']) => void) | null = null;
-
-  mockApi.onIcalProgress.mockImplementation((cb) => {
-    progressCb = cb;
-    return vi.fn();
-  });
-
-  mockApi.ical.fetch.mockImplementation(async (url: string) => {
-    // Simulate fetch progress
-    if (progressCb) {
-      act(() => {
-        progressCb!({ stage: 'fetching', progress: 33, message: 'Fetching...' });
-        progressCb!({ stage: 'parsing', progress: 66, message: 'Parsing...' });
-      });
-    }
-    return { ok: true, data: [] as any };
-  });
-
-  mockApi.ical.import.mockImplementation(async () => {
-    if (progressCb) {
-      act(() => {
-        progressCb!({ stage: 'importing', progress: 100, message: 'Importing...' });
-      });
-    }
-    return { ok: true, data: { imported: 5, updated: 2, skipped: 1 } };
-  });
-
-  return { getProgressCallback: () => progressCb };
+// Set up window.api at module level (before tests run)
+function noop(): () => void {
+  return () => {};
 }
+
+Object.defineProperty(window, 'api', {
+  value: {
+    db: {
+      calendars: {
+        list: () => Promise.resolve({ ok: true, data: [] }),
+        get: () => Promise.resolve({ ok: true, data: null }),
+        create: () => Promise.resolve({ ok: true, data: {} }),
+        update: () => Promise.resolve({ ok: true, data: {} }),
+        delete: () => Promise.resolve({ ok: true }),
+        reorder: () => Promise.resolve({ ok: true }),
+        setEnabled: () => Promise.resolve({ ok: true, data: {} }),
+      },
+    },
+    ical: {
+      fetch: () => Promise.resolve({ ok: true, data: [] }),
+      import: () => Promise.resolve({ ok: true, data: { imported: 0, updated: 0, skipped: 0 } }),
+    },
+    settings: {
+      get: () => Promise.resolve({ ok: true, data: {} }),
+      set: () => Promise.resolve({ ok: true, data: {} }),
+      reset: () => Promise.resolve({ ok: true, data: {} }),
+    },
+    onDbChanged: noop,
+    onSettingsChanged: noop,
+    onIcalProgress: noop,
+  },
+  writable: true,
+  configurable: true,
+});
 
 describe('SettingsModal', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     progressCallback = null;
     settingsUnsubscribe = null;
     document.documentElement.classList.remove('light', 'dark');
 
     // Default mock implementations
-    mockApi.settings.get.mockResolvedValue({ ok: true, data: defaultSettings });
-    mockApi.settings.set.mockResolvedValue({ ok: true, data: defaultSettings });
-    mockApi.settings.reset.mockResolvedValue({ ok: true, data: defaultSettings });
-    mockApi.ical.fetch.mockResolvedValue({ ok: true, data: [] });
-    mockApi.ical.import.mockResolvedValue({
-      ok: true,
-      data: { imported: 0, updated: 0, skipped: 0 },
-    });
+    window.api.settings.get = () => Promise.resolve({ ok: true, data: defaultSettings });
+    window.api.settings.set = () => Promise.resolve({ ok: true, data: defaultSettings });
+    window.api.settings.reset = () => Promise.resolve({ ok: true, data: defaultSettings });
+    window.api.ical.fetch = () => Promise.resolve({ ok: true, data: [] });
+    window.api.ical.import = () => Promise.resolve({ ok: true, data: { imported: 0, updated: 0, skipped: 0 } });
 
-    mockApi.onSettingsChanged.mockImplementation((cb) => {
+    window.api.onSettingsChanged = (cb) => {
       settingsUnsubscribe = vi.fn();
       cb(defaultSettings);
       return settingsUnsubscribe;
-    });
+    };
 
-    mockApi.onIcalProgress.mockImplementation((cb) => {
+    window.api.onIcalProgress = (cb) => {
       progressCallback = cb;
       return vi.fn();
-    });
+    };
   });
 
   afterEach(() => {
@@ -175,7 +153,7 @@ describe('SettingsModal', () => {
     });
 
     it('shows loading state initially', () => {
-      mockApi.settings.get.mockImplementation(() => new Promise(() => {})); // Never resolves
+      window.api.settings.get = () => new Promise(() => {}); // Never resolves
       renderSettingsModal();
       expect(screen.getByText('Loading settings...')).toBeInTheDocument();
     });
@@ -210,7 +188,7 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitFor(() => {
-        expect(mockApi.settings.get).toHaveBeenCalled();
+        expect(window.api.settings.get).toHaveBeenCalled();
       });
     });
 
@@ -234,7 +212,7 @@ describe('SettingsModal', () => {
     });
 
     it('handles settings load error', async () => {
-      mockApi.settings.get.mockResolvedValue({ ok: false, error: 'Failed to load' });
+      window.api.settings.get = () => Promise.resolve({ ok: false, error: 'Failed to load' });
       renderSettingsModal();
       await waitForModalReady();
       await waitFor(() => {
@@ -247,7 +225,7 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitFor(() => {
-        expect(mockApi.onSettingsChanged).toHaveBeenCalled();
+        expect(window.api.onSettingsChanged).toHaveBeenCalled();
       });
     });
 
@@ -255,7 +233,7 @@ describe('SettingsModal', () => {
       const { rerender } = renderSettingsModal({ isOpen: true, onClose: vi.fn() });
       await waitForModalReady();
       await waitFor(() => {
-        expect(mockApi.onSettingsChanged).toHaveBeenCalled();
+        expect(window.api.onSettingsChanged).toHaveBeenCalled();
       });
       expect(settingsUnsubscribe).toBeDefined();
       rerender(
@@ -453,10 +431,7 @@ describe('SettingsModal', () => {
     });
 
     it('disables Fetch Now when no URL', async () => {
-      mockApi.settings.get.mockResolvedValue({
-        ok: true,
-        data: { ...defaultSettings, icalUrl: '' },
-      });
+      window.api.settings.get = () => Promise.resolve({ ok: true, data: { ...defaultSettings, icalUrl: '' } });
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
@@ -473,11 +448,11 @@ describe('SettingsModal', () => {
     // it('shows success message after import', async () => { ... });
 
     it('shows error message on fetch failure', async () => {
-      mockApi.ical.fetch.mockResolvedValue({ ok: false, error: 'Network error' });
-      mockApi.onIcalProgress.mockImplementation((cb) => {
+      window.api.ical.fetch = () => Promise.resolve({ ok: false, error: 'Network error' });
+      window.api.onIcalProgress = (cb) => {
         progressCallback = cb;
         return vi.fn();
-      });
+      };
 
       renderSettingsModal();
       await waitForModalReady();
@@ -496,7 +471,7 @@ describe('SettingsModal', () => {
       await waitForFormReady();
       fireEvent.click(screen.getByText('Save'));
       await waitFor(() => {
-        expect(mockApi.settings.set).toHaveBeenCalled();
+        expect(window.api.settings.set).toHaveBeenCalled();
       });
     });
 
@@ -512,7 +487,7 @@ describe('SettingsModal', () => {
     });
 
     it('shows error on save failure', async () => {
-      mockApi.settings.set.mockResolvedValue({ ok: false, error: 'Save failed' });
+      window.api.settings.set = () => Promise.resolve({ ok: false, error: 'Save failed' });
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
@@ -525,12 +500,10 @@ describe('SettingsModal', () => {
 
     it('shows saving state', async () => {
       let resolveSave: (value: unknown) => void;
-      mockApi.settings.set.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            resolveSave = resolve;
-          }),
-      );
+      window.api.settings.set = () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        });
 
       renderSettingsModal();
       await waitForModalReady();
@@ -553,7 +526,7 @@ describe('SettingsModal', () => {
       await waitForFormReady();
       fireEvent.click(screen.getByText('Reset to Defaults'));
       await waitFor(() => {
-        expect(mockApi.settings.reset).toHaveBeenCalled();
+        expect(window.api.settings.reset).toHaveBeenCalled();
       });
     });
 
@@ -570,7 +543,7 @@ describe('SettingsModal', () => {
     });
 
     it('shows error on reset failure', async () => {
-      mockApi.settings.reset.mockResolvedValue({ ok: false, error: 'Reset failed' });
+      window.api.settings.reset = () => Promise.resolve({ ok: false, error: 'Reset failed' });
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
@@ -605,7 +578,16 @@ describe('SettingsModal', () => {
     });
 
     it('has proper role for progress bar', async () => {
-      setupFetchMocks();
+      // Simulate fetch in progress by providing a loading state
+      let resolveFetch: (value: unknown) => void;
+      const fetchPromise = new Promise((resolve) => { resolveFetch = resolve; });
+      
+      window.api.ical.fetch = () => fetchPromise;
+      window.api.onIcalProgress = (cb) => {
+        progressCallback = cb;
+        return vi.fn();
+      };
+      
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
@@ -613,6 +595,8 @@ describe('SettingsModal', () => {
       await waitFor(() => {
         expect(screen.getByRole('progressbar')).toBeInTheDocument();
       });
+      // Resolve the fetch to clean up
+      resolveFetch!({ ok: true, data: [] });
     });
 
     // TODO: Progress event simulation needs test infrastructure fixes

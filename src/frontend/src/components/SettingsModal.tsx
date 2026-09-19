@@ -1,10 +1,17 @@
 import type { Settings } from '@backend/shared/types';
+import type { CalendarSource } from '@backend/shared/types';
 import React, { useState } from 'react';
 import { useEffect, useCallback } from 'react';
 
 import { useToast } from '../context/ToastContext';
 import { useIcalSync } from '../hooks/useIcalSync';
+import { useCalendarsStore } from '../stores/calendarsStore';
 import { applyTheme } from '../utils/theme';
+
+import { AddCalendarModal } from './calendars/AddCalendarModal';
+import { CalendarList } from './calendars/CalendarList';
+import { ConfirmModal } from './ui/ConfirmModal';
+
 import './SettingsModal.css';
 
 interface SettingsModalProps {
@@ -107,8 +114,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [formData, setFormData] = useState<Partial<Settings>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'general' | 'calendars'>('general');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [addCalendarOpen, setAddCalendarOpen] = useState(false);
+  const [editingCalendar, setEditingCalendar] = useState<CalendarSource | null>(null);
 
   const { success: toastSuccess, error: toastError } = useToast();
+  const { optimisticDelete } = useCalendarsStore();
 
   const {
     isLoading: isSyncing,
@@ -229,6 +241,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   };
 
+  const handleDeleteCalendar = (id: string, name: string) => {
+    setDeleteConfirm({ id, name });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await optimisticDelete(deleteConfirm.id);
+      toastSuccess('Calendar deleted');
+      setDeleteConfirm(null);
+    } catch {
+      toastError('Failed to delete calendar');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirm(null);
+  };
+
   if (!isOpen) return null;
 
   if (isLoading) {
@@ -260,6 +291,32 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </button>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="modal-tabs" role="tablist" aria-label="Settings sections">
+          <button
+            role="tab"
+            aria-selected={activeTab === 'general'}
+            aria-controls="general-panel"
+            id="general-tab"
+            className={`modal-tab ${activeTab === 'general' ? 'modal-tab--active' : ''}`}
+            onClick={() => setActiveTab('general')}
+            type="button"
+          >
+            General
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'calendars'}
+            aria-controls="calendars-panel"
+            id="calendars-tab"
+            className={`modal-tab ${activeTab === 'calendars' ? 'modal-tab--active' : ''}`}
+            onClick={() => setActiveTab('calendars')}
+            type="button"
+          >
+            Calendars
+          </button>
+        </div>
+
         <div className="modal-content">
           {error && (
             <div className="error-message" role="alert">
@@ -267,290 +324,339 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           )}
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void handleSave();
-            }}
+          {/* General Tab Panel */}
+          <div
+            role="tabpanel"
+            id="general-panel"
+            aria-labelledby="general-tab"
+            hidden={activeTab !== 'general'}
+            className="modal-tabpanel"
           >
-            <div className="form-group">
-              <label htmlFor="icalUrl">iCal URL</label>
-              <input
-                id="icalUrl"
-                type="url"
-                placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
-                value={formData.icalUrl || ''}
-                onChange={(e) => {
-                  handleInputChange('icalUrl', e.target.value);
-                  setUrlError(null);
-                }}
-                disabled={isSaving || isSyncing}
-                aria-invalid={!!urlError}
-                aria-describedby={urlError ? 'icalUrl-error' : 'icalUrl-help'}
-                data-testid="ical-url-input"
-              />
-              {urlError && (
-                <small id="icalUrl-error" className="error-text" role="alert">
-                  {urlError}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSave();
+              }}
+            >
+              <div className="form-group">
+                <label htmlFor="icalUrl">iCal URL (Legacy)</label>
+                <input
+                  id="icalUrl"
+                  type="url"
+                  placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
+                  value={formData.icalUrl || ''}
+                  onChange={(e) => {
+                    handleInputChange('icalUrl', e.target.value);
+                    setUrlError(null);
+                  }}
+                  disabled={isSaving || isSyncing}
+                  aria-invalid={!!urlError}
+                  aria-describedby={urlError ? 'icalUrl-error' : 'icalUrl-help'}
+                  data-testid="ical-url-input"
+                />
+                {urlError && (
+                  <small id="icalUrl-error" className="error-text" role="alert">
+                    {urlError}
+                  </small>
+                )}
+                <small id="icalUrl-help" className="help-text">
+                  Legacy single iCal URL. Use the Calendars tab for multi-calendar support.
                 </small>
-              )}
-              <small id="icalUrl-help" className="help-text">
-                Paste any iCal feed URL (Google Calendar, Canvas, Outlook, etc.)
-              </small>
-              <IcalUrlHelp />
-            </div>
+                <IcalUrlHelp />
+              </div>
 
-            {/* Fetch Now Section */}
-            <div className="form-group">
-              <label htmlFor="fetchNow">Fetch & Import</label>
-              <div className="fetch-now-group">
+              {/* Fetch Now Section */}
+              <div className="form-group">
+                <label htmlFor="fetchNow">Fetch & Import</label>
+                <div className="fetch-now-group">
+                  <button
+                    id="fetchNow"
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      const url = formData.icalUrl?.trim();
+                      if (!url) {
+                        setUrlError('Please enter an iCal URL first');
+                        return;
+                      }
+                      try {
+                        new URL(url);
+                      } catch {
+                        setUrlError('Invalid URL format');
+                        return;
+                      }
+                      fetchAndImport(url)
+                        .then(() => {
+                          if (lastResult) {
+                            toastSuccess(
+                              `Synced: ${lastResult.imported} new, ${lastResult.updated} updated, ${lastResult.skipped} skipped`,
+                            );
+                          }
+                        })
+                        .catch(() => {
+                          if (syncError) {
+                            toastError(syncError);
+                          }
+                        });
+                    }}
+                    disabled={isSaving || isSyncing || !formData.icalUrl?.trim()}
+                    aria-busy={isSyncing}
+                    data-testid="sync-now-button"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <span className="spinner" aria-hidden="true"></span>
+                        {stage === 'fetch' && 'Fetching...'}
+                        {stage === 'parse' && 'Parsing...'}
+                        {stage === 'store' && 'Importing...'}
+                        {!stage || (stage === 'idle' && 'Working...')}
+                      </>
+                    ) : (
+                      'Fetch Now'
+                    )}
+                  </button>
+                  {isSyncing && (
+                    <div
+                      className="fetch-progress"
+                      role="progressbar"
+                      aria-valuenow={progress}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label="Fetch and import progress"
+                    >
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+                      </div>
+                      <small className="progress-message">{message}</small>
+                    </div>
+                  )}
+                  {lastResult && !isSyncing && (
+                    <div className="fetch-result success" role="status">
+                      Imported: {lastResult.imported} new, {lastResult.updated} updated,{' '}
+                      {lastResult.skipped} skipped
+                    </div>
+                  )}
+                  {syncError && !isSyncing && (
+                    <div className="fetch-result error" role="alert">
+                      {syncError}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="theme">Theme</label>
+                <select
+                  id="theme"
+                  value={formData.theme || 'system'}
+                  onChange={(e) => handleInputChange('theme', e.target.value)}
+                  disabled={isSaving}
+                >
+                  <option value="system">System</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="autoFetchIntervalMs">Auto-fetch Interval</label>
+                <select
+                  id="autoFetchIntervalMs"
+                  value={formData.autoFetchIntervalMs || 3_600_000}
+                  onChange={(e) =>
+                    handleInputChange('autoFetchIntervalMs', Number.parseInt(e.target.value, 10))
+                  }
+                  disabled={isSaving}
+                  data-testid="sync-interval-input"
+                >
+                  <option value={0}>Off</option>
+                  <option value={900_000}>15 minutes</option>
+                  <option value={1_800_000}>30 minutes</option>
+                  <option value={3_600_000}>1 hour</option>
+                  <option value={21_600_000}>6 hours</option>
+                  <option value={43_200_000}>12 hours</option>
+                  <option value={86_400_000}>24 hours</option>
+                </select>
+              </div>
+
+              <div className="form-group checkbox-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.showCompletedAssignments ?? true}
+                    onChange={(e) => handleInputChange('showCompletedAssignments', e.target.checked)}
+                    disabled={isSaving}
+                  />
+                  Show completed assignments
+                </label>
+              </div>
+
+              <div className="form-group checkbox-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.notifyDueSoon ?? true}
+                    onChange={(e) => handleInputChange('notifyDueSoon', e.target.checked)}
+                    disabled={isSaving}
+                  />
+                  Notify when assignments are due soon
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="dueSoonThresholdHours">Due Soon Threshold (hours)</label>
+                <input
+                  id="dueSoonThresholdHours"
+                  type="number"
+                  min="1"
+                  max="168"
+                  value={formData.dueSoonThresholdHours || 24}
+                  onChange={(e) =>
+                    handleInputChange('dueSoonThresholdHours', Number.parseInt(e.target.value, 10))
+                  }
+                  disabled={isSaving}
+                />
+              </div>
+
+              {/* Keyboard Shortcuts Help */}
+              <details className="keyboard-shortcuts-help" open={false}>
+                <summary className="keyboard-shortcuts__summary">Keyboard Shortcuts</summary>
+                <div className="keyboard-shortcuts__content">
+                  <div className="keyboard-shortcuts__section">
+                    <h4>Global</h4>
+                    <dl className="keyboard-shortcuts__list">
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>?</kbd>
+                        <dd>Show this help</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Esc</kbd>
+                        <dd>Close modal / Clear input / Dismiss prompt</dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <div className="keyboard-shortcuts__section">
+                    <h4>Assignment List</h4>
+                    <dl className="keyboard-shortcuts__list">
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>↑ / ↓</kbd>
+                        <dd>Navigate between assignments</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Enter</kbd>
+                        <dd>Open assignment detail</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Alt + ↑ / ↓</kbd>
+                        <dd>Reorder priority (move up/down)</dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <div className="keyboard-shortcuts__section">
+                    <h4>Assignment Detail</h4>
+                    <dl className="keyboard-shortcuts__list">
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Tab</kbd>
+                        <dd>Navigate between elements</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Space / Enter</kbd>
+                        <dd>Toggle sub-task completion</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Enter</kbd>
+                        <dd>Save sub-task / note</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Esc</kbd>
+                        <dd>Dismiss all-complete prompt / Close modal</dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <div className="keyboard-shortcuts__section">
+                    <h4>Notes Editor</h4>
+                    <dl className="keyboard-shortcuts__list">
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Ctrl + Enter</kbd>
+                        <dd>Save note (⌘+Enter on Mac)</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Esc</kbd>
+                        <dd>Cancel editing</dd>
+                      </div>
+                      <div className="keyboard-shortcuts__item">
+                        <kbd>Tab</kbd>
+                        <dd>Insert tab character (indentation)</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+              </details>
+
+              <div className="modal-actions">
                 <button
-                  id="fetchNow"
                   type="button"
                   className="secondary"
-                  onClick={() => {
-                    const url = formData.icalUrl?.trim();
-                    if (!url) {
-                      setUrlError('Please enter an iCal URL first');
-                      return;
-                    }
-                    try {
-                      new URL(url);
-                    } catch {
-                      setUrlError('Invalid URL format');
-                      return;
-                    }
-                    fetchAndImport(url)
-                      .then(() => {
-                        if (lastResult) {
-                          toastSuccess(
-                            `Synced: ${lastResult.imported} new, ${lastResult.updated} updated, ${lastResult.skipped} skipped`,
-                          );
-                        }
-                      })
-                      .catch(() => {
-                        if (syncError) {
-                          toastError(syncError);
-                        }
-                      });
-                  }}
-                  disabled={isSaving || isSyncing || !formData.icalUrl?.trim()}
-                  aria-busy={isSyncing}
-                  data-testid="sync-now-button"
+                  onClick={() => void handleReset()}
+                  disabled={isSaving}
                 >
-                  {isSyncing ? (
-                    <>
-                      <span className="spinner" aria-hidden="true"></span>
-                      {stage === 'fetch' && 'Fetching...'}
-                      {stage === 'parse' && 'Parsing...'}
-                      {stage === 'store' && 'Importing...'}
-                      {!stage || (stage === 'idle' && 'Working...')}
-                    </>
-                  ) : (
-                    'Fetch Now'
-                  )}
+                  Reset to Defaults
                 </button>
-                {isSyncing && (
-                  <div
-                    className="fetch-progress"
-                    role="progressbar"
-                    aria-valuenow={progress}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label="Fetch and import progress"
-                  >
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${progress}%` }}></div>
-                    </div>
-                    <small className="progress-message">{message}</small>
-                  </div>
-                )}
-                {lastResult && !isSyncing && (
-                  <div className="fetch-result success" role="status">
-                    Imported: {lastResult.imported} new, {lastResult.updated} updated,{' '}
-                    {lastResult.skipped} skipped
-                  </div>
-                )}
-                {syncError && !isSyncing && (
-                  <div className="fetch-result error" role="alert">
-                    {syncError}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="theme">Theme</label>
-              <select
-                id="theme"
-                value={formData.theme || 'system'}
-                onChange={(e) => handleInputChange('theme', e.target.value)}
-                disabled={isSaving}
-              >
-                <option value="system">System</option>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="autoFetchIntervalMs">Auto-fetch Interval</label>
-              <select
-                id="autoFetchIntervalMs"
-                value={formData.autoFetchIntervalMs || 3_600_000}
-                onChange={(e) =>
-                  handleInputChange('autoFetchIntervalMs', Number.parseInt(e.target.value, 10))
-                }
-                disabled={isSaving}
-                data-testid="sync-interval-input"
-              >
-                <option value={0}>Off</option>
-                <option value={900_000}>15 minutes</option>
-                <option value={1_800_000}>30 minutes</option>
-                <option value={3_600_000}>1 hour</option>
-                <option value={21_600_000}>6 hours</option>
-                <option value={43_200_000}>12 hours</option>
-                <option value={86_400_000}>24 hours</option>
-              </select>
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.showCompletedAssignments ?? true}
-                  onChange={(e) => handleInputChange('showCompletedAssignments', e.target.checked)}
+                <button type="button" className="secondary" onClick={onClose} disabled={isSaving}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="primary"
                   disabled={isSaving}
-                />
-                Show completed assignments
-              </label>
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.notifyDueSoon ?? true}
-                  onChange={(e) => handleInputChange('notifyDueSoon', e.target.checked)}
-                  disabled={isSaving}
-                />
-                Notify when assignments are due soon
-              </label>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="dueSoonThresholdHours">Due Soon Threshold (hours)</label>
-              <input
-                id="dueSoonThresholdHours"
-                type="number"
-                min="1"
-                max="168"
-                value={formData.dueSoonThresholdHours || 24}
-                onChange={(e) =>
-                  handleInputChange('dueSoonThresholdHours', Number.parseInt(e.target.value, 10))
-                }
-                disabled={isSaving}
-              />
-            </div>
-
-            {/* Keyboard Shortcuts Help */}
-            <details className="keyboard-shortcuts-help" open={false}>
-              <summary className="keyboard-shortcuts__summary">Keyboard Shortcuts</summary>
-              <div className="keyboard-shortcuts__content">
-                <div className="keyboard-shortcuts__section">
-                  <h4>Global</h4>
-                  <dl className="keyboard-shortcuts__list">
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>?</kbd>
-                      <dd>Show this help</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Esc</kbd>
-                      <dd>Close modal / Clear input / Dismiss prompt</dd>
-                    </div>
-                  </dl>
-                </div>
-                <div className="keyboard-shortcuts__section">
-                  <h4>Assignment List</h4>
-                  <dl className="keyboard-shortcuts__list">
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>↑ / ↓</kbd>
-                      <dd>Navigate between assignments</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Enter</kbd>
-                      <dd>Open assignment detail</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Alt + ↑ / ↓</kbd>
-                      <dd>Reorder priority (move up/down)</dd>
-                    </div>
-                  </dl>
-                </div>
-                <div className="keyboard-shortcuts__section">
-                  <h4>Assignment Detail</h4>
-                  <dl className="keyboard-shortcuts__list">
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Tab</kbd>
-                      <dd>Navigate between elements</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Space / Enter</kbd>
-                      <dd>Toggle sub-task completion</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Enter</kbd>
-                      <dd>Save sub-task / note</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Esc</kbd>
-                      <dd>Dismiss all-complete prompt / Close modal</dd>
-                    </div>
-                  </dl>
-                </div>
-                <div className="keyboard-shortcuts__section">
-                  <h4>Notes Editor</h4>
-                  <dl className="keyboard-shortcuts__list">
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Ctrl + Enter</kbd>
-                      <dd>Save note (⌘+Enter on Mac)</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Esc</kbd>
-                      <dd>Cancel editing</dd>
-                    </div>
-                    <div className="keyboard-shortcuts__item">
-                      <kbd>Tab</kbd>
-                      <dd>Insert tab character (indentation)</dd>
-                    </div>
-                  </dl>
-                </div>
+                  data-testid="save-settings-button"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
               </div>
-            </details>
+            </form>
+          </div>
 
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => void handleReset()}
-                disabled={isSaving}
-              >
-                Reset to Defaults
-              </button>
-              <button type="button" className="secondary" onClick={onClose} disabled={isSaving}>
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="primary"
-                disabled={isSaving}
-                data-testid="save-settings-button"
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          </form>
+          {/* Calendars Tab Panel */}
+          <div
+            role="tabpanel"
+            id="calendars-panel"
+            aria-labelledby="calendars-tab"
+            hidden={activeTab !== 'calendars'}
+            className="modal-tabpanel"
+          >
+            <CalendarList
+              onAddCalendar={() => {
+                setEditingCalendar(null);
+                setAddCalendarOpen(true);
+              }}
+              onDeleteCalendar={handleDeleteCalendar}
+            />
+            <AddCalendarModal
+              open={addCalendarOpen}
+              calendar={editingCalendar}
+              onClose={() => {
+                setAddCalendarOpen(false);
+                setEditingCalendar(null);
+              }}
+            />
+          </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          open={deleteConfirm !== null}
+          title="Delete Calendar"
+          message={deleteConfirm
+            ? `Are you sure you want to delete "${deleteConfirm.name}"? This will disable the calendar and stop syncing its events. Assignments from this calendar will remain but won't be updated.`
+            : ''}
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmVariant="destructive"
+          onConfirm={() => void handleConfirmDelete()}
+          onCancel={handleCancelDelete}
+          isLoading={false}
+        />
       </div>
     </div>
   );

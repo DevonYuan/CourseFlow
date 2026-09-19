@@ -574,3 +574,80 @@ html.dark .keyboard-shortcuts__item kbd {
 html.dark .keyboard-shortcuts__item dd {
   color: var(--text-secondary, #aaa);
 }
+
+/* Modal Tabs */
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-tab {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #666;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.modal-tab:hover:not(.modal-tab--active) {
+  color: #333;
+  background-color: #f0f0f0;
+}
+
+.modal-tab:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.modal-tab--active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  background-color: white;
+}
+
+.modal-tabpanel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode for tabs */
+html.dark .modal-tabs {
+  background-color: #1e1e1e;
+  border-bottom-color: #333;
+}
+
+html.dark .modal-tab {
+  color: #888;
+}
+
+html.dark .modal-tab:hover:not(.modal-tab--active) {
+  color: #e0e0e0;
+  background-color: #2a2a2a;
+}
+
+html.dark .modal-tab--active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+  background-color: #1e1e1e;
+}
