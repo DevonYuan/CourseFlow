@@ -49,6 +49,12 @@
   min-width: 200px;
 }
 
+/* Calendar wrapper - takes remaining space */
+.filter-bar__calendar-wrapper {
+  flex: 1;
+  min-width: 200px;
+}
+
 /* Date wrapper */
 .filter-bar__date-wrapper {
   flex-shrink: 0;
@@ -148,19 +154,24 @@
     order: 1;
   }
 
-  .filter-bar__date-wrapper {
+  .filter-bar__calendar-wrapper {
     min-width: 0;
     order: 2;
   }
 
-  .filter-bar__sort-wrapper {
+  .filter-bar__date-wrapper {
     min-width: 0;
     order: 3;
   }
 
-  .filter-bar__grouping-wrapper {
+  .filter-bar__sort-wrapper {
     min-width: 0;
     order: 4;
+  }
+
+  .filter-bar__grouping-wrapper {
+    min-width: 0;
+    order: 5;
   }
 
   .filter-bar__date-wrapper .date-range-picker {

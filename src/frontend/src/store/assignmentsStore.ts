@@ -18,6 +18,7 @@ import type {
 import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
+import { useCalendarsStore } from '../stores/calendarsStore';
 import { mapErrorToMessage } from '../utils/errorMessages';
 
 import { selectFilteredAssignments } from './selectors';
@@ -29,6 +30,8 @@ import { selectFilteredAssignments } from './selectors';
 export interface FilterState {
   /** Course names to include (empty = all) */
   courseFilter: string[];
+  /** Calendar source IDs to include (empty = all) */
+  calendarFilter: string[];
   /** Status filter: all, pending, or completed */
   statusFilter: 'all' | 'pending' | 'completed';
   /** Optional date range filter for due dates (ISO 8601 strings) */
@@ -44,6 +47,7 @@ export interface FilterState {
 /** Default filter state values */
 const defaultFilterState: FilterState = {
   courseFilter: [],
+  calendarFilter: [],
   statusFilter: 'all',
   dueDateRange: null,
   searchQuery: '',
@@ -108,6 +112,10 @@ interface AssignmentsActions {
   setCourseFilter: (courses: string[]) => void;
   /** Toggles a course in the filter */
   toggleCourseFilter: (course: string) => void;
+  /** Sets the calendar filter (multi-select) */
+  setCalendarFilter: (calendars: string[]) => void;
+  /** Toggles a calendar in the filter */
+  toggleCalendarFilter: (calendar: string) => void;
   /** Sets the status filter */
   setStatusFilter: (status: FilterState['statusFilter']) => void;
   /** Sets the due date range filter */
@@ -346,6 +354,26 @@ export const useAssignmentsStore = create<AssignmentsStore>()((set, get) => ({
     });
   },
 
+  setCalendarFilter: (calendars: string[]) => {
+    set((state) => {
+      const newFilters = { ...state.filters, calendarFilter: calendars };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
+
+  toggleCalendarFilter: (calendar: string) => {
+    set((state) => {
+      const current = state.filters.calendarFilter;
+      const newCalendarFilter = current.includes(calendar)
+        ? current.filter((c: string) => c !== calendar)
+        : [...current, calendar];
+      const newFilters = { ...state.filters, calendarFilter: newCalendarFilter };
+      writeFiltersToStorage(newFilters);
+      return { filters: newFilters };
+    });
+  },
+
   setStatusFilter: (status: FilterState['statusFilter']) => {
     set((state) => {
       const newFilters = { ...state.filters, statusFilter: status };
@@ -427,6 +455,7 @@ export const useHydrate = () => useAssignmentsStore((state) => state.hydrate);
 // Filter selector hooks
 export const useFilters = () => useAssignmentsStore((state) => state.filters);
 export const useCourseFilter = () => useAssignmentsStore((state) => state.filters.courseFilter);
+export const useCalendarFilter = () => useAssignmentsStore((state) => state.filters.calendarFilter);
 export const useStatusFilter = () => useAssignmentsStore((state) => state.filters.statusFilter);
 export const useDueDateRange = () => useAssignmentsStore((state) => state.filters.dueDateRange);
 export const useSearchQuery = () => useAssignmentsStore((state) => state.filters.searchQuery);
@@ -434,6 +463,8 @@ export const useSortOption = () => useAssignmentsStore((state) => state.filters.
 export const useGroupingType = () => useAssignmentsStore((state) => state.filters.groupingType);
 export const useSetCourseFilter = () => useAssignmentsStore((state) => state.setCourseFilter);
 export const useToggleCourseFilter = () => useAssignmentsStore((state) => state.toggleCourseFilter);
+export const useSetCalendarFilter = () => useAssignmentsStore((state) => state.setCalendarFilter);
+export const useToggleCalendarFilter = () => useAssignmentsStore((state) => state.toggleCalendarFilter);
 export const useSetStatusFilter = () => useAssignmentsStore((state) => state.setStatusFilter);
 export const useSetDueDateRange = () => useAssignmentsStore((state) => state.setDueDateRange);
 export const useSetSearchQuery = () => useAssignmentsStore((state) => state.setSearchQuery);
@@ -454,15 +485,25 @@ export const useCourseNames = () =>
 
 /**
  * Derived selector: filtered, sorted, and optionally grouped assignments.
- * Applies: search → course filter → status filter → date range → sort → group.
+ * Applies: search → course filter → calendar filter → status filter → date range → sort → group.
  * Returns flat Assignment[] if groupingType === 'none', otherwise GroupedAssignments[].
- * Memoized via Zustand with shallow equality — only recomputes when assignments, filters, or priorityOrder change.
+ * Memoized via Zustand with shallow equality — only recomputes when assignments, filters, priorityOrder, or calendars change.
  */
 export const useFilteredAssignments = () =>
   useAssignmentsStore(
-    useShallow((state) =>
-      selectFilteredAssignments(state.assignments, state.filters, state.priorityOrder),
-    ),
+    useShallow((state) => {
+      // Build calendarsMap from calendars store when grouping by calendar
+      let calendarsMap: Map<string, { name: string; color: string; position: number }> | undefined;
+      if (state.filters.groupingType === 'calendar') {
+        const calendars = useCalendarsStore.getState().calendars;
+        calendarsMap = new Map(
+          calendars.map((cal) => [cal.id, { name: cal.name, color: cal.color, position: cal.position }]),
+        );
+        // Add entry for uncategorized (legacy/manual assignments)
+        calendarsMap.set('uncategorized', { name: 'Uncategorized', color: '#888', position: Number.MAX_SAFE_INTEGER });
+      }
+      return selectFilteredAssignments(state.assignments, state.filters, state.priorityOrder, calendarsMap);
+    }),
   );
 
 /**

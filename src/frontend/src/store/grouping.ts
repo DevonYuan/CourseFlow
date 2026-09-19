@@ -310,6 +310,50 @@ export function groupByCourse(
 }
 
 /**
+ * Grouping: 'calendar' — groups by calendar source, ordered by calendar position.
+ * Assignments without sourceId (legacy/manual) go to "Uncategorized" group.
+ * Within each calendar group, assignments respect the current sortOption.
+ */
+export function groupByCalendar(
+  assignments: Assignment[],
+  sortOption: SortOption = 'priority',
+  priorityOrder: string[] = [],
+  calendarsMap: Map<string, { name: string; color: string; position: number }> = new Map(),
+): GroupedAssignments[] {
+  const calendarMap = new Map<string, Assignment[]>();
+
+  for (const assignment of assignments) {
+    const sourceId = assignment.sourceId ?? 'uncategorized';
+    if (!calendarMap.has(sourceId)) {
+      calendarMap.set(sourceId, []);
+    }
+    calendarMap.get(sourceId)!.push(assignment);
+  }
+
+  // Convert to array and sort by calendar position
+  const sortedEntries = [...calendarMap.entries()].sort(([aId], [bId]) => {
+    const aCal = calendarsMap.get(aId);
+    const bCal = calendarsMap.get(bId);
+    const aPos = aCal?.position ?? Number.MAX_SAFE_INTEGER;
+    const bPos = bCal?.position ?? Number.MAX_SAFE_INTEGER;
+    return aPos - bPos;
+  });
+
+  return sortedEntries
+    .map(([sourceId, assignments]): GroupedAssignments => {
+      const cal = calendarsMap.get(sourceId);
+      const groupLabel = cal?.name ?? (sourceId === 'uncategorized' ? 'Uncategorized' : 'Unknown Calendar');
+      return {
+        groupKey: sourceId,
+        groupLabel,
+        assignments: applySortWithinGroup(assignments, sortOption, priorityOrder),
+        count: assignments.length,
+      };
+    })
+    .filter((group): group is GroupedAssignments => group.count > 0);
+}
+
+/**
  * Applies grouping based on groupingType.
  * Returns flat array if groupingType is 'none', otherwise GroupedAssignments[].
  */
@@ -318,6 +362,7 @@ export function applyGrouping(
   groupingType: GroupingType,
   sortOption: SortOption = 'priority',
   priorityOrder: string[] = [],
+  calendarsMap?: Map<string, { name: string; color: string; position: number }>,
 ): Assignment[] | GroupedAssignments[] {
   if (groupingType === 'none' || assignments.length === 0) {
     return assignments;
@@ -332,6 +377,9 @@ export function applyGrouping(
     }
     case 'course': {
       return groupByCourse(assignments, sortOption, priorityOrder);
+    }
+    case 'calendar': {
+      return groupByCalendar(assignments, sortOption, priorityOrder, calendarsMap ?? new Map());
     }
     default: {
       return assignments;

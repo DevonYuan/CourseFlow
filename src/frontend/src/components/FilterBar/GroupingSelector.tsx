@@ -40,6 +40,11 @@ const GROUPING_OPTIONS: GroupingOptionConfig[] = [
     label: 'By Course',
     icon: '🎓',
   },
+  {
+    value: 'calendar',
+    label: 'By Calendar',
+    icon: '🗓',
+  },
 ];
 
 /**
@@ -53,7 +58,7 @@ export function GroupingSelector(): JSX.Element {
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     const option =
-      value === 'none' || value === 'week' || value === 'status' || value === 'course'
+      value === 'none' || value === 'week' || value === 'status' || value === 'course' || value === 'calendar'
         ? value
         : 'none';
     setGroupingType(option);

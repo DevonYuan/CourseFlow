@@ -1,7 +1,7 @@
 /* ==========================================================================
    AssignmentRow — Individual Assignment Row
    Matches: docs/design-inspo/courseflow-dashbar-redesign.html
-   Layout: grip | course | title+progress | due | status-badge | checkbox
+   Layout: grip | calendar badge | course | title+progress | due | status-badge | checkbox
    ========================================================================== */
 
 /* Row container */
@@ -71,6 +71,15 @@
 
 .row--dragging .grip {
   cursor: grabbing;
+}
+
+/* Calendar Badge */
+.assignment-row__calendar-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 4px;
 }
 
 /* Course column */

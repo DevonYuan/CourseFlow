@@ -187,8 +187,183 @@
   text-overflow: ellipsis;
 }
 
-/* Dark theme adjustments for full mode */
+/* ===== Popover Styles (Compact Mode) ===== */
+
+.sync-popover {
+  position: fixed;
+  top: 52px; /* Below the TopBar */
+  right: 16px;
+  min-width: 320px;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  animation: popoverFadeIn 0.15s ease;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sync-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sync-popover__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sync-popover__sync-all {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sync-popover__sync-all:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.sync-popover__sync-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sync-popover__list {
+  display: flex;
+  flex-direction: column;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.sync-popover__empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.calendar-sync-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s ease;
+}
+
+.calendar-sync-item:hover:not(:disabled) {
+  background: var(--paper);
+}
+
+.calendar-sync-item:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.calendar-sync-item.syncing {
+  background: var(--accent-soft);
+}
+
+.calendar-sync-item.error {
+  background: #fef2f2;
+}
+
+.calendar-sync-item__badge {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--calendar-color);
+  flex-shrink: 0;
+}
+
+.calendar-sync-item__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.calendar-sync-item__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-sync-item__status {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-sync-item.syncing .calendar-sync-item__status {
+  color: var(--accent);
+}
+
+.calendar-sync-item.error .calendar-sync-item__status {
+  color: var(--danger-color, #dc2626);
+}
+
+.calendar-sync-item__spinner {
+  animation: spin 0.8s linear infinite;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-sync-item__spinner {
+    animation: none;
+  }
+}
+
+/* Dark theme adjustments */
 @media (prefers-color-scheme: dark) {
+  .sync-popover {
+    background: var(--surface-dark, #1e1e1e);
+    border-color: var(--line-dark, #333);
+  }
+
+  .sync-popover__header {
+    border-color: var(--line-dark, #333);
+  }
+
   .sync-status {
     color: var(--text-secondary-dark, #aaa);
   }

@@ -85,13 +85,22 @@ export function filterByDateRange(
 }
 
 /**
+ * Filter: Calendar — include only if sourceId in calendarFilter (empty = all).
+ */
+export function filterByCalendar(assignments: Assignment[], calendarFilter: string[]): Assignment[] {
+  if (calendarFilter.length === 0) return assignments;
+  return assignments.filter((assignment) => assignment.sourceId && calendarFilter.includes(assignment.sourceId));
+}
+
+/**
  * Combined filter pipeline — applies all filters in order:
- * search → course → status → dateRange
+ * search → course → calendar → status → dateRange
  */
 export function applyFilters(assignments: Assignment[], filters: FilterState): Assignment[] {
   let result = assignments;
   result = filterBySearch(result, filters.searchQuery);
   result = filterByCourse(result, filters.courseFilter);
+  result = filterByCalendar(result, filters.calendarFilter);
   result = filterByStatus(result, filters.statusFilter);
   result = filterByDateRange(result, filters.dueDateRange);
   return result;
@@ -210,6 +219,7 @@ let selectFilteredAssignmentsCache: {
   assignments: Assignment[];
   filters: FilterState;
   priorityOrder: string[];
+  calendarsMap: Map<string, { name: string; color: string; position: number }> | undefined;
   result: Assignment[] | GroupedAssignments[];
 } | null = null;
 
@@ -217,26 +227,29 @@ export function selectFilteredAssignments(
   assignments: Assignment[],
   filters: FilterState,
   priorityOrder: string[] = [],
+  calendarsMap?: Map<string, { name: string; color: string; position: number }>,
 ): Assignment[] | GroupedAssignments[] {
   // Check cache - compare by reference for arrays/objects
   if (
     selectFilteredAssignmentsCache &&
     selectFilteredAssignmentsCache.assignments === assignments &&
     selectFilteredAssignmentsCache.filters === filters &&
-    selectFilteredAssignmentsCache.priorityOrder === priorityOrder
+    selectFilteredAssignmentsCache.priorityOrder === priorityOrder &&
+    selectFilteredAssignmentsCache.calendarsMap === calendarsMap
   ) {
     return selectFilteredAssignmentsCache.result;
   }
 
   const filtered = applyFilters(assignments, filters);
   const sorted = applySort(filtered, filters.sortOption, priorityOrder);
-  const grouped = applyGrouping(sorted, filters.groupingType, filters.sortOption, priorityOrder);
+  const grouped = applyGrouping(sorted, filters.groupingType, filters.sortOption, priorityOrder, calendarsMap);
 
   // Update cache
   selectFilteredAssignmentsCache = {
     assignments,
     filters,
     priorityOrder,
+    calendarsMap,
     result: grouped,
   };
 

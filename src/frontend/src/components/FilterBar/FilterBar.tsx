@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 
 import { useFilters, useResetFilters, useSetDueDateRange } from '../../store/assignmentsStore';
 
+import { CalendarFilter } from './CalendarFilter';
 import { CourseChips } from './CourseChips';
 import { DateRangePicker } from './DateRangePicker';
 import { FilterSummary } from './FilterSummary';
@@ -90,6 +91,7 @@ export function FilterBar(): JSX.Element {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.courseFilter.length > 0) count += filters.courseFilter.length;
+    if (filters.calendarFilter.length > 0) count += filters.calendarFilter.length;
     if (filters.statusFilter !== 'all') count += 1;
     if (filters.dueDateRange) count += 1;
     if (filters.searchQuery) count += 1;
@@ -113,10 +115,13 @@ export function FilterBar(): JSX.Element {
         </div>
       </div>
 
-      {/* Row 2: Course chips, Date range, Sort, and Grouping */}
+      {/* Row 2: Course chips, Calendar chips, Date range, Sort, and Grouping */}
       <div className="filter-bar__row filter-bar__row--secondary">
         <div className="filter-bar__course-wrapper">
           <CourseChips />
+        </div>
+        <div className="filter-bar__calendar-wrapper">
+          <CalendarFilter />
         </div>
         <div className="filter-bar__date-wrapper">
           <DateRangePicker value={dateRangeForPicker} onChange={handleDateRangeChange} />

@@ -40,6 +40,7 @@ export interface Assignment {
   status: AssignmentStatus;
   source: AssignmentSource;
   sourceUrl?: string; // iCal feed URL this came from
+  sourceId?: string; // Calendar source ID for per-source attribution
   rrule?: string; // RRULE string for recurring
   createdAt: IsoDateTime; // ISO 8601
   updatedAt: IsoDateTime; // ISO 8601
@@ -211,7 +212,7 @@ export type SortOption = 'priority' | 'dueDateAsc' | 'dueDateDesc' | 'course' | 
 /**
  * GroupingType — available grouping modes for assignment list.
  */
-export type GroupingType = 'none' | 'week' | 'status' | 'course';
+export type GroupingType = 'none' | 'week' | 'status' | 'course' | 'calendar';
 
 /**
  * SchedulerConfig — configuration for background sync scheduler.

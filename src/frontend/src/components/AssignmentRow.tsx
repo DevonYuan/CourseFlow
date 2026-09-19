@@ -1,7 +1,7 @@
 /**
  * AssignmentRow — Individual Assignment Row Component
  *
- * Displays a single assignment with grip handle, course, title+progress, due date, status, checkbox.
+ * Displays a single assignment with grip handle, calendar badge, course, title+progress, due date, status, checkbox.
  * Matches: docs/design-inspo/courseflow-dashbar-redesign.html
  *
  * @module @frontend/components/AssignmentRow
@@ -9,6 +9,8 @@
 
 import type { Assignment } from '@backend/shared/types';
 import React from 'react';
+
+import { useCalendarsStore } from '../stores/calendarsStore';
 
 import './AssignmentRow.css';
 
@@ -81,7 +83,7 @@ const statusLabels: Record<Assignment['status'], string> = {
 
 /**
  * Individual assignment row with click/keyboard handling and drag support.
- * Design: grip | course (dot + name) | title + progress | due | status badge | checkbox | delete
+ * Design: grip | calendar badge | course (dot + name) | title + progress | due | status badge | checkbox | delete
  */
 export function AssignmentRow({
   assignment,
@@ -97,6 +99,13 @@ export function AssignmentRow({
   const isOverdue = assignment.dueAt ? new Date(assignment.dueAt) < new Date() : false;
   const dueDate = formatDueDate(assignment.dueAt);
   const isCompleted = assignment.status === 'completed';
+
+  // Get calendar color for badge
+  const calendarColor = useCalendarsStore((state) => {
+    if (!assignment.sourceId) return 'var(--ink-faint)';
+    const cal = state.calendars.find((c) => c.id === assignment.sourceId);
+    return cal?.color ?? 'var(--ink-faint)';
+  });
 
   const handleClick = () => {
     if (onClick) {
@@ -176,6 +185,14 @@ export function AssignmentRow({
           <circle cx="16" cy="18" r="1.4" />
         </svg>
       </div>
+
+      {/* Calendar Badge: 8px colored indicator from CalendarSource.color */}
+      <div
+        className="assignment-row__calendar-badge"
+        style={{ backgroundColor: calendarColor }}
+        aria-hidden="true"
+        title={assignment.sourceId ? 'From calendar' : 'Manual entry'}
+      />
 
       {/* Course: colored dot + name */}
       <div className="row-course">

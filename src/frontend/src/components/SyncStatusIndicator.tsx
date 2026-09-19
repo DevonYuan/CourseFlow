@@ -3,13 +3,13 @@
  *
  * Displays sync status: last sync time, next auto-sync time,
  * and a manual sync button.
- * Supports compact mode for the TopBar (sync pill).
+ * Supports compact mode for the TopBar (sync pill) with per-calendar popover.
  * Matches: docs/design-inspo/courseflow-dashbar-redesign.html
  *
  * @module @frontend/components/SyncStatusIndicator
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSyncStatus, formatNextSync } from '../hooks/useSyncStatus';
 import './SyncStatusIndicator.css';
@@ -54,11 +54,98 @@ function formatLastSync(isoString: string | null): string {
   });
 }
 
+/**
+ * CalendarSyncStatusItem - Individual calendar sync status for popover
+ */
+function CalendarSyncStatusItem({
+  calendar,
+  onSyncSource,
+}: {
+  calendar: {
+    id: string;
+    name: string;
+    color: string;
+    enabled: boolean;
+    lastSyncAt: string | null;
+    nextSyncAt: string | null;
+    lastError: string | null;
+    isSyncing: boolean;
+    progress: number;
+    stage: 'fetch' | 'parse' | 'store' | 'idle';
+  };
+  onSyncSource: (sourceId: string) => Promise<void>;
+}): JSX.Element {
+  const lastSyncDisplay = useMemo(() => formatLastSync(calendar.lastSyncAt), [calendar.lastSyncAt]);
+
+  const handleClick = () => {
+    if (!calendar.isSyncing) {
+      void onSyncSource(calendar.id);
+    }
+  };
+
+  const getStatusText = () => {
+    if (calendar.isSyncing) {
+      return `Syncing… ${calendar.progress}%`;
+    }
+    if (calendar.lastError) {
+      return `Error: ${calendar.lastError}`;
+    }
+    if (calendar.lastSyncAt) {
+      return `Synced ${lastSyncDisplay}`;
+    }
+    return 'Never synced';
+  };
+
+  const getTooltipText = () => {
+    if (calendar.lastError) {
+      return `Last error: ${calendar.lastError}`;
+    }
+    if (calendar.lastSyncAt) {
+      return `Last synced: ${new Date(calendar.lastSyncAt).toLocaleString()}`;
+    }
+    return 'Never synced';
+  };
+
+  return (
+    <button
+      type="button"
+      className={`calendar-sync-item ${calendar.isSyncing ? 'syncing' : ''} ${calendar.lastError ? 'error' : ''}`}
+      onClick={handleClick}
+      disabled={calendar.isSyncing}
+      title={getTooltipText()}
+      data-testid={`calendar-sync-${calendar.id}`}
+      style={{ '--calendar-color': calendar.color } as React.CSSProperties}
+    >
+      <span className="calendar-sync-item__badge" aria-hidden="true"></span>
+      <div className="calendar-sync-item__content">
+        <span className="calendar-sync-item__name">{calendar.name}</span>
+        <span className="calendar-sync-item__status">{getStatusText()}</span>
+      </div>
+      {calendar.isSyncing && (
+        <svg
+          className="calendar-sync-item__spinner"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+          <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export function SyncStatusIndicator({
   onSync,
   compact = false,
 }: SyncStatusIndicatorProps): JSX.Element {
-  const { lastSyncAt, nextAutoSyncAt, countdown, isSyncing, progress, syncStatus, syncNow } =
+  const { lastSyncAt, nextAutoSyncAt, countdown, isSyncing, progress, syncStatus, syncNow, syncSource, calendarSyncStatus } =
     useSyncStatus();
 
   // Determine display text for last sync
@@ -73,69 +160,143 @@ export function SyncStatusIndicator({
     });
   };
 
-  // Compact mode - Sync Pill for TopBar
+  // Popover state (always declared to satisfy React hooks rules)
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  // Close popover when clicking outside
+  const handleClickOutside = useMemo(() => (event: MouseEvent) => {
+    if (
+      popoverRef.current &&
+      !popoverRef.current.contains(event.target as Node) &&
+      triggerRef.current &&
+      !triggerRef.current.contains(event.target as Node)
+    ) {
+      setIsPopoverOpen(false);
+    }
+  }, []);
+
+  // Global sync status for pill label
+  const label = isSyncing ? 'Syncing…' : `Synced ${lastSyncDisplay}`;
+  const value = isSyncing
+    ? `${progress}%`
+    : nextSyncDisplay
+      ? `Next in ${nextSyncDisplay}`
+      : 'No auto-sync';
+
+  // Click outside listener for popover (always registered, but only active when compact and popover open)
+  useEffect(() => {
+    if (compact && isPopoverOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [compact, isPopoverOpen, handleClickOutside]);
+
+  // Compact mode - Sync Pill for TopBar with popover
   if (compact) {
-    const label = isSyncing ? 'Syncing…' : `Synced ${lastSyncDisplay}`;
-    const value = isSyncing
-      ? `${progress}%`
-      : nextSyncDisplay
-        ? `Next in ${nextSyncDisplay}`
-        : 'No auto-sync';
+    const calendars = calendarSyncStatus;
 
     return (
-      <div
-        className="sync-pill"
-        aria-live="polite"
-        aria-atomic="true"
-        data-testid="scheduler-status-compact"
-      >
-        <div className="sync-text">
-          <span className="label">{label}</span>
-          <span className="value">{value}</span>
-        </div>
-        <button
-          className="sync-btn"
-          onClick={handleSyncNow}
-          disabled={isSyncing}
-          aria-label={isSyncing ? 'Sync in progress' : 'Sync now'}
-          aria-busy={isSyncing}
+      <>
+        <div
+          ref={triggerRef}
+          className="sync-pill"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="scheduler-status-compact"
+          onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         >
-          {isSyncing ? (
-            <svg
-              className="sync-spinner"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M23 4v6h-6" />
-              <path d="M1 20v-6h6" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          ) : (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M23 4v6h-6" />
-              <path d="M1 20v-6h6" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          )}
-        </button>
-      </div>
+          <div className="sync-text">
+            <span className="label">{label}</span>
+            <span className="value">{value}</span>
+          </div>
+          <button
+            className="sync-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleSyncNow();
+            }}
+            disabled={isSyncing}
+            aria-label={isSyncing ? 'Sync all calendars' : 'Sync all now'}
+            aria-busy={isSyncing}
+          >
+            {isSyncing ? (
+              <svg
+                className="sync-spinner"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M23 4v6h-6" />
+                <path d="M1 20v-6h6" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+            ) : (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M23 4v6h-6" />
+                <path d="M1 20v-6h6" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {isPopoverOpen && (
+          <div
+            ref={popoverRef}
+            className="sync-popover"
+            role="menu"
+            aria-label="Calendar sync status"
+            data-testid="sync-popover"
+          >
+            <div className="sync-popover__header">
+              <span className="sync-popover__title">Calendar Sync Status</span>
+              <button
+                type="button"
+                className="sync-popover__sync-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleSyncNow();
+                }}
+                disabled={isSyncing}
+                aria-label={isSyncing ? 'Sync all in progress' : 'Sync all calendars now'}
+              >
+                {isSyncing ? 'Syncing all…' : 'Sync All'}
+              </button>
+            </div>
+            <div className="sync-popover__list">
+              {calendars.length === 0 ? (
+                <div className="sync-popover__empty">No calendars configured</div>
+              ) : (
+                calendars.map((cal) => (
+                  <CalendarSyncStatusItem
+                    key={cal.id}
+                    calendar={cal}
+                    onSyncSource={syncSource}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -168,7 +329,7 @@ export function SyncStatusIndicator({
 
       <button
         className={`sync-status__btn sync-status__btn--${syncStatus}`}
-        onClick={handleSyncNow}
+        onClick={() => void handleSyncNow()}
         disabled={isSyncing}
         aria-label={isSyncing ? 'Sync in progress' : 'Sync now'}
         aria-busy={isSyncing}
