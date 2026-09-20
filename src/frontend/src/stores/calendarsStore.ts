@@ -364,4 +364,14 @@ export function selectCalendarsByPosition(): CalendarSource[] {
   return [...useCalendarsStore.getState().calendars].sort((a, b) => a.position - b.position);
 }
 
+/**
+ * Initialize the calendars store — fetches calendar sources from the database.
+ * Returns cleanup function (currently no-op, kept for API compatibility).
+ */
+export function initializeCalendarsStore(): () => void {
+  const store = useCalendarsStore.getState();
+  store.fetchCalendars();
+  return () => {};
+}
+
 // Named export only - default export not used per project conventions
