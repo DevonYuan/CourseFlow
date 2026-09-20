@@ -36,6 +36,9 @@ const COLOR_PALETTE = [
   '#a855f7', // Purple
 ];
 
+/** Fallback when the palette is ever empty (also satisfies noUncheckedIndexedAccess). */
+const DEFAULT_CALENDAR_COLOR = '#3b82f6';
+
 interface AddCalendarModalProps {
   /** Whether the modal is open */
   open: boolean;
@@ -323,7 +326,7 @@ export function AddCalendarModal({ open, calendar, onClose }: AddCalendarModalPr
 
   const initialName = calendar?.name ?? '';
   const initialUrl = calendar ? '' : ''; // Don't show decrypted URL for security
-  const initialColor = calendar?.color ?? COLOR_PALETTE[0];
+  const initialColor = calendar?.color ?? COLOR_PALETTE[0] ?? DEFAULT_CALENDAR_COLOR;
 
   const modalContent = (
     <div

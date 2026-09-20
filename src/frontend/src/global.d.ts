@@ -18,6 +18,9 @@ import type {
   PageUpdateInput,
   PageTreeNode,
   PageSearchResult,
+  CalendarSource,
+  CalendarSourceInput,
+  CalendarSourceUpdateInput,
 } from '@backend/shared/types';
 
 declare global {
@@ -62,6 +65,18 @@ declare global {
             IpcResult<PageSearchResult[]>
           >;
         };
+        calendars: {
+          list: () => Promise<IpcResult<CalendarSource[]>>;
+          get: (id: string) => Promise<IpcResult<CalendarSource | null>>;
+          create: (input: CalendarSourceInput) => Promise<IpcResult<CalendarSource>>;
+          update: (input: CalendarSourceUpdateInput) => Promise<IpcResult<CalendarSource>>;
+          delete: (id: string) => Promise<IpcResult<void>>;
+          reorder: (ids: string[]) => Promise<IpcResult<void>>;
+          setEnabled: (input: {
+            id: string;
+            enabled: boolean;
+          }) => Promise<IpcResult<CalendarSource>>;
+        };
       };
       ical: {
         fetch: (url: string) => Promise<IpcResult<ICalEvent[]>>;
@@ -82,7 +97,7 @@ declare global {
         start: (input: { intervalMinutes: number }) => Promise<IpcResult<SchedulerStatus>>;
         stop: () => Promise<IpcResult<SchedulerStatus>>;
         status: () => Promise<IpcResult<SchedulerStatus>>;
-        trigger: () => Promise<IpcResult<void>>;
+        trigger: (input?: { sourceId?: string }) => Promise<IpcResult<void>>;
         onTick: (callback: (payload: IpcEvents['scheduler:tick']) => void) => () => void;
         onError: (callback: (payload: IpcEvents['scheduler:error']) => void) => () => void;
         onCoalesced: (callback: (payload: IpcEvents['scheduler:coalesced']) => void) => () => void;

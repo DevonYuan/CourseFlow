@@ -1,5 +1,5 @@
 import type { Settings } from '@backend/shared/types';
-import type { CalendarSource } from '@backend/shared/types';
+import type { CalendarSource, EntityId } from '@backend/shared/types';
 import React, { useState } from 'react';
 import { useEffect, useCallback } from 'react';
 
@@ -115,7 +115,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'calendars'>('general');
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: EntityId; name: string } | null>(null);
   const [addCalendarOpen, setAddCalendarOpen] = useState(false);
   const [editingCalendar, setEditingCalendar] = useState<CalendarSource | null>(null);
 
@@ -242,7 +242,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   const handleDeleteCalendar = (id: string, name: string) => {
-    setDeleteConfirm({ id, name });
+    setDeleteConfirm({ id: id as EntityId, name });
   };
 
   const handleConfirmDelete = async () => {

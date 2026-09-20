@@ -102,8 +102,12 @@ export function CalendarFilter(): JSX.Element {
     }
   };
 
-  // Responsive: chips on desktop (>= 1000px), dropdown on mobile
+  // Responsive: chips on desktop (>= 1000px), dropdown on mobile.
+  // NOTE: `isAllSelected` must be declared BEFORE the mobile early-return below —
+  // the mobile JSX references it, and a `const` declared after the return would
+  // throw "Cannot access before initialization" at narrow widths.
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1000;
+  const isAllSelected = !hasActiveFilters;
 
   if (isMobile) {
     return (
@@ -166,7 +170,6 @@ export function CalendarFilter(): JSX.Element {
   }
 
   // Desktop: horizontal scrollable chips
-  const isAllSelected = !hasActiveFilters;
   return (
     <div className="course-chips" role="group" aria-label="Filter by calendar">
       <button

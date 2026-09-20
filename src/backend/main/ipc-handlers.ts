@@ -599,27 +599,27 @@ const handlers: IpcHandlers = {
     }
   },
 
-  'db:calendars:delete': (id: string): Promise<IpcResult<void>> => {
+  'db:calendars:delete': async (id: string): Promise<IpcResult<void>> => {
     try {
       // Validate input
       if (!id || typeof id !== 'string' || id.trim().length === 0) {
-        return Promise.resolve(err('id is required and must be a non-empty string', 'VALIDATION_ERROR'));
+        return err('id is required and must be a non-empty string', 'VALIDATION_ERROR');
       }
 
       // Check if calendar exists
       const calendar = repo.getCalendar(id);
       if (!calendar) {
-        return Promise.resolve(err('Calendar not found', 'NOT_FOUND'));
+        return err('Calendar not found', 'NOT_FOUND');
       }
 
-      repo.deleteCalendar(id);
+      // `deleteCalendar` is async — await it so the row is actually removed
+      // before we report success and announce the change.
+      await repo.deleteCalendar(id);
       sendEventToRenderers('db:changed', { table: 'calendars', action: 'delete', id });
-      return Promise.resolve(ok(undefined));
+      return ok(undefined);
     } catch (error) {
-      return Promise.resolve(
-        err(
-          `Failed to delete calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        ),
+      return err(
+        `Failed to delete calendar: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   },
@@ -920,11 +920,11 @@ const handlers: IpcHandlers = {
     }
   },
 
-  'scheduler:trigger': async (): Promise<IpcResult<void>> => {
+  'scheduler:trigger': async (input?: { sourceId?: string }): Promise<IpcResult<void>> => {
     try {
       const { getScheduler } = await import('./scheduler.js');
       const scheduler = getScheduler();
-      await scheduler.triggerManual();
+      await scheduler.triggerManual(input?.sourceId);
       return ok(undefined);
     } catch (error) {
       return err(

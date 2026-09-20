@@ -8,7 +8,8 @@
  * @module @frontend/components/calendars/CalendarList
  */
 
-import type { CalendarSource, IpcEvents } from '@backend/shared/types';
+import type { IpcEvents } from '@backend/shared/ipc';
+import type { CalendarSource } from '@backend/shared/types';
 import {
   DndContext,
   closestCenter,
@@ -186,7 +187,8 @@ export function CalendarList({
   onAddCalendar: () => void;
   onDeleteCalendar: (id: string, name: string) => void;
 }): React.ReactElement {
-  const { calendars, isLoading, error, fetchCalendars, optimisticReorder } = useCalendarsStore();
+  const { calendars, isLoading, error, hasFetched, fetchCalendars, optimisticReorder } =
+    useCalendarsStore();
 
   // Sensors for drag-and-drop
   const sensors = useSensors(
@@ -215,12 +217,16 @@ export function CalendarList({
     [calendars, optimisticReorder]
   );
 
-  // Fetch on mount
+  // Fetch on mount, but only if the store has never completed a load.
+  // IMPORTANT: never key this off `calendars.length === 0`. An empty result is
+  // a valid *loaded* state, and re-fetching on it loops forever because the
+  // loading flag flips back to false while the list is still empty — which
+  // makes the skeleton below flash indefinitely (looks stuck loading).
   useEffect(() => {
-    if (calendars.length === 0 && !isLoading) {
+    if (!hasFetched && !isLoading) {
       void fetchCalendars();
     }
-  }, [calendars.length, isLoading, fetchCalendars]);
+  }, [hasFetched, isLoading, fetchCalendars]);
 
   // Handle external db:changed events
   useEffect(() => {
@@ -232,7 +238,8 @@ export function CalendarList({
     return () => unsubscribe();
   }, []);
 
-  if (isLoading) {
+  // Skeleton only for the very first load — later refetches keep the list visible.
+  if (isLoading && !hasFetched) {
     return (
       <div className="calendar-list" role="list" aria-label="Calendars">
         {[0, 1, 2].map((i) => (

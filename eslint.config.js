@@ -258,7 +258,8 @@ export default typescriptEslint.config(
     },
   },
   // Test files: mocks and fixtures legitimately use `any`, loose function types,
-  // intentionally-unused imports, and fire-and-forget promises.
+  // intentionally-unused imports, and fire-and-forget promises. Helper functions
+  // are also deliberately scoped inside their `describe` block for readability.
   {
     files: [
       'src/**/*.test.ts',
@@ -272,6 +273,7 @@ export default typescriptEslint.config(
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
+      'unicorn/consistent-function-scoping': 'off',
     },
   },
   // The backend main process logs to stdout/stderr directly.

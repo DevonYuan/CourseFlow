@@ -36,12 +36,7 @@ import type {
  * Re-export domain types for consumers (Preload, Renderer).
  * These are part of the IPC contract for various channels.
  */
-export type {
-  Settings,
-  CalendarSource,
-  CalendarSourceInput,
-  CalendarSourceUpdateInput,
-};
+
 
 /**
  * Unified response wrapper for all IPC request/response channels.
@@ -245,7 +240,7 @@ export interface IpcChannels {
     response: SchedulerStatus;
   };
   'scheduler:trigger': {
-    request: void;
+    request: { sourceId?: string } | undefined;
     response: void;
   };
   'scheduler:config:get': {
@@ -339,3 +334,5 @@ export type IpcEventName = keyof IpcEvents;
 export type IpcHandlers = {
   [C in IpcChannelName]: (request: IpcRequest<C>) => Promise<IpcResult<IpcResponse<C>>>;
 };
+
+export {type Settings, type CalendarSource, type CalendarSourceInput, type CalendarSourceUpdateInput} from './types.js';

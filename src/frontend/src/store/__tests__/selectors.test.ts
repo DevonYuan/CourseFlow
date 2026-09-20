@@ -234,6 +234,7 @@ describe('applyFilters', () => {
 
   const baseFilters = {
     courseFilter: [] as string[],
+    calendarFilter: [] as string[],
     statusFilter: 'all' as const,
     dueDateRange: null as { start: IsoDateTime; end: IsoDateTime } | null,
     searchQuery: '',
@@ -604,6 +605,7 @@ describe('selectFilteredAssignments (full pipeline)', () => {
 
   const baseFilters = {
     courseFilter: [] as string[],
+    calendarFilter: [] as string[],
     statusFilter: 'all' as const,
     dueDateRange: null as { start: IsoDateTime; end: IsoDateTime } | null,
     searchQuery: '',

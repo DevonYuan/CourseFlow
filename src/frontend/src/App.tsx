@@ -8,13 +8,13 @@ import { SearchPalette } from './components/notes/SearchPalette';
 import { FocusRestorationProvider } from './context/FocusRestorationContext';
 import { ToastProvider } from './context/ToastContext';
 import { useSettings } from './hooks/useSettings';
-import { initializeAssignmentsStore } from './store/assignmentsStore';
-import { initializeCalendarsStore } from './stores/calendarsStore';
 import { AssignmentDetailPage } from './pages/AssignmentDetailPage';
 import { AssignmentListPage } from './pages/AssignmentListPage';
 import { NotesSearchResults } from './pages/NotesSearchResults';
 import { NotesWorkspace, NotesWelcome } from './pages/NotesWorkspace';
 import { SettingsPage } from './pages/SettingsPage';
+import { initializeAssignmentsStore } from './store/assignmentsStore';
+import { initializeCalendarsStore } from './stores/calendarsStore';
 import { applyTheme } from './utils/theme';
 
 export function ThemedApp(): JSX.Element {

@@ -109,8 +109,8 @@ import {
   NetworkError,
   HttpError,
 } from '../ical/index.js';
-import { decryptIcalUrl } from '../security/encryption.js';
 import { Scheduler, __resetScheduler } from '../scheduler.js';
+import { decryptIcalUrl } from '../security/encryption.js';
 
 const mockFetchICalFeed = fetchICalFeed as Mock;
 const mockParseICalFeed = parseICalFeed as Mock;

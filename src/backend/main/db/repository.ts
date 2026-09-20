@@ -1549,8 +1549,6 @@ export const repo = {
    * - Backfill assignments.source_id by matching source_url to the calendar's feed_url
    */
   async seedCalendarFromSettings(): Promise<void> {
-    const db = getDatabase();
-
     // Check if calendars table exists and has any rows
     const calendarCount = get<{ count: number }>('SELECT COUNT(*) as count FROM calendars');
     if (calendarCount && calendarCount.count > 0) {
@@ -1566,12 +1564,9 @@ export const repo = {
     let legacyUrl: string;
     try {
       const parsed = JSON.parse(icalUrlRow.value);
-      if (isEncryptedSetting(parsed)) {
-        legacyUrl = await decryptIcalUrl(parsed);
-      } else {
-        // Plaintext (shouldn't happen but handle anyway)
-        legacyUrl = parsed as string;
-      }
+      legacyUrl = isEncryptedSetting(parsed)
+        ? await decryptIcalUrl(parsed)
+        : (parsed as string);
     } catch {
       return; // Invalid settings, skip seeding
     }
@@ -1654,7 +1649,7 @@ export const repo = {
       ];
       let hash = 0;
       for (let i = 0; i < input.name.length; i++) {
-        hash = input.name.charCodeAt(i) + ((hash << 5) - hash);
+        hash = (input.name.codePointAt(i) ?? 0) + ((hash << 5) - hash);
       }
       color = colors[Math.abs(hash) % colors.length]!;
     }

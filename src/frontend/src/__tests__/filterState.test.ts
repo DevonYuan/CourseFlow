@@ -74,6 +74,7 @@ function resetStore() {
     _previousPriorityOrder: null,
     filters: {
       courseFilter: [],
+      calendarFilter: [],
       statusFilter: 'all',
       dueDateRange: null,
       searchQuery: '',

@@ -223,11 +223,14 @@ export class Scheduler {
   }
 
   /**
-   * Triggers an immediate fetch cycle for all enabled sources (for "Sync Now" button).
+   * Triggers an immediate fetch cycle for enabled sources (for "Sync Now" button).
    * Does not affect the regular interval schedule.
    * If a fetch is already in progress, ignores the request and emits a coalesced event.
+   *
+   * @param sourceId - When provided, sync only that calendar source (per-calendar
+   *                   "Sync" action in the TopBar). Omit to sync all enabled sources.
    */
-  async triggerManual(): Promise<void> {
+  async triggerManual(sourceId?: string): Promise<void> {
     if (!this.currentSettings) {
       console.warn('[Scheduler] No settings available for manual trigger');
       sendEventToRenderers('scheduler:error', {
@@ -246,10 +249,17 @@ export class Scheduler {
       return;
     }
 
-    // Get all enabled calendars
-    const calendars = repo.listCalendars().filter((c) => c.enabled);
+    // Get enabled calendars, optionally narrowed to a single source
+    const enabledCalendars = repo.listCalendars().filter((c) => c.enabled);
+    const calendars = sourceId
+      ? enabledCalendars.filter((c) => c.id === sourceId)
+      : enabledCalendars;
     if (calendars.length === 0) {
-      console.warn('[Scheduler] No enabled calendar sources for manual trigger');
+      console.warn(
+        sourceId
+          ? `[Scheduler] Calendar source not found or disabled: ${sourceId}`
+          : '[Scheduler] No enabled calendar sources for manual trigger',
+      );
       sendEventToRenderers('scheduler:error', {
         message: 'No enabled calendar sources — check Settings',
         code: 'auth',
@@ -270,8 +280,12 @@ export class Scheduler {
       return;
     }
 
-    console.log('[Scheduler] Manual trigger initiated for all enabled sources');
-    await this.runFetchCycle();
+    console.log(
+      sourceId
+        ? `[Scheduler] Manual trigger initiated for source ${sourceId}`
+        : '[Scheduler] Manual trigger initiated for all enabled sources',
+    );
+    await this.runFetchCycle(sourceId ? calendars : undefined);
   }
 
   /**
@@ -304,11 +318,14 @@ export class Scheduler {
   }
 
   /**
-   * Performs a single fetch-and-import cycle for ALL enabled calendar sources.
+   * Performs a single fetch-and-import cycle for calendar sources.
    * Each source is processed independently with its own retry logic.
    * Per-source coalescing prevents overlapping syncs for the same source.
+   *
+   * @param onlySources - When provided, sync exactly these sources instead of
+   *                      every enabled source (used by per-calendar manual sync).
    */
-  private async runFetchCycle(): Promise<void> {
+  private async runFetchCycle(onlySources?: CalendarSource[]): Promise<void> {
     if (!this.currentSettings) {
       console.warn('[Scheduler] No settings available, skipping fetch cycle');
       return;
@@ -329,8 +346,9 @@ export class Scheduler {
       return;
     }
 
-    // Get all enabled calendar sources
-    const calendars = repo.listCalendars().filter((c) => c.enabled);
+    // Get the calendar sources for this cycle: an explicit subset (per-calendar
+    // manual sync) or every enabled source (scheduled / "sync all").
+    const calendars = onlySources ?? repo.listCalendars().filter((c) => c.enabled);
     if (calendars.length === 0) {
       console.warn('[Scheduler] No enabled calendar sources, skipping fetch cycle');
       return;
@@ -440,7 +458,7 @@ export class Scheduler {
 
       if (events.length === 0) {
         this.emitProgressForSource(calendar.id, calendar.name, 'complete', 100, 'No events found');
-        await this.onFetchSuccessForSource(calendar, 0, 0, 0, syncIntervalMinutes);
+        await this.onFetchSuccessForSource(calendar, 0, 0, 0);
         return;
       }
 
@@ -465,7 +483,6 @@ export class Scheduler {
         result.imported,
         result.updated,
         result.skipped,
-        syncIntervalMinutes,
       );
     } catch (error) {
       await this.handleFetchErrorForSource(error, calendar, feedUrl, syncIntervalMinutes);
@@ -479,17 +496,13 @@ export class Scheduler {
    * @param imported - Number of newly imported assignments
    * @param updated - Number of updated assignments
    * @param skipped - Number of skipped assignments
-   * @param syncIntervalMinutes - Sync interval for next run calculation
    */
   private async onFetchSuccessForSource(
     calendar: CalendarSource,
     imported: number,
     updated: number,
     skipped: number,
-    syncIntervalMinutes: number,
   ): Promise<void> {
-    const syncNow = new Date().toISOString() as IsoDateTime;
-
     // Reset retry state on success
     this.retryCount = 0;
     this.lastError = null;

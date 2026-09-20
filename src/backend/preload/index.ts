@@ -1,7 +1,7 @@
-import { contextBridge, ipcRenderer } from 'electron';
 
 import type { IpcChannels, IpcEvents, IpcResult } from '@backend/shared/ipc.js';
 import type { Settings } from '@backend/shared/ipc.js';
+import { contextBridge, ipcRenderer } from 'electron';
 
 /**
  * Typed wrapper for ipcRenderer.invoke that returns IpcResult<T>.
@@ -102,7 +102,7 @@ const api = {
     start: (intervalMinutes: number) => invoke('scheduler:start', { intervalMinutes }),
     stop: () => invoke('scheduler:stop', undefined),
     status: () => invoke('scheduler:status', undefined),
-    trigger: () => invoke('scheduler:trigger', undefined),
+    trigger: (input?: { sourceId?: string }) => invoke('scheduler:trigger', input),
     onTick: (callback: (payload: IpcEvents['scheduler:tick']) => void) =>
       on('scheduler:tick', callback),
     onError: (callback: (payload: IpcEvents['scheduler:error']) => void) =>

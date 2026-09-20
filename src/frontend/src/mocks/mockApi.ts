@@ -29,6 +29,9 @@ import type {
   PageUpdateInput,
   PageTreeNode,
   PageSearchResult,
+  CalendarSource,
+  CalendarSourceInput,
+  CalendarSourceUpdateInput,
 } from '@backend/shared/types';
 
 // In-memory mock database
@@ -36,6 +39,7 @@ const mockAssignments: Map<string, Assignment> = new Map();
 const mockSubTasks: Map<string, SubTask[]> = new Map();
 const mockNotes: Map<string, Note[]> = new Map();
 const mockPriorityOrders: Map<string, PriorityOrder> = new Map();
+const mockCalendars: Map<string, CalendarSource> = new Map();
 const mockPages: Map<string, Page> = new Map();
 let mockSettings: Settings = {
   theme: 'system',
@@ -662,6 +666,91 @@ const mockApi = {
         return createMockResult(order);
       },
     },
+    calendars: {
+      list: async (): Promise<IpcResult<CalendarSource[]>> => {
+        await new Promise((r) => setTimeout(r, 100));
+        return createMockResult([...mockCalendars.values()].sort((a, b) => a.position - b.position));
+      },
+      get: async (id: string): Promise<IpcResult<CalendarSource | null>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        return createMockResult(mockCalendars.get(id) ?? null);
+      },
+      create: async (input: CalendarSourceInput): Promise<IpcResult<CalendarSource>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        const now = new Date().toISOString() as IsoDateTime;
+        const id = generateId() as EntityId;
+        const calendar: CalendarSource = {
+          id,
+          name: input.name,
+          feedUrl: input.feedUrl, // In mock, store as-is
+          enabled: input.enabled ?? true,
+          color: input.color ?? '#3b82f6',
+          position: input.position ?? mockCalendars.size,
+          lastSyncAt: null,
+          nextSyncAt: null,
+          lastError: null,
+          createdAt: now,
+          updatedAt: now,
+        };
+        mockCalendars.set(id, calendar);
+        emitEvent('db:changed', { table: 'calendars', action: 'insert', id });
+        return createMockResult(calendar);
+      },
+      update: async (input: CalendarSourceUpdateInput): Promise<IpcResult<CalendarSource>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        const existing = mockCalendars.get(input.id);
+        if (!existing) return createMockError('Calendar not found', 'NOT_FOUND');
+        const now = new Date().toISOString() as IsoDateTime;
+        const updated: CalendarSource = {
+          ...existing,
+          name: input.name ?? existing.name,
+          feedUrl: input.feedUrl ?? existing.feedUrl,
+          enabled: input.enabled ?? existing.enabled,
+          color: input.color ?? existing.color,
+          position: input.position ?? existing.position,
+          updatedAt: now,
+        };
+        mockCalendars.set(input.id, updated);
+        emitEvent('db:changed', { table: 'calendars', action: 'update', id: input.id });
+        return createMockResult(updated);
+      },
+      delete: async (id: string): Promise<IpcResult<void>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        mockCalendars.delete(id);
+        emitEvent('db:changed', { table: 'calendars', action: 'delete', id });
+        return createMockResult(undefined);
+      },
+      reorder: async (ids: string[]): Promise<IpcResult<void>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        ids.forEach((id, index) => {
+          const existing = mockCalendars.get(id);
+          if (existing) {
+            mockCalendars.set(id, {
+              ...existing,
+              position: index,
+              updatedAt: new Date().toISOString() as IsoDateTime,
+            });
+          }
+        });
+        ids.forEach((id) =>
+          emitEvent('db:changed', { table: 'calendars', action: 'update', id }),
+        );
+        return createMockResult(undefined);
+      },
+      setEnabled: async (input: { id: string; enabled: boolean }): Promise<IpcResult<void>> => {
+        await new Promise((r) => setTimeout(r, 50));
+        const existing = mockCalendars.get(input.id);
+        if (!existing) return createMockError('Calendar not found', 'NOT_FOUND');
+        const now = new Date().toISOString() as IsoDateTime;
+        mockCalendars.set(input.id, {
+          ...existing,
+          enabled: input.enabled,
+          updatedAt: now,
+        });
+        emitEvent('db:changed', { table: 'calendars', action: 'update', id: input.id });
+        return createMockResult(undefined);
+      },
+    },
     pages: {
       list: async (parentId?: string): Promise<IpcResult<Page[]>> => {
         await new Promise((r) => setTimeout(r, 30));
@@ -884,7 +973,7 @@ const mockApi = {
         lastError: null,
       });
     },
-    trigger: async (): Promise<IpcResult<void>> => {
+    trigger: async (_input?: { sourceId?: string }): Promise<IpcResult<void>> => {
       await new Promise((r) => setTimeout(r, 500));
       return createMockResult(undefined);
     },

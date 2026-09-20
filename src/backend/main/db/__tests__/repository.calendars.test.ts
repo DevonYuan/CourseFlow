@@ -20,8 +20,8 @@ vi.mock('electron', () => ({
 }));
 
 // Import after mocking electron
-import { repo } from '../repository.js';
 import type { CalendarSource } from '../../../shared/types.js';
+import { repo } from '../repository.js';
 
 // The repository reads the database and emits events through these modules.
 // Inject a test database and a spy so the real repository logic runs in isolation.

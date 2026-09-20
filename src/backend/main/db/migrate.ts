@@ -10,9 +10,9 @@
  * @module @backend/main/db/migrate
  */
 
+import { randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 
 import type { Database } from 'sql.js';
 
@@ -163,7 +163,7 @@ async function decryptIcalUrl(encrypted: EncryptedSetting): Promise<string> {
 function hashToColor(name: string): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    hash = (name.codePointAt(i) ?? 0) + ((hash << 5) - hash);
   }
   const hue = Math.abs(hash) % 360;
   return `hsl(${hue}, 70%, 50%)`;
@@ -307,11 +307,7 @@ async function runSeeding(db: Database): Promise<void> {
   let legacyUrl: string;
   try {
     const parsed = JSON.parse(icalUrlRow['value'] as string);
-    if (isEncryptedSetting(parsed)) {
-      legacyUrl = await decryptIcalUrl(parsed);
-    } else {
-      legacyUrl = parsed as string;
-    }
+    legacyUrl = isEncryptedSetting(parsed) ? (await decryptIcalUrl(parsed)) : parsed as string;
   } catch {
     return; // Invalid settings, skip seeding
   }

@@ -13,8 +13,8 @@
 
 // @vitest-environment jsdom
 
-import type { IpcEvents } from '@backend/shared/ipc';
-import type { Settings } from '@backend/shared/types';
+import type { IpcEvents, IpcResult } from '@backend/shared/ipc';
+import type { ICalEvent, Settings } from '@backend/shared/types';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { render, screen, fireEvent, waitFor, act, within, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -113,18 +113,27 @@ describe('SettingsModal', () => {
     settingsUnsubscribe = null;
     document.documentElement.classList.remove('light', 'dark');
 
-    // Default mock implementations
-    window.api.settings.get = () => Promise.resolve({ ok: true, data: defaultSettings });
-    window.api.settings.set = () => Promise.resolve({ ok: true, data: defaultSettings });
-    window.api.settings.reset = () => Promise.resolve({ ok: true, data: defaultSettings });
-    window.api.ical.fetch = () => Promise.resolve({ ok: true, data: [] });
-    window.api.ical.import = () => Promise.resolve({ ok: true, data: { imported: 0, updated: 0, skipped: 0 } });
+    // Default mock implementations (vi.fn so tests can assert on calls).
+    // `ok: true as const` keeps the discriminant literal through vi.fn's generic.
+    window.api.settings.get = vi.fn(() =>
+      Promise.resolve({ ok: true as const, data: defaultSettings }),
+    );
+    window.api.settings.set = vi.fn(() =>
+      Promise.resolve({ ok: true as const, data: defaultSettings }),
+    );
+    window.api.settings.reset = vi.fn(() =>
+      Promise.resolve({ ok: true as const, data: defaultSettings }),
+    );
+    window.api.ical.fetch = vi.fn(() => Promise.resolve({ ok: true as const, data: [] }));
+    window.api.ical.import = vi.fn(() =>
+      Promise.resolve({ ok: true as const, data: { imported: 0, updated: 0, skipped: 0 } }),
+    );
 
-    window.api.onSettingsChanged = (cb) => {
+    window.api.onSettingsChanged = vi.fn((cb) => {
       settingsUnsubscribe = vi.fn();
       cb(defaultSettings);
       return settingsUnsubscribe;
-    };
+    });
 
     window.api.onIcalProgress = (cb) => {
       progressCallback = cb;
@@ -250,7 +259,7 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
-      const input = screen.getByLabelText('iCal URL');
+      const input = screen.getByLabelText('iCal URL (Legacy)');
       expect(input).toHaveValue('https://canvas.example.edu/feeds/calendars/...');
     });
 
@@ -258,7 +267,7 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
-      const input = screen.getByLabelText('iCal URL');
+      const input = screen.getByLabelText('iCal URL (Legacy)');
       fireEvent.change(input, { target: { value: 'https://new-url.example.com' } });
       expect(input).toHaveValue('https://new-url.example.com');
     });
@@ -267,7 +276,7 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
-      const input = screen.getByLabelText('iCal URL');
+      const input = screen.getByLabelText('iCal URL (Legacy)');
       fireEvent.change(input, { target: { value: 'not-a-url' } });
       fireEvent.click(screen.getByText('Fetch Now'));
       await waitFor(() => {
@@ -282,7 +291,7 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
-      const input = screen.getByLabelText('iCal URL');
+      const input = screen.getByLabelText('iCal URL (Legacy)');
       fireEvent.change(input, { target: { value: 'not-a-url' } });
       fireEvent.click(screen.getByText('Fetch Now'));
       await waitFor(() => {
@@ -499,7 +508,7 @@ describe('SettingsModal', () => {
     });
 
     it('shows saving state', async () => {
-      let resolveSave: (value: unknown) => void;
+      let resolveSave: (value: IpcResult<Settings>) => void;
       window.api.settings.set = () =>
         new Promise((resolve) => {
           resolveSave = resolve;
@@ -571,7 +580,7 @@ describe('SettingsModal', () => {
       renderSettingsModal();
       await waitForModalReady();
       await waitForFormReady();
-      expect(screen.getByLabelText('iCal URL')).toBeInTheDocument();
+      expect(screen.getByLabelText('iCal URL (Legacy)')).toBeInTheDocument();
       expect(screen.getByLabelText('Theme')).toBeInTheDocument();
       expect(screen.getByLabelText('Auto-fetch Interval')).toBeInTheDocument();
       expect(screen.getByLabelText('Close settings')).toBeInTheDocument();
@@ -579,8 +588,8 @@ describe('SettingsModal', () => {
 
     it('has proper role for progress bar', async () => {
       // Simulate fetch in progress by providing a loading state
-      let resolveFetch: (value: unknown) => void;
-      const fetchPromise = new Promise((resolve) => { resolveFetch = resolve; });
+      let resolveFetch: (value: IpcResult<ICalEvent[]>) => void;
+      const fetchPromise = new Promise<IpcResult<ICalEvent[]>>((resolve) => { resolveFetch = resolve; });
       
       window.api.ical.fetch = () => fetchPromise;
       window.api.onIcalProgress = (cb) => {

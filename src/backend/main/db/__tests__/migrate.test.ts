@@ -224,7 +224,7 @@ describe('migrate v6 seeding', () => {
     db.run(
       `INSERT INTO assignments (id, title, course_name, due_at, ical_uid, source, source_url, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, 'ical', ?, 'pending', ?, ?)`,
-      [crypto.randomUUID(), 'Test Assignment', 'Test Course', now + 86400000, icalUid, sourceUrl, now, now],
+      [crypto.randomUUID(), 'Test Assignment', 'Test Course', now + 86_400_000, icalUid, sourceUrl, now, now],
     );
   }
 
@@ -356,7 +356,7 @@ describe('migrate v6 seeding', () => {
     freshDb.run(
       `INSERT INTO assignments (id, title, course_name, due_at, ical_uid, source, source_url, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, 'ical', NULL, 'pending', ?, ?)`,
-      [crypto.randomUUID(), 'Test Assignment', 'Test Course', now + 86400000, 'uid-null-url', now, now],
+      [crypto.randomUUID(), 'Test Assignment', 'Test Course', now + 86_400_000, 'uid-null-url', now, now],
     );
     
     await migrate(freshDb); // Run seeding

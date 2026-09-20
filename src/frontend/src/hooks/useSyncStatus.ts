@@ -257,7 +257,7 @@ export function useSyncStatus(): UseSyncStatusReturn {
       }
       // Trigger sync for all enabled calendars via scheduler
       for (const cal of enabledCalendars) {
-        await window.api.scheduler.trigger?.(cal.id);
+        await window.api.scheduler.trigger?.({ sourceId: cal.id });
       }
 
       // Show success toast with import details
@@ -276,7 +276,7 @@ export function useSyncStatus(): UseSyncStatusReturn {
     if (!cal) return;
 
     try {
-      await window.api.scheduler.trigger?.(sourceId);
+      await window.api.scheduler.trigger?.({ sourceId });
     } catch {
       toastError(`Failed to sync ${cal.name}`);
     }

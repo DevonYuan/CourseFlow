@@ -9,7 +9,7 @@
  */
 
 import type { IpcEvents } from '@backend/shared/ipc';
-import type { CalendarSource, CalendarSourceInput, CalendarSourceUpdateInput, EntityId } from '@backend/shared/types';
+import type { CalendarSource, CalendarSourceInput, CalendarSourceUpdateInput, EntityId, IsoDateTime } from '@backend/shared/types';
 import { create } from 'zustand';
 
 /**
@@ -20,6 +20,12 @@ interface CalendarsState {
   calendars: CalendarSource[];
   /** Whether a fetch operation is in progress */
   isLoading: boolean;
+  /**
+   * Whether an initial load has completed (successfully or not).
+   * Distinguishes "not loaded yet" from "loaded, but empty" so consumers
+   * do not re-fetch forever when there are zero calendars.
+   */
+  hasFetched: boolean;
   /** Error message if fetch failed (null if no error) */
   error: string | null;
   /** Previous calendar order for rollback on reorder error */
@@ -92,37 +98,40 @@ function getNextPosition(calendars: CalendarSource[]): number {
 export const useCalendarsStore = create<CalendarsState & CalendarsActions>((set, get) => ({
   calendars: [],
   isLoading: false,
+  hasFetched: false,
   error: null,
   _previousCalendars: null,
   _previousState: null,
 
   fetchCalendars: async () => {
+    // De-duplicate concurrent requests (e.g. app startup + a component mount).
+    if (get().isLoading) return;
     set({ isLoading: true, error: null });
     try {
       const result = await window.api.db.calendars.list();
       if (result.ok) {
-        set({ calendars: result.data, isLoading: false });
+        set({ calendars: result.data, isLoading: false, hasFetched: true });
       } else {
-        set({ error: result.error, isLoading: false });
+        set({ error: result.error, isLoading: false, hasFetched: true });
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load calendars';
-      set({ error: errorMessage, isLoading: false });
+      set({ error: errorMessage, isLoading: false, hasFetched: true });
     }
   },
 
   hydrate: (calendars: CalendarSource[]) => {
-    set({ calendars, isLoading: false, error: null });
+    set({ calendars, isLoading: false, hasFetched: true, error: null });
   },
 
   setCalendars: (calendars: CalendarSource[]) => {
-    set({ calendars, isLoading: false, error: null });
+    set({ calendars, isLoading: false, hasFetched: true, error: null });
   },
 
   optimisticCreate: async (input: CalendarSourceInput) => {
     const { calendars } = get();
     const tempId = generateTempId();
-    const now = new Date().toISOString();
+    const now = new Date().toISOString() as IsoDateTime;
 
     // Create optimistic calendar
     const optimisticCalendar: CalendarSource = {
@@ -181,7 +190,7 @@ export const useCalendarsStore = create<CalendarsState & CalendarsActions>((set,
       // feedUrl and color are already proper types
       feedUrl: input.feedUrl ?? existing.feedUrl,
       color: input.color ?? existing.color,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString() as IsoDateTime,
     };
 
     set({
@@ -213,7 +222,7 @@ export const useCalendarsStore = create<CalendarsState & CalendarsActions>((set,
     const optimisticCalendar: CalendarSource = {
       ...existing,
       enabled: false,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString() as IsoDateTime,
     };
 
     set({
@@ -279,20 +288,27 @@ export const useCalendarsStore = create<CalendarsState & CalendarsActions>((set,
 
     switch (payload.action) {
       case 'insert': {
-        // For insert, we should fetch the new calendar to get the real data
-        // The optimistic create already handles this, but this handles external inserts
-        window.api.db.calendars.get(payload.id).then((result) => {
+        // Fetch the inserted calendar to get the real (decrypted) data.
+        // Upsert by id rather than append: `optimisticCreate` already added a
+        // temp row that it later swaps for the real one, and this event can
+        // arrive before or after that swap — appending would duplicate the row.
+        void window.api.db.calendars.get(payload.id).then((result) => {
           if (result.ok && result.data) {
-            set((state) => ({
-              calendars: [...state.calendars, result.data!].sort((a, b) => a.position - b.position),
-            }));
+            const inserted = result.data;
+            set((state) => {
+              const exists = state.calendars.some((cal) => cal.id === inserted.id);
+              const calendars = exists
+                ? state.calendars.map((cal) => (cal.id === inserted.id ? inserted : cal))
+                : [...state.calendars, inserted];
+              return { calendars: calendars.sort((a, b) => a.position - b.position) };
+            });
           }
         });
         break;
       }
       case 'update': {
         // For update, fetch the updated calendar
-        window.api.db.calendars.get(payload.id).then((result) => {
+        void window.api.db.calendars.get(payload.id).then((result) => {
           if (result.ok && result.data) {
             set((state) => ({
               calendars: state.calendars.map((cal) =>
@@ -312,7 +328,7 @@ export const useCalendarsStore = create<CalendarsState & CalendarsActions>((set,
       }
       case 'reorder': {
         // Reorder event from another window - re-fetch to get correct order
-        window.api.db.calendars.list().then((result) => {
+        void window.api.db.calendars.list().then((result) => {
           if (result.ok) {
             set({ calendars: result.data });
           }
@@ -336,7 +352,7 @@ export const useCalendarsStore = create<CalendarsState & CalendarsActions>((set,
     const optimisticCalendar: CalendarSource = {
       ...existing,
       enabled,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString() as IsoDateTime,
     };
 
     set({
@@ -370,7 +386,7 @@ export function selectCalendarsByPosition(): CalendarSource[] {
  */
 export function initializeCalendarsStore(): () => void {
   const store = useCalendarsStore.getState();
-  store.fetchCalendars();
+  void store.fetchCalendars();
   return () => {};
 }
 
