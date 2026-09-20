@@ -26,7 +26,10 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  /* The workspace shell is fixed-height, so the editor pane owns scrolling.
+     PageEditor fills 100% and scrolls internally; the welcome state can
+     overflow here instead of being clipped. */
+  overflow: auto;
 }
 
 /* Resize handle */

@@ -30,8 +30,9 @@ export function Layout({ children }: LayoutProps): JSX.Element {
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      {/* Window Chrome */}
-      <div className="window">
+      {/* Window Chrome — the notes view is a fixed-height shell that manages
+          its own internal scrolling, so it must not inherit the page scroll. */}
+      <div className={`window${isNotesView ? ' window--fixed' : ''}`}>
         {/* Primary Bar: Brand, Tabs, Search, Sync, Settings */}
         <TopBar />
 

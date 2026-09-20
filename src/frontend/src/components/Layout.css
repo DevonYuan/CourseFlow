@@ -41,6 +41,8 @@
 
 /* Main Content */
 .layout__main {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: var(--space-4) var(--space-5) var(--space-6);
@@ -103,5 +105,18 @@
 .layout__content--flush {
   max-width: none;
   margin: 0;
+  /* Fill the space left under the TopBar so the sidebar divider and the
+     shortcuts footer reach the bottom edge of the window. */
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Fixed-height shell: the notes workspace owns the full viewport height and
+   scrolls internally, so no page-level scrollbar or trailing scroll area. */
+.window--fixed {
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
