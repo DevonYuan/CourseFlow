@@ -3,6 +3,17 @@
    Matches: docs/design-inspo/courseflow-dashbar-redesign.html
    ========================================================================== */
 
+/* Hide scrollbars globally while keeping scroll functionality */
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 .layout {
   display: flex;
   flex-direction: column;
